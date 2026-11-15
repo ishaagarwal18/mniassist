@@ -5,16 +5,19 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 
 import { inr } from '../../../core/util/format';
 import { ArTopbar } from '../../../layout/topbar';
-import { SalesExportFormat } from '../../../proxy/sales/sales-enums';
+import { SalesExportFormat, SalesInvoiceStatus } from '../../../proxy/sales/sales-enums';
 import { SalesInvoiceDto } from '../../../proxy/sales/sales-invoice.models';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { ArButton, ArChip, ArIcon } from '../../../ui';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../../ui/grid';
 import { SALES_RECORD_STYLES, SalesRecordPage } from '../sales-record-page';
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../../core/auth/permission';
 import {
   SALES_PAYMENT_MODES,
   SalesPaymentForm,
+  canCancelInvoice,
   canIssueInvoice,
   canPayInvoice,
   invoiceStatusLabel,
@@ -403,6 +406,17 @@ import { ArSalesExport } from '../sales-export';
               [fileName]="inv.invoiceNumber"
               hint="This invoice"
             />
+            @if (mayCancel() && canCancel(inv)) {
+              <button
+                ar-button
+                variant="ghost"
+                type="button"
+                [disabled]="busy()"
+                (click)="cancelInvoice(inv)"
+              >
+                Cancel invoice
+              </button>
+            }
             @if (canIssue(inv)) {
               <button
                 ar-button
@@ -441,6 +455,21 @@ export class ArSalesInvoicePage extends SalesRecordPage<SalesInvoiceDto> {
     this.api.download(this.record()!.id!, format, { skipHandleError: true });
 
   protected readonly list = '/sales/invoices';
+  protected readonly canCancel = canCancelInvoice;
+  protected readonly mayCancel = grantedPolicy(
+    'AutoReach.SalesInvoices.Cancel',
+    inject(PermissionService),
+  );
+
+  protected cancelInvoice(inv: SalesInvoiceDto): void {
+    void this.cancelRecord(
+      `Invoice ${inv.invoiceNumber}`,
+      inv.status === SalesInvoiceStatus.Draft
+        ? 'The draft is kept as cancelled and will never be issued.'
+        : 'An issued invoice keeps its number and stays on record as cancelled. If it was reported for GST or an e-invoice was generated, cancel it on the portal too.',
+      () => this.api.cancel(inv.id!, { skipHandleError: true }),
+    );
+  }
   protected readonly noun = 'This invoice';
 
   protected readonly inr = inr;

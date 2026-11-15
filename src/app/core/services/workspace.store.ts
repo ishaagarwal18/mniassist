@@ -123,9 +123,20 @@ export class WorkspaceStore {
     this.reloadTick.update((n) => n + 1);
   }
 
-  async invite(email: string, roleName: string, note?: string): Promise<string | null> {
+  /** `expiryDays` is how long the link works, 1 to 30 days; the API's default (7) when left out. */
+  async invite(
+    email: string,
+    roleName: string,
+    note?: string,
+    expiryDays?: number,
+  ): Promise<string | null> {
     const created = await firstValueFrom(
-      this.api.invite({ email: email.trim(), roleName, note: note?.trim() || undefined }),
+      this.api.invite({
+        email: email.trim(),
+        roleName,
+        note: note?.trim() || undefined,
+        ...(expiryDays ? { expiryDays } : {}),
+      }),
     );
     this.reload();
     return created.acceptUrl ?? null;

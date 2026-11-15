@@ -1,8 +1,10 @@
+import { ConfirmService } from '../../../core/ui/confirm.service';
+import { ToastService } from '../../../core/ui/toast.service';
 import { PermissionService } from '@abp/ng.core';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 
 import { checkPolicy } from '../../../core/auth/permission';
 import { readApiError } from '../../../core/util/api-error';
@@ -125,12 +127,22 @@ import { grnStatusChip, qcChip } from './grn-labels';
                     {{ l.receivedQuantity }} {{ l.unitOfMeasure }}
                   </ng-template>
                 </e-column>
-                <e-column field="acceptedQuantity" headerText="Accepted" width="110" [textAlign]="'Right'">
+                <e-column
+                  field="acceptedQuantity"
+                  headerText="Accepted"
+                  width="110"
+                  [textAlign]="'Right'"
+                >
                   <ng-template #template let-l>
                     <span class="gd-good">{{ l.acceptedQuantity }}</span>
                   </ng-template>
                 </e-column>
-                <e-column field="rejectedQuantity" headerText="Rejected" width="110" [textAlign]="'Right'">
+                <e-column
+                  field="rejectedQuantity"
+                  headerText="Rejected"
+                  width="110"
+                  [textAlign]="'Right'"
+                >
                   <ng-template #template let-l>
                     <span [class.gd-bad]="l.rejectedQuantity > 0">{{ l.rejectedQuantity }}</span>
                   </ng-template>
@@ -152,6 +164,30 @@ import { grnStatusChip, qcChip } from './grn-labels';
           <footer class="pf__bar">
             <span class="pf__summary">What next</span>
             <button ar-button variant="ghost" type="button" (click)="back()">Back</button>
+            @if (
+              can().cancel && g.status !== GrnStatus.Billed && g.status !== GrnStatus.Cancelled
+            ) {
+              <button
+                ar-button
+                variant="ghost"
+                type="button"
+                [disabled]="acting()"
+                (click)="cancelGrn(g)"
+              >
+                Cancel GRN
+              </button>
+            }
+            @if (can().inspect && g.status === GrnStatus.Draft) {
+              <button
+                ar-button
+                variant="ghost"
+                type="button"
+                [disabled]="acting()"
+                (click)="startInspection(g)"
+              >
+                Move to QC
+              </button>
+            }
             @if (can().debitNote && totals().rejected > 0 && g.status !== GrnStatus.Cancelled) {
               <a
                 ar-button
@@ -321,6 +357,7 @@ export class ArGrnDetailPage {
     const has = (p: string) => checkPolicy(p, this.permissions);
     return {
       inspect: has(PURCHASING_PERMISSIONS.inspectGrn),
+      cancel: has(PURCHASING_PERMISSIONS.cancelGrn),
       bill: has(PURCHASING_PERMISSIONS.createBill),
       debitNote: has(PURCHASING_PERMISSIONS.createDebitNote),
     };
@@ -328,6 +365,54 @@ export class ArGrnDetailPage {
 
   constructor() {
     void this.load(this.route.snapshot.paramMap.get('id') ?? '');
+  }
+
+  private readonly dialogs = inject(ConfirmService);
+  private readonly toasts = inject(ToastService);
+  protected readonly acting = signal(false);
+
+  /** Marks the goods as being checked, so the team sees they are in QC and not yet usable. */
+  protected async startInspection(g: GoodsReceiptNoteDto): Promise<void> {
+    await this.act(
+      () => this.api.startInspection(g.id!, { skipHandleError: true }),
+      `${g.grnNumber} is in QC inspection.`,
+      'The goods receipt could not be moved to QC.',
+    );
+  }
+
+  protected async cancelGrn(g: GoodsReceiptNoteDto): Promise<void> {
+    if (
+      !(await this.dialogs.confirm({
+        title: `Cancel ${g.grnNumber}?`,
+        message:
+          'It stays on record as cancelled. Stock it added is not reversed here; adjust stock separately if the goods went back.',
+        confirmText: 'Cancel GRN',
+        cancelText: 'Keep it',
+        tone: 'danger',
+      }))
+    )
+      return;
+    await this.act(
+      () => this.api.cancel(g.id!, { skipHandleError: true }),
+      `${g.grnNumber} cancelled.`,
+      'The goods receipt could not be cancelled.',
+    );
+  }
+
+  private async act(
+    call: () => Observable<GoodsReceiptNoteDto>,
+    done: string,
+    failed: string,
+  ): Promise<void> {
+    this.acting.set(true);
+    try {
+      this.grn.set(await firstValueFrom(call()));
+      this.toasts.success(done);
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, failed));
+    } finally {
+      this.acting.set(false);
+    }
   }
 
   private async load(id: string): Promise<void> {

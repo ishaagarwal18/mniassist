@@ -79,6 +79,24 @@
                 >
                   {{ webhookBusy() === 'test' ? 'Sending…' : 'Send test' }}
                 </button>
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="webhookBusy() !== null"
+                  (click)="openEdit(w)"
+                >
+                  Edit
+                </button>
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="webhookBusy() !== null"
+                  (click)="removeEndpoint(w)"
+                >
+                  {{ webhookBusy() === 'delete' ? 'Deleting…' : 'Delete' }}
+                </button>
                 @if (!w.enabled) {
                   <button
                     ar-button
@@ -357,11 +375,17 @@
       <ar-api-keys-card />
     </div>
   }
+  @if (editingId()) {
+    <ng-container *ngTemplateOutlet="formsTpl" />
+  }
 }
 
 <ng-template #formsTpl>
   @if (dialogOpen()) {
-    <ar-dialog title="Add a webhook endpoint" (dismiss)="close()">
+    <ar-dialog
+      [title]="editingId() ? 'Edit webhook endpoint' : 'Add a webhook endpoint'"
+      (dismiss)="close()"
+    >
       <label class="ar-field">
         <span class="ar-field__label">Endpoint URL</span>
         <input
@@ -410,7 +434,7 @@
           [disabled]="saving()"
           (click)="createEndpoint()"
         >
-          {{ saving() ? 'Adding…' : 'Add endpoint' }}
+          {{ saving() ? 'Saving…' : editingId() ? 'Save endpoint' : 'Add endpoint' }}
         </button>
       </div>
     </ar-dialog>

@@ -1,3 +1,4 @@
+import { ToastService } from '../../core/ui/toast.service';
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -46,6 +47,18 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
       [subtitle]="subtitle()"
       help="Customers open a personal link from WhatsApp, confirm with a code sent to their number, and see their machines with the spares due, at their own prices. What they send arrives here as a draft quotation for you to check and issue."
     >
+      @if (shipments().length) {
+        <button
+          ar-button
+          variant="ghost"
+          type="button"
+          [disabled]="refreshing()"
+          title="Read the latest courier tracking for open shipments now"
+          (click)="refreshTracking()"
+        >
+          {{ refreshing() ? 'Refreshing…' : 'Refresh tracking' }}
+        </button>
+      }
       @if (canSettings()) {
         <a ar-button variant="ghost" icon="settings" routerLink="/reorders/settings">
           Portal settings
@@ -350,6 +363,27 @@ export class ArReorders {
       this.shipments.set(await firstValueFrom(this.shippingApi.getShipments()));
     } catch {
       // Delivery is extra on this page: without it the requests still show.
+    }
+  }
+
+  private readonly toasts = inject(ToastService);
+  protected readonly refreshing = signal(false);
+
+  /** Asks the courier for the latest tracking now, instead of waiting for the next automatic check. */
+  protected async refreshTracking(): Promise<void> {
+    this.refreshing.set(true);
+    this.error.set(null);
+    try {
+      const changed = await firstValueFrom(this.shippingApi.refresh());
+      await this.loadShipping();
+      this.toasts.success(
+        changed ? `${changed} shipment(s) updated.` : 'Tracking is up to date.',
+        'Deliveries',
+      );
+    } catch (e: unknown) {
+      this.error.set(problem(e, 'The tracking could not be refreshed.'));
+    } finally {
+      this.refreshing.set(false);
     }
   }
 

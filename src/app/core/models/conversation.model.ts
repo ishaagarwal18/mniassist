@@ -70,4 +70,8 @@ export interface Conversation {
   readonly unread: number;
   readonly window: ServiceWindow;
   readonly messages: readonly Message[];
+  /** Resolved by an agent; a new customer message opens it again. */
+  readonly closed?: boolean;
+  readonly assignedUserId?: string;
+  readonly assignedUserName?: string;
 }

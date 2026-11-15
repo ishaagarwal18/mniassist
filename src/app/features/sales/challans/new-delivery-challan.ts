@@ -1,3 +1,4 @@
+import { InventoryService, StockLocationDto } from '../../../proxy/inventory/inventory.service';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -111,6 +112,21 @@ export const CHALLAN_TYPES = withOptionNames('sales.challan-type', [
               (input)="shippingAddress.set($any($event.target).value)"
             ></textarea>
           </div>
+          @if (locations().length) {
+            <label class="ar-field">
+              <span class="ar-field__label"
+                >Dispatch from <span class="ar-field__opt">optional</span></span
+              >
+              <select class="ar-field__input" (change)="locationId.set($any($event.target).value)">
+                <option value="" [selected]="!locationId()">Not tracked</option>
+                @for (l of locations(); track l.id) {
+                  <option [value]="l.id" [selected]="l.id === locationId()" translate="no">
+                    {{ l.name }}
+                  </option>
+                }
+              </select>
+            </label>
+          }
           <label class="ar-field">
             <span class="ar-field__label"
               >Transporter <span class="ar-field__opt">optional</span></span
@@ -359,6 +375,15 @@ export class ArNewDeliveryChallan {
   protected readonly lr = signal('');
   protected readonly eway = signal('');
   protected readonly remarks = signal('');
+  /** The stock location the goods leave from; the challan then issues them from that location's stock. */
+  protected readonly locationId = signal('');
+  protected readonly locations = signal<StockLocationDto[]>([]);
+  private readonly inventoryApi = inject(InventoryService);
+  private readonly locationsLoad = firstValueFrom(
+    this.inventoryApi.getLocations({ skipHandleError: true }),
+  )
+    .then((l) => this.locations.set((l ?? []).filter((x) => x.isActive)))
+    .catch(() => undefined);
   protected readonly lines = signal<ChallanLine[]>([blankChallanLine()]);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -431,6 +456,7 @@ export class ArNewDeliveryChallan {
       lrNumber: this.lr().trim() || undefined,
       eWayBillNumber: eway || undefined,
       remarks: this.remarks().trim() || undefined,
+      dispatchFromLocationId: this.locationId() || undefined,
       lines: toChallanLines(filled),
     };
 

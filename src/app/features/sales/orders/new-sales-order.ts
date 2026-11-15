@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PickerOption } from '../../../core/services/pipeline.service';
 import type { ProductDto } from '../../../proxy/library/product.service';
@@ -14,6 +23,7 @@ import {
   OrderLine,
   blankLine,
   editLine,
+  lineFromOrder,
   lineFromProduct,
   toOrderLines,
 } from './new-sales-order.logic';
@@ -30,12 +40,21 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog
-      title="Create New Sales Order"
+      [title]="editing() ? 'Edit ' + editing()!.orderNumber : 'Create New Sales Order'"
       width="min(920px, calc(100vw - 32px))"
       (dismiss)="closed.emit(null)"
     >
       <div class="so">
-        <ar-sales-customer [initialCustomer]="initialCustomer()" (changed)="onCustomer($event)" />
+        @if (editing(); as e) {
+          <p class="so__fixed">
+            Customer: <strong translate="no">{{ e.customerName }}</strong>
+            @if (e.customerAccountName) {
+              · <span translate="no">{{ e.customerAccountName }}</span>
+            }
+          </p>
+        } @else {
+          <ar-sales-customer [initialCustomer]="initialCustomer()" (changed)="onCustomer($event)" />
+        }
 
         <div class="so__grid">
           <label class="ar-field" for="so-po">
@@ -104,6 +123,33 @@ import {
               (input)="shippingAddress.set($any($event.target).value)"
             ></textarea>
           </div>
+          <label class="ar-field so__half" for="so-notes">
+            <span class="ar-field__label"
+              >Notes <span class="ar-field__opt">printed on the order</span></span
+            >
+            <textarea
+              id="so-notes"
+              class="ar-field__input"
+              rows="3"
+              maxlength="2000"
+              [value]="notes()"
+              (input)="notes.set($any($event.target).value)"
+            ></textarea>
+          </label>
+          <label class="ar-field so__half" for="so-internal">
+            <span class="ar-field__label"
+              >Internal notes <span class="ar-field__opt">only your team sees these</span></span
+            >
+            <textarea
+              id="so-internal"
+              class="ar-field__input"
+              rows="3"
+              maxlength="2000"
+              placeholder="e.g. Agreed 2% extra discount on next order"
+              [value]="internalNotes()"
+              (input)="internalNotes.set($any($event.target).value)"
+            ></textarea>
+          </label>
         </div>
 
         <h4 class="so__h">Order items</h4>
@@ -176,7 +222,7 @@ import {
       <div dialogActions>
         <button ar-button variant="ghost" (click)="closed.emit(null)">Cancel</button>
         <button ar-button variant="primary" [disabled]="creating()" (click)="submit()">
-          {{ creating() ? 'Creating…' : 'Create Sales Order' }}
+          {{ creating() ? 'Saving…' : editing() ? 'Save changes' : 'Create Sales Order' }}
         </button>
       </div>
     </ar-dialog>
@@ -274,6 +320,11 @@ import {
       background: var(--ar-red-100);
       color: var(--ar-bad-600);
     }
+    .so__fixed {
+      margin: 0;
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
     @media (max-width: 760px) {
       .so__grid {
         grid-template-columns: minmax(0, 1fr);
@@ -293,12 +344,16 @@ export class ArNewSalesOrder {
 
   /** The customer to start with: a contact passed from Customer 360 or a list showing one customer. */
   readonly initialCustomer = input<PickerOption | null>(null);
+  /** A draft order to edit instead of making a new one. Its customer stays as it is. */
+  readonly editing = input<SalesOrderDto | null>(null);
   readonly closed = output<SalesOrderDto | null>();
 
   protected readonly choice = signal<SalesCustomerChoice | null>(null);
   protected readonly party = signal<SalesParty>(EMPTY_PARTY);
   protected readonly billingAddress = signal('');
   protected readonly shippingAddress = signal('');
+  protected readonly notes = signal('');
+  protected readonly internalNotes = signal('');
   protected readonly shipIndex = signal(-1);
   protected readonly lines = signal<OrderLine[]>([blankLine()]);
 
@@ -346,7 +401,70 @@ export class ArNewSalesOrder {
 
   // ---- Save ----------------------------------------------------------------------
 
+  constructor() {
+    // An edit starts from the saved order.
+    effect(() => {
+      const o = this.editing();
+      if (!o) return;
+      untracked(() => {
+        this.order = {
+          customerPoNumber: o.customerPoNumber ?? '',
+          paymentTermsDays: o.paymentTermsDays ?? 30,
+          deliveryTerms: o.deliveryTerms ?? 'Ex-Works',
+        };
+        this.billingAddress.set(o.billingAddress ?? '');
+        this.shippingAddress.set(o.shippingAddress ?? '');
+        this.notes.set(o.notes ?? '');
+        this.internalNotes.set(o.internalNotes ?? '');
+        this.lines.set(o.lines.length ? o.lines.map(lineFromOrder) : [blankLine()]);
+      });
+    });
+  }
+
+  private saveEdit(o: SalesOrderDto): void {
+    if (!this.order.customerPoNumber.trim()) {
+      this.error.set('Enter the customer PO number.');
+      return;
+    }
+    const lines = toOrderLines(this.lines());
+    if (lines.length === 0) {
+      this.error.set('Add at least one item with an item number and quantity.');
+      return;
+    }
+    this.creating.set(true);
+    this.error.set(null);
+    this.orderService
+      .update(o.id!, {
+        customerPoNumber: this.order.customerPoNumber.trim(),
+        customerPoDate: o.customerPoDate,
+        paymentTermsDays: this.order.paymentTermsDays,
+        deliveryTerms: this.order.deliveryTerms,
+        billingAddress: this.billingAddress().trim() || undefined,
+        shippingAddress: this.shippingAddress().trim() || undefined,
+        expectedDeliveryDateUtc: o.expectedDeliveryDateUtc,
+        discountInPaise: o.discountInPaise,
+        notes: this.notes().trim() || undefined,
+        internalNotes: this.internalNotes().trim() || undefined,
+        lines,
+      })
+      .subscribe({
+        next: (saved) => {
+          this.creating.set(false);
+          this.closed.emit(saved);
+        },
+        error: (e: unknown) => {
+          this.creating.set(false);
+          this.error.set(errorMessage(e, 'The sales order could not be saved.'));
+        },
+      });
+  }
+
   protected submit(): void {
+    const editing = this.editing();
+    if (editing) {
+      this.saveEdit(editing);
+      return;
+    }
     const choice = this.choice();
     const customer = choice?.customer;
     if (!customer) {
@@ -375,6 +493,8 @@ export class ArNewSalesOrder {
       deliveryTerms: this.order.deliveryTerms,
       billingAddress: this.billingAddress().trim() || undefined,
       shippingAddress: this.shippingAddress().trim() || undefined,
+      notes: this.notes().trim() || undefined,
+      internalNotes: this.internalNotes().trim() || undefined,
       discountInPaise: 0,
       lines,
     };

@@ -255,7 +255,10 @@ export class ArIntegrations {
   }
 
   protected close(): void {
+    const wasEditing = this.editingId() !== null;
+    this.editingId.set(null);
     this.dialogOpen.set(false);
+    if (wasEditing) return;
     this.mappingConnection.set(null);
     if (this.isPage && this.router) {
       void this.router.navigate(['/settings/integrations']);
@@ -494,8 +497,43 @@ export class ArIntegrations {
   protected readonly url = signal('');
   protected readonly description = signal('');
   protected readonly events = signal<Set<WebhookEvent>>(new Set());
+  /** The endpoint being edited in the dialog; null when adding a new one. */
+  protected readonly editingId = signal<string | null>(null);
+
+  protected openEdit(w: WebhookSubscription): void {
+    this.url.set(w.url);
+    // The list shows the URL when there is no description; an edit must not save it as one.
+    this.description.set(w.description === w.url ? '' : w.description);
+    this.events.set(
+      new Set(
+        w.events
+          .map((name) => WebhookEvent[name as keyof typeof WebhookEvent])
+          .filter((e): e is WebhookEvent => e !== undefined),
+      ),
+    );
+    this.error.set(null);
+    this.editingId.set(w.id);
+    this.dialogOpen.set(true);
+  }
+
+  protected async removeEndpoint(w: WebhookSubscription): Promise<void> {
+    if (
+      !(await this.dialogs.delete(
+        'endpoint',
+        w.description,
+        'Nothing more is sent to it, and its delivery history is removed.',
+      ))
+    )
+      return;
+    await this.runWebhook('delete', async () => {
+      await this.ops.deleteWebhook(w.id);
+      if (this.selectedId() === w.id) this.selectedId.set(null);
+      this.toasts.success('Endpoint deleted.', 'Webhook');
+    });
+  }
 
   protected openDialog(): void {
+    this.editingId.set(null);
     this.url.set('');
     this.description.set('');
     this.events.set(new Set([WebhookEvent.InboundMessage]));
@@ -591,7 +629,20 @@ export class ArIntegrations {
     this.saving.set(true);
     this.error.set(null);
     try {
-      await this.ops.createWebhook(this.url(), this.description(), [...this.events()]);
+      const id = this.editingId();
+      if (id) {
+        const current = this.webhooks().find((w) => w.id === id);
+        await this.ops.updateWebhook(
+          id,
+          this.url(),
+          this.description(),
+          [...this.events()],
+          current?.enabled ?? true,
+        );
+        this.toasts.success('Endpoint saved.', 'Webhook');
+      } else {
+        await this.ops.createWebhook(this.url(), this.description(), [...this.events()]);
+      }
       this.close();
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'The endpoint could not be added.');

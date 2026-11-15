@@ -580,6 +580,12 @@ export const routes: Routes = [
           import('./features/sales/new-sales-record-pages').then((m) => m.ArNewSalesOrderPage),
       },
       {
+        path: 'sales/orders/:id/edit',
+        title: 'Edit sales order · MNI Assist',
+        loadComponent: () =>
+          import('./features/sales/new-sales-record-pages').then((m) => m.ArEditSalesOrderPage),
+      },
+      {
         path: 'sales/orders/:id',
         title: 'Sales order · MNI Assist',
         loadComponent: () =>
@@ -809,6 +815,12 @@ export const routes: Routes = [
       {
         path: 'manufacturing/bom/new',
         title: 'Create Bill of Materials · MNI Assist',
+        loadComponent: () =>
+          import('./features/manufacturing/bom/new-bom-page').then((m) => m.ArNewBomPage),
+      },
+      {
+        path: 'manufacturing/bom/:id/edit',
+        title: 'Edit Bill of Materials · MNI Assist',
         loadComponent: () =>
           import('./features/manufacturing/bom/new-bom-page').then((m) => m.ArNewBomPage),
       },
@@ -1104,6 +1116,12 @@ export const routes: Routes = [
         title: 'Automations · MNI Assist',
         loadComponent: () =>
           import('./features/automations/automations').then((m) => m.ArAutomations),
+      },
+      {
+        path: 'canned-replies',
+        title: 'Canned replies · MNI Assist',
+        loadComponent: () =>
+          import('./features/inbox/canned-replies').then((m) => m.ArCannedReplies),
       },
       {
         path: 'auto-replies',

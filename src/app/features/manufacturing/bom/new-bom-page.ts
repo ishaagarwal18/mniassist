@@ -1,10 +1,17 @@
 import { CommonModule, DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
+  BillOfMaterialDto,
   BillOfMaterialService,
   BomStatus,
   BomType,
@@ -19,7 +26,9 @@ import { ArButton, ArCard } from '../../../ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
-      title="Create Bill of Materials (Multi-Level BOM)"
+      [title]="
+        editingId ? 'Edit ' + newBom.bomNumber : 'Create Bill of Materials (Multi-Level BOM)'
+      "
       subtitle="Define assembly header, multi-level component explosion, scrap allowances and routing stages"
     >
       <button ar-button variant="ghost" (click)="cancel()">Back to BOM Registry</button>
@@ -36,6 +45,7 @@ import { ArButton, ArCard } from '../../../ui';
                 class="ar-field__input"
                 required
                 [(ngModel)]="newBom.bomNumber"
+                [disabled]="!!editingId"
                 name="bomNumber"
               />
             </div>
@@ -61,6 +71,7 @@ import { ArButton, ArCard } from '../../../ui';
                 class="ar-field__input"
                 required
                 [(ngModel)]="newBom.finishedGoodPartNumber"
+                [disabled]="!!editingId"
                 placeholder="e.g. PLC-PNL-400A"
                 name="finishedGoodPartNumber"
               />
@@ -103,7 +114,12 @@ import { ArButton, ArCard } from '../../../ui';
 
             <div class="form-group">
               <label class="form-label">BOM Classification</label>
-              <select class="ar-field__input" [(ngModel)]="newBom.bomType" name="bomType">
+              <select
+                class="ar-field__input"
+                [(ngModel)]="newBom.bomType"
+                [disabled]="!!editingId"
+                name="bomType"
+              >
                 <option [ngValue]="BomType.Manufacturing">Manufacturing BOM</option>
                 <option [ngValue]="BomType.Engineering">Engineering / Design BOM</option>
                 <option [ngValue]="BomType.Kit">Kit / Assemblies</option>
@@ -231,9 +247,27 @@ import { ArButton, ArCard } from '../../../ui';
                       <td class="text-center">
                         <input
                           type="checkbox"
+                          [attr.aria-label]="'Line ' + ($index + 1) + ' is a sub-assembly'"
                           [(ngModel)]="item.isSubAssembly"
+                          (ngModelChange)="!$event && (item.subAssemblyBomId = undefined)"
                           [name]="'sub_' + $index"
                         />
+                        @if (item.isSubAssembly) {
+                          <select
+                            class="table-input sub-bom"
+                            [attr.aria-label]="'BOM that builds line ' + ($index + 1)"
+                            [name]="'subbom_' + $index"
+                            [ngModel]="item.subAssemblyBomId ?? ''"
+                            (ngModelChange)="linkSubAssembly(item, $event)"
+                          >
+                            <option value="">Its BOM…</option>
+                            @for (b of subBoms(); track b.id) {
+                              <option [value]="b.id" translate="no">
+                                {{ b.finishedGoodPartNumber }} · {{ b.revisionCode }}
+                              </option>
+                            }
+                          </select>
+                        }
                       </td>
                       <td class="text-center">
                         <button
@@ -277,7 +311,7 @@ import { ArButton, ArCard } from '../../../ui';
               busy() || !newBom.bomNumber?.trim() || !newBom.finishedGoodPartNumber.trim()
             "
           >
-            {{ busy() ? 'Saving BOM…' : 'Save & Register BOM' }}
+            {{ busy() ? 'Saving BOM…' : editingId ? 'Save changes' : 'Save & Register BOM' }}
           </button>
         </div>
       </form>
@@ -394,6 +428,12 @@ import { ArButton, ArCard } from '../../../ui';
         padding-top: 1rem;
         border-top: 1px solid var(--ar-line-200);
       }
+      .sub-bom {
+        display: block;
+        margin-top: 4px;
+        min-width: 140px;
+        font-size: 12px;
+      }
     `,
   ],
 })
@@ -408,6 +448,67 @@ export class ArNewBomPage {
 
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
+  /** BOMs a sub-assembly line can point to: every one that is not obsolete. */
+  protected readonly subBoms = signal<BillOfMaterialDto[]>([]);
+
+  /** Set on /manufacturing/bom/:id/edit; the number, finished good and type are fixed once made. */
+  private readonly cdr = inject(ChangeDetectorRef);
+  protected readonly editingId = inject(ActivatedRoute).snapshot.paramMap.get('id');
+  private editingStatus = BomStatus.Draft;
+
+  constructor() {
+    if (this.editingId) {
+      this.bomService.get(this.editingId, { skipHandleError: true }).subscribe({
+        next: (b) => {
+          this.editingStatus = b.status;
+          this.newBom = {
+            bomNumber: b.bomNumber,
+            finishedGoodPartNumber: b.finishedGoodPartNumber,
+            finishedGoodDescription: b.finishedGoodDescription,
+            finishedGoodUom: b.finishedGoodUom,
+            baseQuantity: b.baseQuantity,
+            bomType: b.bomType,
+            revisionCode: b.revisionCode,
+            remarks: b.remarks ?? '',
+            items: (b.items ?? []).map((i) => ({
+              itemSequence: i.itemSequence,
+              componentPartNumber: i.componentPartNumber,
+              componentDescription: i.componentDescription,
+              quantityPerUnit: i.quantityPerUnit,
+              unitOfMeasure: i.unitOfMeasure,
+              scrapPercentage: i.scrapPercentage,
+              unitCostInPaise: i.unitCostInPaise,
+              routingStage: i.routingStage,
+              isSubAssembly: i.isSubAssembly,
+              subAssemblyBomId: i.subAssemblyBomId,
+            })),
+          };
+          this.cdr.markForCheck();
+        },
+        error: () => this.error.set('The BOM could not be loaded for editing.'),
+      });
+    }
+    this.bomService
+      .getList({ maxResultCount: 500, skipCount: 0 }, { skipHandleError: true })
+      .subscribe({
+        next: (r) =>
+          this.subBoms.set(
+            (r.items ?? [])
+              .filter((b) => b.status !== BomStatus.Obsolete)
+              .sort((a, b) => a.finishedGoodPartNumber.localeCompare(b.finishedGoodPartNumber)),
+          ),
+        error: () => this.subBoms.set([]),
+      });
+  }
+
+  /** Links a sub-assembly line to the BOM that builds it, filling a blank part number and description from it. */
+  protected linkSubAssembly(item: CreateBillOfMaterialDto['items'][number], bomId: string): void {
+    item.subAssemblyBomId = bomId || undefined;
+    const bom = this.subBoms().find((b) => b.id === bomId);
+    if (!bom) return;
+    if (!item.componentPartNumber?.trim()) item.componentPartNumber = bom.finishedGoodPartNumber;
+    if (!item.componentDescription?.trim()) item.componentDescription = bom.finishedGoodDescription;
+  }
 
   protected newBom: CreateBillOfMaterialDto = {
     bomNumber: `BOM-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -475,15 +576,44 @@ export class ArNewBomPage {
     ) {
       return;
     }
+    const selfLink = this.newBom.items.find(
+      (i) =>
+        i.isSubAssembly &&
+        i.componentPartNumber.trim().toLowerCase() ===
+          this.newBom.finishedGoodPartNumber.trim().toLowerCase(),
+    );
+    if (selfLink) {
+      this.error.set('A BOM cannot use itself as a sub-assembly.');
+      return;
+    }
 
     this.busy.set(true);
     this.error.set(null);
 
-    this.bomService.create(this.newBom).subscribe({
-      next: () => {
+    const save = this.editingId
+      ? this.bomService.update(this.editingId, {
+          revisionCode: this.newBom.revisionCode,
+          finishedGoodDescription: this.newBom.finishedGoodDescription,
+          finishedGoodUom: this.newBom.finishedGoodUom,
+          baseQuantity: this.newBom.baseQuantity,
+          status: this.editingStatus,
+          remarks: this.newBom.remarks,
+          items: this.newBom.items,
+        })
+      : this.bomService.create(this.newBom);
+    save.subscribe({
+      next: (saved) => {
         this.busy.set(false);
-        this.toasts.success(`BOM ${this.newBom.bomNumber} created.`);
-        void this.router.navigateByUrl('/manufacturing/bom');
+        this.toasts.success(
+          this.editingId
+            ? `BOM ${this.newBom.bomNumber} saved.`
+            : `BOM ${this.newBom.bomNumber} created.`,
+        );
+        void this.router.navigateByUrl(
+          this.editingId
+            ? `/manufacturing/bom/${saved.id ?? this.editingId}`
+            : '/manufacturing/bom',
+        );
       },
       error: (err) => {
         this.busy.set(false);

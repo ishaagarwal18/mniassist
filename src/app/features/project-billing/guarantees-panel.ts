@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, effect, inject, input, signal } fro
 import { firstValueFrom } from 'rxjs';
 
 import { grantedPolicy } from '../../core/auth/permission';
+import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
 import {
@@ -43,6 +44,7 @@ export class ArGuaranteesPanel {
   private readonly api = inject(BankGuaranteeService);
   private readonly toasts = inject(ToastService);
   private readonly permissions = inject(PermissionService);
+  private readonly dialogs = inject(ConfirmService);
 
   readonly orderId = input.required<string>();
 
@@ -158,12 +160,42 @@ export class ArGuaranteesPanel {
   }
 
   protected async invoked(g: BankGuaranteeDto): Promise<void> {
-    if (!window.confirm(`Mark ${g.number} invoked by the customer?`)) return;
+    if (
+      !(await this.dialogs.confirm({
+        title: `Mark ${g.number} invoked?`,
+        message: 'Record that the customer has claimed against this guarantee.',
+        confirmText: 'Mark invoked',
+        tone: 'danger',
+      }))
+    )
+      return;
     try {
       await firstValueFrom(this.api.markInvoked(g.id));
       await this.load(this.orderId());
     } catch (e) {
       this.toasts.error(readApiError(e, 'It could not be marked invoked.'));
+    }
+  }
+
+  /** Removes a guarantee entered by mistake. A real one that ended is marked returned or invoked instead. */
+  protected async remove(g: BankGuaranteeDto): Promise<void> {
+    if (
+      !(await this.dialogs.delete(
+        'guarantee',
+        g.number,
+        'Use this for one entered by mistake. A guarantee that has ended is marked Returned or Invoked instead, so the record stays.',
+      ))
+    )
+      return;
+    this.busy.set(true);
+    try {
+      await firstValueFrom(this.api.delete(g.id));
+      this.toasts.success('Guarantee deleted.');
+      await this.load(this.orderId());
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The guarantee could not be deleted.'));
+    } finally {
+      this.busy.set(false);
     }
   }
 }

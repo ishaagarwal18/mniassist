@@ -303,7 +303,7 @@ export class ArFaultCodesPage {
     });
     if (!ok) return;
     try {
-      await firstValueFrom(this.api.delete(e.id));
+      await firstValueFrom(answered ? this.api.retire(e.id) : this.api.delete(e.id));
       this.close();
       await this.load();
     } catch (err) {

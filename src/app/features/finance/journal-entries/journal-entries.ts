@@ -2,6 +2,7 @@ import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { documentLink } from './document-ref-picker';
 import {
   GridModule,
   RecordClickEventArgs,
@@ -175,8 +176,15 @@ import { ArGrid } from '../../../ui/grid';
               <p class="cockpit-sub">
                 Dated: <strong>{{ entry.entryDateUtc | date: 'longDate' }}</strong>
                 <span *ngIf="entry.referenceDocumentNumber">
-                  &bull; Ref: <strong>{{ entry.referenceDocumentNumber }}</strong></span
-                >
+                  &bull; Ref:
+                  @if (docLink(entry.referenceDocumentType, entry.referenceDocumentId); as link) {
+                    <a [routerLink]="link"
+                      ><strong translate="no">{{ entry.referenceDocumentNumber }}</strong></a
+                    >
+                  } @else {
+                    <strong translate="no">{{ entry.referenceDocumentNumber }}</strong>
+                  }
+                </span>
               </p>
               <p class="posted-info" *ngIf="entry.postedBy">
                 Posted by {{ entry.postedBy }} on {{ entry.postedAtUtc | date: 'medium' }}
@@ -709,6 +717,7 @@ import { ArGrid } from '../../../ui/grid';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JournalEntriesComponent {
+  protected readonly docLink = documentLink;
   private readonly journalService = inject(JournalEntryService);
   private readonly confirmService = inject(ConfirmService);
   private readonly toasts = inject(ToastService);

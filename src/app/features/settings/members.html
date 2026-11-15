@@ -50,6 +50,16 @@
             (input)="inviteNote.set($any($event.target).value)"
           />
         </label>
+        <label class="fld">
+          <span class="fld__k">Link valid for</span>
+          <select class="fld__in" (change)="inviteExpiry.set(+$any($event.target).value)">
+            @for (d of expiryChoices; track d) {
+              <option [value]="d" [selected]="d === inviteExpiry()">
+                {{ d === 1 ? '1 day' : d + ' days' }}
+              </option>
+            }
+          </select>
+        </label>
       </div>
       <div class="invite__row">
         <button

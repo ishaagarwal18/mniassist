@@ -1,0 +1,98 @@
+<aside class="cn" aria-label="Team notes">
+  <button
+    type="button"
+    class="cn__toggle"
+    [attr.aria-expanded]="open()"
+    aria-controls="cn-panel"
+    (click)="toggle()"
+  >
+    <span class="cn__title">Team notes</span>
+    <span class="cn__count">{{ notes().length }}</span>
+    <span class="cn__hint">Only your team sees these</span>
+    <span class="cn__chev" aria-hidden="true">{{ open() ? '▴' : '▾' }}</span>
+  </button>
+
+  @if (open()) {
+    <div class="cn__panel" id="cn-panel">
+      @if (failed()) {
+        <p class="cn__empty">The notes could not be loaded.</p>
+      } @else {
+        <ol class="cn__list">
+          @for (n of notes(); track n.id) {
+            <li class="cn__note">
+              <div class="cn__meta">
+                <strong translate="no">{{ n.authorName ?? 'Someone' }}</strong>
+                <span>{{ when(n.creationTime) }}</span>
+                @if (canWrite() && n.authorUserId && n.authorUserId === meId()) {
+                  <button
+                    type="button"
+                    class="cn__delete"
+                    [attr.aria-label]="'Delete note from ' + when(n.creationTime)"
+                    (click)="remove(n)"
+                  >
+                    Delete
+                  </button>
+                }
+              </div>
+              <p class="cn__body" translate="no">{{ n.body }}</p>
+            </li>
+          } @empty {
+            <li class="cn__empty">No notes yet.</li>
+          }
+        </ol>
+      }
+
+      @if (canWrite()) {
+        <div class="cn__compose">
+          <label class="cn__label" for="cn-box">Add a note</label>
+          <div class="cn__box-wrap">
+            <textarea
+              #box
+              id="cn-box"
+              class="ar-field__input cn__box"
+              rows="2"
+              maxlength="4000"
+              placeholder="Type @ to mention a teammate"
+              role="combobox"
+              aria-autocomplete="list"
+              [attr.aria-expanded]="suggestions().length > 0"
+              aria-controls="cn-people"
+              [attr.aria-activedescendant]="suggestions().length ? 'cn-person-' + active() : null"
+              [value]="body()"
+              (input)="onInput(box)"
+              (click)="onInput(box)"
+              (keydown)="onKeydown($event)"
+            ></textarea>
+            @if (suggestions().length) {
+              <ul class="cn__people" id="cn-people" role="listbox" aria-label="Teammates">
+                @for (p of suggestions(); track p.userId; let i = $index) {
+                  <li
+                    role="option"
+                    [id]="'cn-person-' + i"
+                    [class.cn__person--active]="i === active()"
+                    [attr.aria-selected]="i === active()"
+                    (mousedown)="$event.preventDefault(); pick(p)"
+                  >
+                    <span translate="no">{{ p.name }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+          <div class="cn__actions">
+            <span class="cn__tip">Ctrl + Enter to save</span>
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              [disabled]="busy() || !body().trim()"
+              (click)="send()"
+            >
+              {{ busy() ? 'Saving…' : 'Save note' }}
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</aside>

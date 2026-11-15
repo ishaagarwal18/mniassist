@@ -1,3 +1,4 @@
+import { ArDocumentRefPicker, DocumentRef } from './document-ref-picker';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -42,7 +43,15 @@ const BLANK_LINE: VoucherLineVM = {
 @Component({
   selector: 'ar-new-journal-voucher-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, DecimalPipe, ArTopbar, ArButton, ArCard],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DecimalPipe,
+    ArTopbar,
+    ArButton,
+    ArCard,
+    ArDocumentRefPicker,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -93,18 +102,7 @@ const BLANK_LINE: VoucherLineVM = {
               </select>
             </label>
 
-            <label class="ar-field">
-              <span class="ar-field__label"
-                >Reference Document # <span class="ar-field__opt">(optional)</span></span
-              >
-              <input
-                type="text"
-                class="ar-field__input"
-                placeholder="e.g. INV-2026-0091, PO-4482, RTGS-..."
-                [(ngModel)]="referenceDocumentNumber"
-                name="referenceDocumentNumber"
-              />
-            </label>
+            <ar-document-ref-picker [value]="reference()" (valueChange)="reference.set($event)" />
 
             <label class="ar-field full-width">
               <span class="ar-field__label"
@@ -457,7 +455,8 @@ export class ArNewJournalVoucherPage {
   protected entryNumber = '';
   protected entryDateUtc = new Date().toISOString().substring(0, 10);
   protected voucherType = JournalVoucherType.GeneralJournal;
-  protected referenceDocumentNumber = '';
+  /** The document the entry is for; "Other" keeps a typed number with no link. */
+  protected readonly reference = signal<DocumentRef>({ type: '', id: '', number: '' });
   protected narration = '';
 
   protected readonly accountOptions = signal<{ id: string; code: string; name: string }[]>([]);
@@ -525,7 +524,11 @@ export class ArNewJournalVoucherPage {
       ? v.entryDateUtc.substring(0, 10)
       : new Date().toISOString().substring(0, 10);
     this.voucherType = v.voucherType;
-    this.referenceDocumentNumber = v.referenceDocumentNumber ?? '';
+    this.reference.set({
+      type: v.referenceDocumentType ?? (v.referenceDocumentNumber ? 'Other' : ''),
+      id: v.referenceDocumentId ?? '',
+      number: v.referenceDocumentNumber ?? '',
+    });
     this.narration = v.narration;
 
     if (v.lines && v.lines.length > 0) {
@@ -646,7 +649,9 @@ export class ArNewJournalVoucherPage {
       ).toISOString(),
       voucherType: this.voucherType,
       narration: this.narration.trim(),
-      referenceDocumentNumber: this.referenceDocumentNumber.trim() || undefined,
+      referenceDocumentType: this.reference().type || undefined,
+      referenceDocumentId: this.reference().id || undefined,
+      referenceDocumentNumber: this.reference().number.trim() || undefined,
       lines: dtoLines,
     };
 

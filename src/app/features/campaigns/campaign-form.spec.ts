@@ -1,3 +1,7 @@
+import { ChannelKind } from '../../proxy/channels/channel-kind.enum';
+import { EmailChannelService } from '../../proxy/email/email-channel.service';
+import { InstagramChannelService } from '../../proxy/social/social-channels.service';
+import { SmsChannelService } from '../../proxy/sms/sms-channel.service';
 import { PermissionService } from '@abp/ng.core';
 import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -75,6 +79,9 @@ describe('ArCampaignForm (New Campaign Page)', () => {
             error: vi.fn(),
           },
         },
+        { provide: EmailChannelService, useValue: { getOrCreate: vi.fn() } },
+        { provide: SmsChannelService, useValue: { getOrCreate: vi.fn(), getTemplates: vi.fn() } },
+        { provide: InstagramChannelService, useValue: { getList: vi.fn() } },
         {
           provide: PermissionService,
           useValue: {
@@ -149,7 +156,12 @@ describe('ArCampaignForm (New Campaign Page)', () => {
     submitButton?.click();
     await fixture.whenStable();
 
-    expect(storeCreate).toHaveBeenCalledWith('Q4 Special Retrofit Discount', 'ch-1', 'tmpl-1');
+    expect(storeCreate).toHaveBeenCalledWith(
+      'Q4 Special Retrofit Discount',
+      'ch-1',
+      'tmpl-1',
+      expect.objectContaining({ kind: ChannelKind.WhatsApp, throttlePerSecond: 10 }),
+    );
     expect(toastSuccess).toHaveBeenCalledWith(expect.stringContaining('created as draft'));
     expect(routerNavigate).toHaveBeenCalledWith(['/campaigns'], {
       queryParams: { open: 'c-101' },

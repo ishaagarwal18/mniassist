@@ -245,6 +245,11 @@
                 </div>
 
                 <footer class="tc-card__foot">
+                  @if (canManage()) {
+                    <button ar-button type="button" variant="ghost" (click)="openKyc(n)">
+                      Update KYC
+                    </button>
+                  }
                   @if (n.status === ResellerNumberStatus.Available && canResell()) {
                     <button
                       ar-button
@@ -893,6 +898,70 @@
                 (input)="draftCtsoDesignation.set($any($event.target).value)"
               />
             </div>
+            <fieldset class="decls">
+              <legend>Compliance declarations</legend>
+              <p class="decls__hint">
+                Tick only what is true today. These are your declarations to the regulator and
+                carriers, and they show on the compliance audit.
+              </p>
+              <label class="decl">
+                <input
+                  type="checkbox"
+                  [checked]="draftDecl().simBindingEnforced"
+                  (change)="patchDecl('simBindingEnforced', $any($event.target).checked)"
+                />
+                SIM binding is enforced on every number we use
+              </label>
+              <label class="decl">
+                <input
+                  type="checkbox"
+                  [checked]="draftDecl().antiSpoofingAuditPassed"
+                  (change)="patchDecl('antiSpoofingAuditPassed', $any($event.target).checked)"
+                />
+                Our anti-spoofing audit has been passed
+              </label>
+              <label class="decl">
+                <input
+                  type="checkbox"
+                  [checked]="draftDecl().lawfulInterceptionLogging"
+                  (change)="patchDecl('lawfulInterceptionLogging', $any($event.target).checked)"
+                />
+                Lawful interception logging is in place
+              </label>
+              <label class="decl">
+                <input
+                  type="checkbox"
+                  [checked]="draftDecl().metaTechProviderAgreementSigned"
+                  (change)="
+                    patchDecl('metaTechProviderAgreementSigned', $any($event.target).checked)
+                  "
+                />
+                We have signed the Meta Tech Provider agreement
+              </label>
+              <label class="decl">
+                <input
+                  type="checkbox"
+                  [checked]="draftDecl().prohibitionOfDisposableNumbersAcknowledged"
+                  (change)="
+                    patchDecl(
+                      'prohibitionOfDisposableNumbersAcknowledged',
+                      $any($event.target).checked
+                    )
+                  "
+                />
+                We will not use disposable or unauthorised numbers
+              </label>
+            </fieldset>
+            <div class="form-row">
+              <label>Audit notes (optional):</label>
+              <textarea
+                class="form-in"
+                rows="3"
+                maxlength="2000"
+                [value]="draftAuditNotes()"
+                (input)="draftAuditNotes.set($any($event.target).value)"
+              ></textarea>
+            </div>
           </div>
         </div>
 
@@ -958,3 +1027,79 @@
     </div>
   }
 </ng-template>
+
+@if (kyc(); as k) {
+  <ar-dialog [title]="'KYC · ' + k.e164" (dismiss)="kyc.set(null)">
+    <div class="kyc-form">
+      <label class="ar-field" for="kyc-status">
+        <span class="ar-field__label">KYC status</span>
+        <select
+          id="kyc-status"
+          class="ar-field__input"
+          (change)="patchKyc({ status: +$any($event.target).value })"
+        >
+          <option
+            [value]="TelecomKycStatus.PendingKyc"
+            [selected]="k.status === TelecomKycStatus.PendingKyc"
+          >
+            Pending
+          </option>
+          <option
+            [value]="TelecomKycStatus.Verified"
+            [selected]="k.status === TelecomKycStatus.Verified"
+          >
+            Verified
+          </option>
+          <option
+            [value]="TelecomKycStatus.Rejected"
+            [selected]="k.status === TelecomKycStatus.Rejected"
+          >
+            Rejected
+          </option>
+          <option
+            [value]="TelecomKycStatus.Exempt"
+            [selected]="k.status === TelecomKycStatus.Exempt"
+          >
+            Exempt
+          </option>
+        </select>
+      </label>
+      <label class="ar-field" for="kyc-ref">
+        <span class="ar-field__label">Document reference</span>
+        <span class="ar-field__hint"
+          >GST or CIN certificate number, or where the signed form is kept.</span
+        >
+        <input
+          id="kyc-ref"
+          class="ar-field__input"
+          maxlength="256"
+          [value]="k.documentRef"
+          (input)="patchKyc({ documentRef: $any($event.target).value })"
+        />
+      </label>
+      <label class="ar-field" for="kyc-notes">
+        <span class="ar-field__label">Notes <span class="ar-field__opt">optional</span></span>
+        <textarea
+          id="kyc-notes"
+          class="ar-field__input"
+          rows="3"
+          maxlength="1000"
+          [value]="k.notes"
+          (input)="patchKyc({ notes: $any($event.target).value })"
+        ></textarea>
+      </label>
+    </div>
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="kyc.set(null)">Cancel</button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="store.busy()"
+        (click)="saveKyc()"
+      >
+        Save KYC
+      </button>
+    </div>
+  </ar-dialog>
+}

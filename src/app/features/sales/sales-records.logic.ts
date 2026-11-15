@@ -71,6 +71,25 @@ export const canConfirmOrder = (o: SalesOrderDto) => o.status === SalesOrderStat
 export const canFulfilOrder = (o: SalesOrderDto) =>
   o.status === SalesOrderStatus.Confirmed || o.status === SalesOrderStatus.PartiallyDispatched;
 
+/** An order can be cancelled until it is completed, as long as nothing on it has been dispatched or invoiced. */
+export const canCancelOrder = (o: SalesOrderDto) =>
+  o.status !== SalesOrderStatus.Completed &&
+  o.status !== SalesOrderStatus.Cancelled &&
+  !(o.lines ?? []).some((l) => (l.dispatchedQuantity ?? 0) > 0 || (l.invoicedQuantity ?? 0) > 0);
+
+/** Only a draft order can be deleted; a confirmed one is cancelled instead, so its number stays. */
+export const canDeleteOrder = (o: SalesOrderDto) => o.status === SalesOrderStatus.Draft;
+
+/** An invoice with no payment against it can be cancelled; one with payments needs a credit note. */
+export const canCancelInvoice = (i: SalesInvoiceDto) =>
+  i.status !== SalesInvoiceStatus.Cancelled &&
+  i.status !== SalesInvoiceStatus.Paid &&
+  (i.paidAmountInPaise ?? 0) === 0;
+
+/** A challan can be cancelled until it is invoiced. */
+export const canCancelChallan = (c: DeliveryChallanDto) =>
+  c.status !== DeliveryChallanStatus.Invoiced && c.status !== DeliveryChallanStatus.Cancelled;
+
 export function challanTypeLabel(type: DeliveryChallanType): string {
   const fallback: Record<DeliveryChallanType, string> = {
     [DeliveryChallanType.SupplyAgainstOrder]: 'Supply against order',

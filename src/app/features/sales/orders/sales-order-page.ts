@@ -1,3 +1,5 @@
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../../core/auth/permission';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
@@ -17,6 +19,8 @@ import {
   canFulfilOrder,
   orderStatusLabel,
   orderStatusTone,
+  canCancelOrder,
+  canDeleteOrder,
 } from '../sales-records.logic';
 import { ArSalesExport } from '../sales-export';
 import { ArBillingPlanPanel } from '../../project-billing/billing-plan-panel';
@@ -119,6 +123,21 @@ import { ArGuaranteesPanel } from '../../project-billing/guarantees-panel';
                   <dd>{{ o.shippingAddress || 'Default site address' }}</dd>
                 </dl>
               </div>
+              @if (o.notes || o.internalNotes) {
+                <div class="sr-box">
+                  <h3>Notes</h3>
+                  <dl>
+                    @if (o.notes) {
+                      <dt>On the order</dt>
+                      <dd>{{ o.notes }}</dd>
+                    }
+                    @if (o.internalNotes) {
+                      <dt>Internal</dt>
+                      <dd>{{ o.internalNotes }}</dd>
+                    }
+                  </dl>
+                </div>
+              }
             </div>
           </section>
 
@@ -233,6 +252,39 @@ import { ArGuaranteesPanel } from '../../project-billing/guarantees-panel';
                 Confirm sales order
               </button>
             }
+            @if (mayEdit() && canDeleteOrder(o)) {
+              <button
+                ar-button
+                variant="ghost"
+                type="button"
+                [disabled]="busy()"
+                (click)="editOrder(o)"
+              >
+                Edit draft
+              </button>
+            }
+            @if (mayDelete() && canDeleteOrder(o)) {
+              <button
+                ar-button
+                variant="ghost"
+                type="button"
+                [disabled]="busy()"
+                (click)="deleteOrder(o)"
+              >
+                Delete draft
+              </button>
+            }
+            @if (mayCancel() && canCancelOrder(o)) {
+              <button
+                ar-button
+                variant="ghost"
+                type="button"
+                [disabled]="busy()"
+                (click)="cancelOrder(o)"
+              >
+                Cancel order
+              </button>
+            }
             @if (canFulfil(o)) {
               <button
                 ar-button
@@ -277,6 +329,30 @@ export class ArSalesOrderPage extends SalesRecordPage<SalesOrderDto> {
   protected readonly tone = orderStatusTone;
   protected readonly canConfirm = canConfirmOrder;
   protected readonly canFulfil = canFulfilOrder;
+  protected readonly canCancelOrder = canCancelOrder;
+  protected readonly canDeleteOrder = canDeleteOrder;
+  private readonly permissions = inject(PermissionService);
+  protected readonly mayCancel = grantedPolicy('AutoReach.SalesOrders.Cancel', this.permissions);
+  protected readonly mayDelete = grantedPolicy('AutoReach.SalesOrders.Delete', this.permissions);
+  protected readonly mayEdit = grantedPolicy('AutoReach.SalesOrders.Update', this.permissions);
+
+  protected editOrder(o: SalesOrderDto): void {
+    void this.router.navigate(['/sales/orders', o.id, 'edit']);
+  }
+
+  protected cancelOrder(o: SalesOrderDto): void {
+    void this.cancelRecord(
+      `Sales order ${o.orderNumber}`,
+      'It stays on record as cancelled, with its number. Nothing has been dispatched or invoiced against it.',
+      () => this.api.cancel(o.id!, { skipHandleError: true }),
+    );
+  }
+
+  protected deleteOrder(o: SalesOrderDto): void {
+    void this.deleteRecord(`Draft order ${o.orderNumber}`, () =>
+      this.api.delete(o.id!, { skipHandleError: true }),
+    );
+  }
 
   constructor() {
     super();

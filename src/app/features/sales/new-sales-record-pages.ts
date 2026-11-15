@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { PickerOption } from '../../core/services/pipeline.service';
@@ -7,7 +7,9 @@ import { CockpitOriginService } from '../../layout/cockpit-origin.service';
 import { ArTopbar } from '../../layout/topbar';
 import { DeliveryChallanDto } from '../../proxy/sales/delivery-challan.models';
 import { SalesInvoiceDto } from '../../proxy/sales/sales-invoice.models';
+import { SalesOrderStatus } from '../../proxy/sales/sales-enums';
 import { SalesOrderDto } from '../../proxy/sales/sales-order.models';
+import { SalesOrderService } from '../../proxy/sales/sales-order.service';
 import { AR_DIALOG_INLINE } from '../../ui';
 import { ArNewDeliveryChallan } from './challans/new-delivery-challan';
 import { ArNewSalesInvoice } from './invoices/new-sales-invoice';
@@ -21,8 +23,8 @@ import { ArNewSalesOrder } from './orders/new-sales-order';
  * to the list.
  */
 abstract class NewSalesRecordPage {
-  private readonly router = inject(Router);
-  private readonly toasts = inject(ToastService);
+  protected readonly router = inject(Router);
+  protected readonly toasts = inject(ToastService);
   private readonly origin = inject(CockpitOriginService);
   private readonly query = inject(ActivatedRoute).snapshot.queryParamMap;
 
@@ -58,6 +60,50 @@ export class ArNewSalesOrderPage extends NewSalesRecordPage {
 
   protected done(order: SalesOrderDto | null): void {
     this.finish(order, `Sales order ${order?.orderNumber} created.`);
+  }
+}
+
+/** /sales/orders/:id/edit — a draft order in the same form it was made in. */
+@Component({
+  selector: 'ar-edit-sales-order-page',
+  imports: [ArTopbar, ArNewSalesOrder],
+  providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <ar-topbar title="Edit sales order" [subtitle]="order()?.orderNumber ?? ''" />
+    <div class="new-record ar-scroll">
+      @if (problem(); as p) {
+        <p role="alert">{{ p }}</p>
+      } @else if (order(); as o) {
+        <ar-new-sales-order [editing]="o" (closed)="done($event)" />
+      } @else {
+        <p>Loading…</p>
+      }
+    </div>
+  `,
+  styleUrl: './new-sales-record-pages.scss',
+})
+export class ArEditSalesOrderPage extends NewSalesRecordPage {
+  protected readonly list = '/sales/orders';
+  private readonly orders = inject(SalesOrderService);
+  private readonly orderId = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
+  protected readonly order = signal<SalesOrderDto | null>(null);
+  protected readonly problem = signal<string | null>(null);
+
+  constructor() {
+    super();
+    this.orders.get(this.orderId, { skipHandleError: true }).subscribe({
+      next: (o) =>
+        o.status === SalesOrderStatus.Draft
+          ? this.order.set(o)
+          : this.problem.set('Only a draft order can be edited. Cancel it and raise a new one.'),
+      error: () => this.problem.set('The sales order could not be loaded.'),
+    });
+  }
+
+  protected done(order: SalesOrderDto | null): void {
+    if (order?.id) this.toasts.success(`Sales order ${order.orderNumber} saved.`);
+    void this.router.navigate(['/sales/orders', this.orderId]);
   }
 }
 

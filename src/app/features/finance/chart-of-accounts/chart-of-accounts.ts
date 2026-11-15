@@ -12,7 +12,10 @@ import {
   ChartOfAccountDto,
   ChartOfAccountService,
 } from '../../../proxy/finance';
-import { ArBanner, ArButton, ArChip, ChipTone } from '../../../ui';
+import { ArBanner, ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../../core/auth/permission';
+import { ConfirmService } from '../../../core/ui/confirm.service';
 import { readApiError } from '../../../core/util/api-error';
 import { ArGrid } from '../../../ui/grid';
 
@@ -27,6 +30,7 @@ import { ArGrid } from '../../../ui/grid';
     ArBanner,
     ArButton,
     ArChip,
+    ArDialog,
     ArGrid,
     GridModule,
     RouterLink,
@@ -197,16 +201,138 @@ import { ArGrid } from '../../../ui/grid';
                 </ar-chip>
               </ng-template>
             </e-column>
+            @if (canUpdate() || canDelete()) {
+              <e-column headerText="" width="150" [allowSorting]="false" [allowFiltering]="false">
+                <ng-template #template let-acc>
+                  <span class="coa-actions">
+                    @if (canUpdate()) {
+                      <button
+                        type="button"
+                        class="coa-link"
+                        [attr.aria-label]="'Edit ' + acc.accountName"
+                        (click)="openEdit(acc)"
+                      >
+                        Edit
+                      </button>
+                    }
+                    @if (canDelete() && !acc.isSystemAccount) {
+                      <button
+                        type="button"
+                        class="coa-link"
+                        [attr.aria-label]="'Delete ' + acc.accountName"
+                        (click)="remove(acc)"
+                      >
+                        Delete
+                      </button>
+                    }
+                  </span>
+                </ng-template>
+              </e-column>
+            }
           </e-columns>
         </ejs-grid>
       </section>
     </div>
+
+    @if (editing(); as e) {
+      <ar-dialog [title]="'Edit ' + e.code" (dismiss)="editing.set(null)">
+        <div class="coa-form">
+          <label class="ar-field" for="coa-name">
+            <span class="ar-field__label">Account name</span>
+            <input
+              id="coa-name"
+              class="ar-field__input"
+              maxlength="200"
+              [value]="e.name"
+              (input)="patchEdit({ name: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field" for="coa-desc">
+            <span class="ar-field__label"
+              >Description <span class="ar-field__opt">optional</span></span
+            >
+            <input
+              id="coa-desc"
+              class="ar-field__input"
+              maxlength="500"
+              [value]="e.description"
+              (input)="patchEdit({ description: $any($event.target).value })"
+            />
+          </label>
+          <label class="coa-check">
+            <input
+              type="checkbox"
+              [checked]="e.active"
+              (change)="patchEdit({ active: $any($event.target).checked })"
+            />
+            Active (can be used in new entries)
+          </label>
+          <p class="coa-note">
+            The code, category and normal balance are fixed: past entries are reported by them.
+          </p>
+          @if (editError(); as err) {
+            <p class="coa-err" role="alert">{{ err }}</p>
+          }
+        </div>
+        <div dialogActions>
+          <button ar-button type="button" variant="ghost" (click)="editing.set(null)">
+            Cancel
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="saving()"
+            (click)="saveEdit()"
+          >
+            {{ saving() ? 'Saving…' : 'Save account' }}
+          </button>
+        </div>
+      </ar-dialog>
+    }
   `,
   styles: [
     `
       :host {
         display: block;
         padding-bottom: 3rem;
+      }
+      .coa-actions {
+        display: inline-flex;
+        gap: 10px;
+      }
+      .coa-link {
+        border: 0;
+        background: transparent;
+        color: var(--ar-primary);
+        font: 500 13px var(--ar-font-sans);
+        cursor: pointer;
+        padding: 0;
+      }
+      .coa-link:focus-visible {
+        outline: 2px solid var(--ar-primary);
+        outline-offset: 2px;
+      }
+      .coa-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .coa-check {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        font: 400 13px var(--ar-font-sans);
+      }
+      .coa-note {
+        margin: 0;
+        font: 400 12px/1.5 var(--ar-font-sans);
+        color: var(--ar-ink-500);
+      }
+      .coa-err {
+        margin: 0;
+        color: var(--ar-bad-600);
+        font: 500 12.5px var(--ar-font-sans);
       }
 
       .page-content {
@@ -465,6 +591,99 @@ import { ArGrid } from '../../../ui/grid';
 export class ChartOfAccountsComponent {
   private readonly coaService = inject(ChartOfAccountService);
   private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
+  private readonly permissions = inject(PermissionService);
+  protected readonly canUpdate = grantedPolicy(
+    'AutoReach.ChartOfAccounts.Update',
+    this.permissions,
+  );
+  protected readonly canDelete = grantedPolicy(
+    'AutoReach.ChartOfAccounts.Delete',
+    this.permissions,
+  );
+  protected readonly editing = signal<{
+    acc: ChartOfAccountDto;
+    code: string;
+    name: string;
+    description: string;
+    active: boolean;
+  } | null>(null);
+  protected readonly editError = signal<string | null>(null);
+  protected readonly saving = signal(false);
+
+  protected openEdit(acc: ChartOfAccountDto): void {
+    this.editError.set(null);
+    this.editing.set({
+      acc,
+      code: `${acc.accountCode} · ${acc.accountName}`,
+      name: acc.accountName,
+      description: acc.description ?? '',
+      active: acc.isActive,
+    });
+  }
+
+  protected patchEdit(
+    change: Partial<{ name: string; description: string; active: boolean }>,
+  ): void {
+    this.editing.update((e) => (e ? { ...e, ...change } : e));
+    this.editError.set(null);
+  }
+
+  protected saveEdit(): void {
+    const e = this.editing();
+    if (!e) return;
+    if (!e.name.trim()) {
+      this.editError.set('Give the account a name.');
+      return;
+    }
+    this.saving.set(true);
+    this.coaService
+      .update(
+        e.acc.id!,
+        {
+          accountName: e.name.trim(),
+          category: e.acc.category,
+          subCategory: e.acc.subCategory,
+          description: e.description.trim() || undefined,
+          isActive: e.active,
+        },
+        { skipHandleError: true },
+      )
+      .subscribe({
+        next: (saved) => {
+          this.saving.set(false);
+          this.accounts.update((list) => list.map((a) => (a.id === saved.id ? saved : a)));
+          this.editing.set(null);
+          this.toasts.success('Account saved.', 'Chart of accounts');
+        },
+        error: (err: unknown) => {
+          this.saving.set(false);
+          this.editError.set(readApiError(err, 'The account could not be saved.'));
+        },
+      });
+  }
+
+  protected async remove(acc: ChartOfAccountDto): Promise<void> {
+    if (
+      !(await this.dialogs.delete(
+        'account',
+        `${acc.accountCode} · ${acc.accountName}`,
+        'An account with journal postings cannot be deleted; make it inactive instead.',
+      ))
+    )
+      return;
+    this.coaService.delete(acc.id!, { skipHandleError: true }).subscribe({
+      next: () => {
+        this.accounts.update((list) => list.filter((a) => a.id !== acc.id));
+        this.toasts.success('Account deleted.', 'Chart of accounts');
+      },
+      error: (err: unknown) =>
+        this.toasts.error(
+          readApiError(err, 'The account could not be deleted.'),
+          'Chart of accounts',
+        ),
+    });
+  }
 
   readonly accounts = signal<ChartOfAccountDto[]>([]);
   readonly isLoading = signal<boolean>(false);

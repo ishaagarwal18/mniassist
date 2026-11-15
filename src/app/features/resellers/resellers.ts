@@ -65,6 +65,44 @@ const PAGE = { maxResultCount: 200 };
  * The white-label reseller programme. The host sees every partner and approves partners, tiers and payouts; a workspace
  * registers as a partner and then runs its own branding, client workspaces, commissions and payout requests.
  */
+/** The payout account as the form edits it; stored by the API as JSON. */
+export function readBankDetails(json: string | null | undefined): {
+  bankAccountName: string;
+  bankAccountNumber: string;
+  bankIfsc: string;
+  bankName: string;
+} {
+  let d: Record<string, unknown> = {};
+  try {
+    d = json ? (JSON.parse(json) as Record<string, unknown>) : {};
+  } catch {
+    d = {};
+  }
+  const str = (k: string) => (typeof d[k] === 'string' ? (d[k] as string) : '');
+  return {
+    bankAccountName: str('accountName'),
+    bankAccountNumber: str('accountNumber'),
+    bankIfsc: str('ifsc'),
+    bankName: str('bankName'),
+  };
+}
+
+/** The JSON to send, or undefined when nothing was entered (the API then keeps what it has). */
+export function bankDetailsJson(v: {
+  bankAccountName: string;
+  bankAccountNumber: string;
+  bankIfsc: string;
+  bankName: string;
+}): string | undefined {
+  const d = {
+    accountName: v.bankAccountName.trim(),
+    accountNumber: v.bankAccountNumber.replace(/\s+/g, ''),
+    ifsc: v.bankIfsc.trim().toUpperCase(),
+    bankName: v.bankName.trim(),
+  };
+  return Object.values(d).some((x) => x) ? JSON.stringify(d) : undefined;
+}
+
 @Component({
   selector: 'ar-resellers',
   standalone: true,
@@ -771,6 +809,43 @@ const PAGE = { maxResultCount: 200 };
               (input)="patchEditDraft({ taxId: $any($event.target).value })"
             />
           </label>
+          <p class="ar-field__hint">Commission payouts are paid to this bank account.</p>
+          <label class="ar-field">
+            <span class="ar-field__label">Payout account holder</span>
+            <input
+              class="ar-field__input"
+              translate="no"
+              [value]="editDraft().bankAccountName"
+              (input)="patchEditDraft({ bankAccountName: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Account number</span>
+            <input
+              class="ar-field__input ar-mono"
+              translate="no"
+              [value]="editDraft().bankAccountNumber"
+              (input)="patchEditDraft({ bankAccountNumber: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">IFSC</span>
+            <input
+              class="ar-field__input ar-mono"
+              translate="no"
+              [value]="editDraft().bankIfsc"
+              (input)="patchEditDraft({ bankIfsc: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Bank</span>
+            <input
+              class="ar-field__input"
+              translate="no"
+              [value]="editDraft().bankName"
+              (input)="patchEditDraft({ bankName: $any($event.target).value })"
+            />
+          </label>
           <div dialogActions>
             <button ar-button variant="ghost" (click)="close()">Cancel</button>
             <button ar-button variant="primary" (click)="saveEditDetails()">Save</button>
@@ -1104,6 +1179,10 @@ export class ArResellers {
     contactPhone: '',
     websiteUrl: '',
     taxId: '',
+    bankAccountName: '',
+    bankAccountNumber: '',
+    bankIfsc: '',
+    bankName: '',
   });
 
   protected readonly tierDraft = signal({
@@ -1376,6 +1455,7 @@ export class ArResellers {
       contactPhone: p.contactPhone,
       websiteUrl: p.websiteUrl ?? '',
       taxId: p.taxId ?? '',
+      ...readBankDetails(p.payoutBankDetailsJson),
     });
     this.editDetailsOpen.set(true);
     if (this.router && p.id) void this.router.navigate(['/resellers', p.id, 'edit']);
@@ -1464,6 +1544,11 @@ export class ArResellers {
     const p = this.editingPartner();
     if (!p) return;
     const v = this.editDraft();
+    const ifsc = v.bankIfsc.trim().toUpperCase();
+    if (ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) {
+      this.toasts.warning('An IFSC has 11 characters, like HDFC0001234.', 'Bank details');
+      return;
+    }
     await this.act(async () => {
       await firstValueFrom(
         this.api.updatePartner(p.id, {
@@ -1473,6 +1558,7 @@ export class ArResellers {
           contactPhone: v.contactPhone.trim(),
           websiteUrl: v.websiteUrl.trim() || undefined,
           taxId: v.taxId.trim() || undefined,
+          payoutBankDetailsJson: bankDetailsJson(v),
         }),
       );
       this.close();

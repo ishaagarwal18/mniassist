@@ -7,6 +7,11 @@ import { RestService, Rest } from '@abp/ng.core';
 import type { ListResultDto, PagedResultDto, PagedResultRequestDto } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
 
+export interface SupportEngineerDto {
+  id: string;
+  name: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -32,6 +37,17 @@ export class SupportAccessService {
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/support-access/session-history',
         params: { skipCount: input.skipCount, maxResultCount: input.maxResultCount },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Platform support engineers a grant can name (names only). */
+  getSupportEngineers = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ListResultDto<SupportEngineerDto>>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/support-access/support-engineers',
       },
       { apiName: this.apiName, ...config },
     );

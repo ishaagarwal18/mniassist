@@ -1,0 +1,38 @@
+:host {
+  display: block;
+  height: auto;
+}
+
+.cfd {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cfd__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+@media (max-width: 480px) {
+  .cfd__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cfd__note {
+  margin: -4px 0 0;
+  font: 400 12px/1.5 var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+
+.cfd__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  font: 400 13px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}

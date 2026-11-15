@@ -1,3 +1,6 @@
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../../core/auth/permission';
+import { ConfirmService } from '../../../core/ui/confirm.service';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -175,6 +178,19 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
           >
             Release to Production
           </button>
+          @if (canUpdate() && b.status !== BomStatus.Obsolete) {
+            <button ar-button variant="ghost" (click)="edit(b)">Edit</button>
+          }
+          @if (canUpdate() && b.status === BomStatus.Active) {
+            <button ar-button variant="ghost" [disabled]="acting()" (click)="obsolete(b)">
+              Mark obsolete
+            </button>
+          }
+          @if (canDelete() && b.status === BomStatus.Draft) {
+            <button ar-button variant="ghost" [disabled]="acting()" (click)="remove(b)">
+              Delete draft
+            </button>
+          }
         </div>
       } @else {
         <ar-banner tone="bad">{{
@@ -378,6 +394,57 @@ export class ArBomDetailPage implements OnInit {
         partNumber: bom.finishedGoodPartNumber,
         description: bom.finishedGoodDescription,
       },
+    });
+  }
+
+  private readonly dialogs = inject(ConfirmService);
+  private readonly permissions = inject(PermissionService);
+  protected readonly canUpdate = grantedPolicy(
+    'AutoReach.BillOfMaterials.Update',
+    this.permissions,
+  );
+  protected readonly canDelete = grantedPolicy(
+    'AutoReach.BillOfMaterials.Delete',
+    this.permissions,
+  );
+  protected readonly acting = signal(false);
+
+  edit(bom: BillOfMaterialDto): void {
+    void this.router.navigate(['/manufacturing/bom', bom.id, 'edit']);
+  }
+
+  /** Retires a released BOM: no new work orders from it, while the old ones keep their record. */
+  async obsolete(bom: BillOfMaterialDto): Promise<void> {
+    if (
+      !(await this.dialogs.confirm({
+        title: `Mark ${bom.bomNumber} obsolete?`,
+        message:
+          'No new work orders can be made from it. Work orders already made from it are kept.',
+        confirmText: 'Mark obsolete',
+        tone: 'danger',
+      }))
+    )
+      return;
+    this.acting.set(true);
+    this.bomService.obsolete(bom.id!).subscribe({
+      next: (saved) => {
+        this.bom.set(saved);
+        this.toasts.success(`BOM ${bom.bomNumber} marked obsolete.`);
+        this.acting.set(false);
+      },
+      error: () => this.acting.set(false),
+    });
+  }
+
+  async remove(bom: BillOfMaterialDto): Promise<void> {
+    if (!(await this.dialogs.delete('draft BOM', bom.bomNumber))) return;
+    this.acting.set(true);
+    this.bomService.delete(bom.id!).subscribe({
+      next: () => {
+        this.toasts.success(`BOM ${bom.bomNumber} deleted.`);
+        this.back();
+      },
+      error: () => this.acting.set(false),
     });
   }
 

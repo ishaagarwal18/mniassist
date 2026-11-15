@@ -167,6 +167,13 @@ export const NAV: readonly NavGroup[] = [
         //tenantOnly: true,
       },
       {
+        label: 'Canned replies',
+        icon: 'document',
+        route: '/canned-replies',
+        menu: 'settings',
+        permission: 'AutoReach.Inbox',
+      },
+      {
         label: 'Auto-replies',
         icon: 'clock',
         route: '/auto-replies',

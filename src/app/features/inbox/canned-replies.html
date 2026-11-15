@@ -1,0 +1,182 @@
+<ar-topbar
+  title="Canned replies"
+  [subtitle]="replies().length + ' saved'"
+  help="Saved answers your team inserts in the inbox by typing / and the shortcut, or by picking from the list. Words in double braces, such as customer_name, are filled in before sending."
+>
+  @if (canManage()) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="openNew()">
+      New reply
+    </button>
+  }
+</ar-topbar>
+
+<div class="cr ar-scroll">
+  <div class="cr__inner">
+    <label class="cr__search" for="cr-search">
+      <span class="ar-field__label">Search</span>
+      <input
+        id="cr-search"
+        class="ar-field__input"
+        type="search"
+        placeholder="Title, shortcut or text"
+        [value]="query()"
+        (input)="query.set($any($event.target).value)"
+      />
+    </label>
+
+    @if (failed()) {
+      <p class="cr__empty" role="alert">The replies could not be loaded.</p>
+    } @else if (loaded() && !replies().length) {
+      <div class="cr__empty">
+        <p>No canned replies yet.</p>
+        @if (canManage()) {
+          <button ar-button type="button" variant="ghost" (click)="openNew()">
+            Write the first one
+          </button>
+        }
+      </div>
+    } @else {
+      @for (g of groups(); track g.folder) {
+        <section class="cr__group">
+          <h2 class="cr__folder" [attr.translate]="g.folder ? 'no' : null">
+            {{ g.folder || 'No folder' }}
+          </h2>
+          <ul class="cr__list">
+            @for (r of g.items; track r.id) {
+              <li class="cr__item">
+                <div class="cr__head">
+                  <strong class="cr__title" translate="no">{{ r.title }}</strong>
+                  <span class="cr__shortcut ar-mono" translate="no">/{{ r.shortcut }}</span>
+                  @if (r.useCount) {
+                    <ar-chip tone="neutral">Used {{ r.useCount }}×</ar-chip>
+                  }
+                  @if (canManage()) {
+                    <span class="cr__actions">
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        [attr.aria-label]="'Edit ' + r.title"
+                        [disabled]="busy()"
+                        (click)="openEdit(r)"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        [attr.aria-label]="'Delete ' + r.title"
+                        [disabled]="busy()"
+                        (click)="remove(r)"
+                      >
+                        Delete
+                      </button>
+                    </span>
+                  }
+                </div>
+                <p class="cr__body" translate="no">{{ r.body }}</p>
+              </li>
+            }
+          </ul>
+        </section>
+      } @empty {
+        <p class="cr__empty">No reply matches “{{ query() }}”.</p>
+      }
+    }
+  </div>
+</div>
+
+@if (draft(); as d) {
+  <ar-dialog
+    [title]="d.id ? 'Edit reply' : 'New canned reply'"
+    width="min(560px, calc(100vw - 32px))"
+    (dismiss)="draft.set(null)"
+  >
+    <div class="crd">
+      <label class="ar-field" for="crd-title">
+        <span class="ar-field__label">Title</span>
+        <input
+          id="crd-title"
+          class="ar-field__input"
+          maxlength="128"
+          placeholder="e.g. Spares price list"
+          [attr.aria-invalid]="problems()['title'] ? 'true' : null"
+          [value]="d.title"
+          (input)="patch({ title: $any($event.target).value })"
+        />
+        @if (problems()['title']; as e) {
+          <small class="ar-field__error">{{ e }}</small>
+        }
+      </label>
+      <div class="crd__row">
+        <label class="ar-field" for="crd-shortcut">
+          <span class="ar-field__label">Shortcut</span>
+          <span class="ar-field__hint">Type /shortcut in the inbox to insert it.</span>
+          <input
+            id="crd-shortcut"
+            class="ar-field__input ar-mono"
+            translate="no"
+            maxlength="64"
+            [attr.aria-invalid]="problems()['shortcut'] ? 'true' : null"
+            [value]="d.shortcut"
+            (input)="patch({ shortcut: $any($event.target).value })"
+          />
+          @if (problems()['shortcut']; as e) {
+            <small class="ar-field__error">{{ e }}</small>
+          }
+        </label>
+        <label class="ar-field" for="crd-folder">
+          <span class="ar-field__label">Folder <span class="ar-field__opt">optional</span></span>
+          <span class="ar-field__hint">Group replies, such as Spares or AMC.</span>
+          <input
+            id="crd-folder"
+            class="ar-field__input"
+            maxlength="64"
+            list="crd-folders"
+            [attr.aria-invalid]="problems()['folder'] ? 'true' : null"
+            [value]="d.folder"
+            (input)="patch({ folder: $any($event.target).value })"
+          />
+          <datalist id="crd-folders">
+            @for (f of folders(); track f) {
+              <option [value]="f"></option>
+            }
+          </datalist>
+          @if (problems()['folder']; as e) {
+            <small class="ar-field__error">{{ e }}</small>
+          }
+        </label>
+      </div>
+      <label class="ar-field" for="crd-body">
+        <span class="ar-field__label">Reply</span>
+        <span class="ar-field__hint">
+          Put words to fill in between double braces, e.g. <code>{{ '{{customer_name}}' }}</code>.
+        </span>
+        <textarea
+          id="crd-body"
+          class="ar-field__input"
+          rows="7"
+          maxlength="4000"
+          [attr.aria-invalid]="problems()['body'] ? 'true' : null"
+          [value]="d.body"
+          (input)="patch({ body: $any($event.target).value })"
+        ></textarea>
+        @if (problems()['body']; as e) {
+          <small class="ar-field__error">{{ e }}</small>
+        }
+        @if (variablesIn(d.body); as vars) {
+          @if (vars.length) {
+            <span class="ar-field__hint">Fills in: {{ vars.join(', ') }}</span>
+          }
+        }
+      </label>
+    </div>
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="draft.set(null)">Cancel</button>
+      <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
+        {{ busy() ? 'Saving…' : d.id ? 'Save reply' : 'Add reply' }}
+      </button>
+    </div>
+  </ar-dialog>
+}

@@ -70,8 +70,40 @@
                   {{ paying() ? 'Opening…' : 'Pay now' }}
                 </button>
               }
+              @if (v.state !== 'cancelled') {
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  icon="download"
+                  [disabled]="downloading() === v.id"
+                  (click)="downloadPdf(v)"
+                >
+                  {{ downloading() === v.id ? 'Downloading…' : 'Download PDF' }}
+                </button>
+              }
               @if (canIssue()) {
                 <div class="doc__admin">
+                  @if (v.state === 'draft') {
+                    <button
+                      ar-button
+                      type="button"
+                      variant="primary"
+                      [disabled]="adminBusy()"
+                      (click)="issue(v)"
+                    >
+                      Issue invoice
+                    </button>
+                    <button
+                      ar-button
+                      type="button"
+                      variant="ghost"
+                      [disabled]="adminBusy()"
+                      (click)="cancelDraft(v)"
+                    >
+                      Cancel draft
+                    </button>
+                  }
                   @if (v.state === 'issued') {
                     <button
                       ar-button

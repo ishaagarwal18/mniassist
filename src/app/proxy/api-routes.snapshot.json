@@ -491,6 +491,7 @@
     "GET /api/auto-reach/stock-planning",
     "GET /api/auto-reach/support-access/my-grants",
     "GET /api/auto-reach/support-access/session-history",
+    "GET /api/auto-reach/support-access/support-engineers",
     "GET /api/auto-reach/support-impersonation/active-grants",
     "GET /api/auto-reach/support-impersonation/my-open-session",
     "GET /api/auto-reach/support-impersonation/sessions/{}",

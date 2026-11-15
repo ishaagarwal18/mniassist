@@ -1,3 +1,8 @@
+import { firstValueFrom } from 'rxjs';
+import {
+  SupportAccessService,
+  SupportEngineerDto,
+} from '../../proxy/platform/support-access.service';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -23,7 +28,17 @@ import { ArGrid } from '../../ui/grid';
  */
 @Component({
   selector: 'ar-support-access',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArDialog, ArSelect, ArGrid, GridModule, NgTemplateOutlet],
+  imports: [
+    ArTopbar,
+    ArBanner,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArSelect,
+    ArGrid,
+    GridModule,
+    NgTemplateOutlet,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './support-access.html',
   styleUrl: './support-access.scss',
@@ -73,6 +88,10 @@ export class ArSupportAccess {
   protected readonly hours = signal(4);
   protected readonly ticket = signal('');
   protected readonly allowsWrite = signal(false);
+  /** One named engineer, or '' for anyone in support. */
+  protected readonly engineerId = signal('');
+  protected readonly engineers = signal<SupportEngineerDto[]>([]);
+  private readonly supportApi = inject(SupportAccessService);
   protected readonly busy = signal(false);
 
   protected openGrant(): void {
@@ -80,7 +99,13 @@ export class ArSupportAccess {
     this.hours.set(4);
     this.ticket.set('');
     this.allowsWrite.set(false);
+    this.engineerId.set('');
     this.grantOpen.set(true);
+    if (!this.engineers().length) {
+      firstValueFrom(this.supportApi.getSupportEngineers({ skipHandleError: true }))
+        .then((r) => this.engineers.set(r.items ?? []))
+        .catch(() => undefined);
+    }
   }
 
   /** The dialog has checked the reason before this runs. */
@@ -92,6 +117,7 @@ export class ArSupportAccess {
         durationHours: this.hours(),
         allowsWrite: this.allowsWrite(),
         ticketRef: this.ticket().trim() || null,
+        grantedToSupportUserId: this.engineerId() || null,
       });
       this.close();
     } catch {

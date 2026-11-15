@@ -85,6 +85,12 @@ export class AtRiskStore {
     this.reload();
   }
 
+  /** Gives the alert to one platform staff member to work. */
+  async assign(id: string, userId: string): Promise<void> {
+    await firstValueFrom(this.api.assign(id, userId));
+    this.reload();
+  }
+
   async addNote(id: string, note: string): Promise<void> {
     await firstValueFrom(this.api.addNote(id, note.trim()));
     this.reload();

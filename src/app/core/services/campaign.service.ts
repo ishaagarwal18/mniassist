@@ -7,7 +7,9 @@ import {
   CampaignReportDto,
   CampaignService as CampaignApi,
   CampaignState,
+  CreateUpdateCampaignDto,
   PreflightCheck,
+  ScheduleCampaignInput,
 } from '../../proxy/campaigns';
 import { ChannelKind } from '../../proxy/channels/channel-kind.enum';
 import { settled } from '../util/resource';
@@ -204,6 +206,12 @@ export class CampaignStore {
   async report(id: string): Promise<Report> {
     return toReport(await firstValueFrom(this.api.getReport(id)));
   }
+  /** Sends later: once, or on a repeat, with quiet hours and blackout days. */
+  async schedule(id: string, input: ScheduleCampaignInput): Promise<void> {
+    await firstValueFrom(this.api.schedule(id, input));
+    this.reload();
+  }
+
   async sendNow(id: string): Promise<void> {
     await firstValueFrom(this.api.sendNow(id));
     this.reload();
@@ -235,10 +243,23 @@ export class CampaignStore {
     this.reload();
   }
 
-  /** Creates a draft campaign. Template, segment and schedule are set later. */
-  async create(name: string, channelId: string, templateId: string): Promise<string> {
+  /**
+   * Creates a draft campaign. Segment and schedule are set later. `extras` carries the kind (WhatsApp by default),
+   * the email or Instagram content, and the sending options.
+   */
+  async create(
+    name: string,
+    channelId: string,
+    templateId: string,
+    extras?: Partial<CreateUpdateCampaignDto>,
+  ): Promise<string> {
     const created = await firstValueFrom(
-      this.api.create({ name: name.trim(), channelId, templateId }),
+      this.api.create({
+        ...extras,
+        name: name.trim(),
+        channelId,
+        templateId: templateId || undefined,
+      }),
     );
     this.reload();
     return created.id!;

@@ -352,6 +352,20 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Click Save. The line at the top says what a customer writing now would get.',
     ],
   },
+  'canned-replies': {
+    benefits: [
+      'Answer the questions you get every day in two keystrokes, the same way every time.',
+      'Fill in the customer name and other details automatically before sending.',
+      'See which replies the team actually uses.',
+    ],
+    steps: [
+      'Click New reply and give it a title, such as Spares price list.',
+      'Choose a short shortcut; in the inbox, type / and the shortcut to insert it.',
+      'Write the reply. Put words to fill in between double braces, such as customer_name.',
+      'Group replies into folders such as Spares or AMC so they are easy to find.',
+      'Click Add reply. Edit or delete it here at any time.',
+    ],
+  },
   flows: {
     benefits: [
       'Collect structured details (an RFQ, a booking, a service ticket) inside WhatsApp.',

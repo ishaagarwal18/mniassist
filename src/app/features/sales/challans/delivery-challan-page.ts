@@ -13,7 +13,10 @@ import { ArButton, ArChip, ArIcon } from '../../../ui';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../../ui/grid';
 import { SALES_RECORD_STYLES, SalesRecordPage } from '../sales-record-page';
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../../core/auth/permission';
 import {
+  canCancelChallan,
   canDeliverChallan,
   canDispatchChallan,
   canInvoiceChallan,
@@ -257,6 +260,17 @@ import { ArSalesExport } from '../sales-export';
               Customer 360
             </button>
             <ar-sales-export [fetch]="download" [fileName]="dc.challanNumber" hint="This challan" />
+            @if (mayCancel() && canCancel(dc)) {
+              <button
+                ar-button
+                variant="ghost"
+                type="button"
+                [disabled]="busy()"
+                (click)="cancelChallan(dc)"
+              >
+                Cancel challan
+              </button>
+            }
             @if (canDispatch(dc) && !dispatching()) {
               <button
                 ar-button
@@ -315,6 +329,19 @@ export class ArDeliveryChallanPage extends SalesRecordPage<DeliveryChallanDto> {
   protected readonly canDispatch = canDispatchChallan;
   protected readonly canDeliver = canDeliverChallan;
   protected readonly canInvoice = canInvoiceChallan;
+  protected readonly canCancel = canCancelChallan;
+  protected readonly mayCancel = grantedPolicy(
+    'AutoReach.DeliveryChallans.Cancel',
+    inject(PermissionService),
+  );
+
+  protected cancelChallan(dc: DeliveryChallanDto): void {
+    void this.cancelRecord(
+      `Challan ${dc.challanNumber}`,
+      'It stays on record as cancelled. If goods were sent, record their return separately; an e-way bill must be cancelled on the portal.',
+      () => this.api.cancel(dc.id!, { skipHandleError: true }),
+    );
+  }
 
   protected readonly dispatching = signal(false);
   protected readonly dispatch = signal<DispatchDeliveryChallanDto>({});

@@ -25,6 +25,7 @@ import { firstValueFrom } from 'rxjs';
 import { readApiError } from '../../core/util/api-error';
 import { MachineQrService } from '../../proxy/support/machine-qr.service';
 import { savePdf } from './machine/machine-qr.logic';
+import { InstalledAssetService } from '../../proxy/pipeline/installed-asset.service';
 
 const MAX_STICKERS = 240;
 
@@ -112,14 +113,22 @@ export class ArInstalledBase {
   protected readonly f = signal({
     description: '',
     serialNumber: '',
+    partNumber: '',
     make: '',
     model: '',
     siteName: '',
     siteCity: '',
+    commissionedOn: '',
+    warrantyEndsOn: '',
     amcEndsOn: '',
     amcValue: '',
     amcTermMonths: '',
+    calibrationDueOn: '',
+    pmIntervalDays: '',
   });
+  /** True while an edit loads the machine's full record, so nothing is saved half-filled. */
+  protected readonly loadingAsset = signal(false);
+  private readonly assetApi = inject(InstalledAssetService);
 
   // ---- AMC import ------------------------------------------------------------------------
   protected readonly importOpen = signal(false);
@@ -177,33 +186,59 @@ export class ArInstalledBase {
       description: '',
       serialNumber: '',
       make: '',
+      partNumber: '',
       model: '',
       siteName: '',
       siteCity: '',
+      commissionedOn: '',
+      warrantyEndsOn: '',
       amcEndsOn: '',
       amcValue: '',
       amcTermMonths: '',
+      calibrationDueOn: '',
+      pmIntervalDays: '',
     });
     this.error.set(null);
     this.dialogOpen.set(true);
   }
 
-  protected openEdit(a: Asset): void {
+  /**
+   * Opens the machine for editing with every saved field. An update replaces all of them, so the form must start
+   * from the full record; otherwise saving would clear what the list does not show (model, dates, AMC value).
+   */
+  protected async openEdit(a: Asset): Promise<void> {
     this.editingAssetId.set(a.id);
     this.contact.set(null);
-    this.f.set({
-      description: a.description,
-      serialNumber: a.serial ?? '',
-      make: a.make ?? '',
-      model: '',
-      siteName: a.site ?? '',
-      siteCity: '',
-      amcEndsOn: a.nextDueOn ? a.nextDueOn.slice(0, 10) : '',
-      amcValue: '',
-      amcTermMonths: '12',
-    });
     this.error.set(null);
+    this.loadingAsset.set(true);
     this.dialogOpen.set(true);
+    try {
+      const d = await firstValueFrom(this.assetApi.get(a.id, { skipHandleError: true }));
+      const day = (v?: string | null) => (v ? v.slice(0, 10) : '');
+      this.f.set({
+        description: d.description ?? a.description,
+        serialNumber: d.serialNumber ?? '',
+        partNumber: d.partNumber ?? '',
+        make: d.make ?? '',
+        model: d.model ?? '',
+        siteName: d.siteName ?? '',
+        siteCity: d.siteCity ?? '',
+        commissionedOn: day(d.commissionedOn),
+        warrantyEndsOn: day(d.warrantyEndsOn),
+        amcEndsOn: day(d.amcEndsOn),
+        amcValue: d.amcValueInPaise ? String(d.amcValueInPaise / 100) : '',
+        amcTermMonths: d.amcTermMonths ? String(d.amcTermMonths) : '',
+        calibrationDueOn: day(d.calibrationDueOn),
+        pmIntervalDays: d.preventiveMaintenanceIntervalDays
+          ? String(d.preventiveMaintenanceIntervalDays)
+          : '',
+      });
+      if (d.contactId) this.contact.set({ id: d.contactId, label: d.contactDisplayName ?? '' });
+    } catch (e: unknown) {
+      this.error.set(readApiError(e, 'The machine could not be loaded for editing.'));
+    } finally {
+      this.loadingAsset.set(false);
+    }
   }
 
   protected async registerMachine(): Promise<void> {
@@ -217,37 +252,37 @@ export class ArInstalledBase {
       this.error.set(amc);
       return;
     }
+    const pm = v.pmIntervalDays.trim();
+    if (pm && (!/^\d+$/.test(pm) || +pm < 1 || +pm > 3650)) {
+      this.error.set('The maintenance interval is a whole number of days, from 1 to 3,650.');
+      return;
+    }
+    const input = {
+      contactId: this.contact()?.id,
+      description: v.description.trim(),
+      serialNumber: v.serialNumber.trim() || undefined,
+      partNumber: v.partNumber.trim() || undefined,
+      make: v.make.trim() || undefined,
+      model: v.model.trim() || undefined,
+      siteName: v.siteName.trim() || undefined,
+      siteCity: v.siteCity.trim() || undefined,
+      commissionedOn: v.commissionedOn || undefined,
+      warrantyEndsOn: v.warrantyEndsOn || undefined,
+      amcEndsOn: v.amcEndsOn || undefined,
+      calibrationDueOn: v.calibrationDueOn || undefined,
+      preventiveMaintenanceIntervalDays: pm ? Number(pm) : undefined,
+      amcValueInPaise: amc.valueInPaise,
+      amcTermMonths: amc.termMonths,
+    };
     this.saving.set(true);
     this.error.set(null);
     try {
       const editingId = this.editingAssetId();
       if (editingId) {
-        await this.store.updateAsset(editingId, {
-          contactId: this.contact()?.id,
-          description: v.description.trim(),
-          serialNumber: v.serialNumber.trim() || undefined,
-          make: v.make.trim() || undefined,
-          model: v.model.trim() || undefined,
-          siteName: v.siteName.trim() || undefined,
-          siteCity: v.siteCity.trim() || undefined,
-          amcEndsOn: v.amcEndsOn || undefined,
-          amcValueInPaise: amc.valueInPaise,
-          amcTermMonths: amc.termMonths,
-        });
+        await this.store.updateAsset(editingId, input);
         this.toasts.success(`“${v.description.trim()}” updated.`);
       } else {
-        await this.store.createAsset({
-          contactId: this.contact()?.id,
-          description: v.description.trim(),
-          serialNumber: v.serialNumber.trim() || undefined,
-          make: v.make.trim() || undefined,
-          model: v.model.trim() || undefined,
-          siteName: v.siteName.trim() || undefined,
-          siteCity: v.siteCity.trim() || undefined,
-          amcEndsOn: v.amcEndsOn || undefined,
-          amcValueInPaise: amc.valueInPaise,
-          amcTermMonths: amc.termMonths,
-        });
+        await this.store.createAsset(input);
         this.toasts.success(`“${v.description.trim()}” registered.`);
       }
       this.dialogOpen.set(false);

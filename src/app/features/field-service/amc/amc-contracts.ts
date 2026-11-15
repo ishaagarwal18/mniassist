@@ -1,3 +1,6 @@
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../../core/auth/permission';
+import { ConfirmService } from '../../../core/ui/confirm.service';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -234,6 +237,19 @@ import { initialSearch } from '../../../core/util/customer-scope';
               >
                 Renew Contract
               </a>
+              @if (
+                canTerminate() &&
+                (contract.status === AmcStatus.Active || contract.status === AmcStatus.ExpiringSoon)
+              ) {
+                <button
+                  ar-button="ghost"
+                  type="button"
+                  [disabled]="terminating()"
+                  (click)="terminate(contract)"
+                >
+                  Terminate
+                </button>
+              }
             </div>
           </div>
 
@@ -1000,6 +1016,32 @@ import { initialSearch } from '../../../core/util/customer-scope';
 })
 export class AmcContractsComponent {
   private readonly amcService = inject(AmcContractService);
+  private readonly confirmDialogs = inject(ConfirmService);
+  readonly canTerminate = grantedPolicy('AutoReach.AmcContracts.Cancel', inject(PermissionService));
+  readonly terminating = signal(false);
+
+  /** Ends a contract early: no more visits are planned under it, and it stays on record. */
+  async terminate(c: AmcContractDto): Promise<void> {
+    if (
+      !(await this.confirmDialogs.confirm({
+        title: `Terminate ${c.contractNumber}?`,
+        message: 'No more visits are planned under it. The contract stays on record as terminated.',
+        confirmText: 'Terminate',
+        cancelText: 'Keep it',
+        tone: 'danger',
+      }))
+    )
+      return;
+    this.terminating.set(true);
+    this.amcService.terminate(c.id!).subscribe({
+      next: (saved) => {
+        this.terminating.set(false);
+        this.contracts.update((list) => list.map((x) => (x.id === saved.id ? saved : x)));
+        this.selectedContract.set(saved);
+      },
+      error: () => this.terminating.set(false),
+    });
+  }
 
   readonly contracts = signal<AmcContractDto[]>([]);
   readonly selectedContract = signal<AmcContractDto | null>(null);

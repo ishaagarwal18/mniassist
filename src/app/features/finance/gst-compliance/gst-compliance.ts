@@ -1,3 +1,6 @@
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../../core/auth/permission';
+import { ArRegisterEntryDialog } from './register-entry-dialog';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -51,6 +54,7 @@ export function recentReturnPeriods(
   selector: 'app-gst-compliance',
   standalone: true,
   imports: [
+    ArRegisterEntryDialog,
     CommonModule,
     FormsModule,
     DatePipe,
@@ -171,6 +175,16 @@ export function recentReturnPeriods(
               live.
             </p>
           }
+        }
+        @if (canFile()) {
+          <div class="register-actions">
+            <button ar-button type="button" variant="ghost" (click)="addingEntry.set(true)">
+              Add register entry
+            </button>
+          </div>
+        }
+        @if (addingEntry()) {
+          <ar-register-entry-dialog (closed)="entryClosed($event)" />
         }
         <div class="table-card">
           @if (loadError(); as e) {
@@ -696,6 +710,11 @@ export function recentReturnPeriods(
       }
 
       .einvoice-cell,
+      .register-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 8px;
+      }
       .register-note {
         margin: 0 0 12px;
         padding: 10px 14px;
@@ -899,6 +918,16 @@ export class GstComplianceComponent {
   /** The last twelve GST return periods (MMYYYY), this month first. */
   readonly periods = recentReturnPeriods(12);
   readonly selectedPeriod = signal(this.periods[0].value);
+  /** A document raised outside the app, added to the register by hand. */
+  readonly addingEntry = signal(false);
+  readonly canFile = grantedPolicy('AutoReach.GstCompliance.FileGstr', inject(PermissionService));
+
+  entryClosed(saved: GstAuditRegisterDto | null): void {
+    this.addingEntry.set(false);
+    if (!saved) return;
+    this.toasts.success(`${saved.documentNumber} added to the register.`, 'GST');
+    if (saved.returnPeriod === this.selectedPeriod()) void this.loadGstRecords();
+  }
   readonly loading = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly activeTab = signal<'register' | 'gstr1' | 'gstr2b' | 'gstr3b'>('register');

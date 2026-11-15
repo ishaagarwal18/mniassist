@@ -197,3 +197,32 @@
 .muted {
   color: var(--ar-ink-400);
 }
+
+.sched {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sched__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.sched__days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.sched__day,
+.sched__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 400 13px var(--ar-font-sans);
+}

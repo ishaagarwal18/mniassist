@@ -23,7 +23,26 @@ import { ArButton } from '../../ui/button';
 import { ArCard } from '../../ui/card';
 import { ArChip } from '../../ui/chip';
 import { ArIcon } from '../../ui/icon';
-import { BLANK_CAMPAIGN_DRAFT, CampaignDraft, validateCampaignDraft } from './campaign-form.logic';
+import { ChannelKind } from '../../proxy/channels/channel-kind.enum';
+import { EmailChannelService } from '../../proxy/email/email-channel.service';
+import {
+  InstagramChannelDto,
+  InstagramChannelService,
+  SocialChannelState,
+} from '../../proxy/social/social-channels.service';
+import {
+  SmsChannelService,
+  SmsTemplateDto,
+  SmsTemplateStatus,
+} from '../../proxy/sms/sms-channel.service';
+import {
+  BLANK_CAMPAIGN_DRAFT,
+  CAMPAIGN_KINDS,
+  CampaignDraft,
+  INSTAGRAM_MAX,
+  campaignExtras,
+  validateCampaignDraft,
+} from './campaign-form.logic';
 
 @Component({
   selector: 'ar-campaign-form',
@@ -39,6 +58,23 @@ export class ArCampaignForm implements OnInit {
   private readonly store = inject(CampaignStore);
   private readonly channelService = inject(ChannelService);
   private readonly templateApi = inject(TemplateApi);
+  private readonly emailApi = inject(EmailChannelService);
+  private readonly smsApi = inject(SmsChannelService);
+  private readonly instagramApi = inject(InstagramChannelService);
+
+  protected readonly K = ChannelKind;
+  protected readonly kinds = CAMPAIGN_KINDS;
+  protected readonly instagramMax = INSTAGRAM_MAX;
+  protected readonly kind = computed(() => this.draft().kind ?? ChannelKind.WhatsApp);
+
+  /** The workspace's one email sender and one SMS sender; null until loaded or when not set up. */
+  protected readonly emailSender = signal<{ id: string; label: string; ready: boolean } | null>(
+    null,
+  );
+  protected readonly smsSender = signal<{ id: string; label: string } | null>(null);
+  protected readonly smsTemplates = signal<SmsTemplateDto[]>([]);
+  protected readonly instagramAccounts = signal<InstagramChannelDto[]>([]);
+  protected readonly kindLoading = signal(false);
 
   protected readonly canCreate = grantedPolicy('AutoReach.Campaigns.Create', this.permissions);
 
@@ -65,6 +101,58 @@ export class ArCampaignForm implements OnInit {
       this.draft.update((d) => ({ ...d, channelId: firstId }));
       await this.loadTemplates(firstId);
     }
+  }
+
+  /** Switches the channel kind and loads what that kind sends from. */
+  protected async chooseKind(kind: ChannelKind): Promise<void> {
+    this.draft.update((d) => ({ ...d, kind, channelId: '', templateId: '' }));
+    this.error.set(null);
+    this.approvedTemplates.set([]);
+    if (kind === ChannelKind.WhatsApp) {
+      const first = this.channels()[0]?.id ?? '';
+      this.draft.update((d) => ({ ...d, channelId: first }));
+      await this.loadTemplates(first);
+      return;
+    }
+    this.kindLoading.set(true);
+    try {
+      if (kind === ChannelKind.Email) {
+        const ch = await firstValueFrom(this.emailApi.getOrCreate({ skipHandleError: true }));
+        this.emailSender.set({
+          id: ch.id,
+          label: `${ch.fromName} <${ch.fromAddress}>`,
+          ready: ch.isSenderConfigured,
+        });
+        if (ch.isSenderConfigured) this.draft.update((d) => ({ ...d, channelId: ch.id }));
+      } else if (kind === ChannelKind.Sms) {
+        const [ch, templates] = await Promise.all([
+          firstValueFrom(this.smsApi.getOrCreate({ skipHandleError: true })),
+          firstValueFrom(this.smsApi.getTemplates({ skipHandleError: true })),
+        ]);
+        const approved = templates.filter((t) => t.status === SmsTemplateStatus.Approved);
+        this.smsSender.set({ id: ch.id, label: ch.senderId });
+        this.smsTemplates.set(approved);
+        this.draft.update((d) => ({
+          ...d,
+          channelId: ch.senderId ? ch.id : '',
+          templateId: approved[0]?.id ?? '',
+        }));
+      } else if (kind === ChannelKind.Instagram) {
+        const r = await firstValueFrom(this.instagramApi.getList({ skipHandleError: true }));
+        const active = (r.items ?? []).filter((a) => a.state === SocialChannelState.Active);
+        this.instagramAccounts.set(active);
+        this.draft.update((d) => ({ ...d, channelId: active[0]?.id ?? '' }));
+      }
+    } catch (e: unknown) {
+      this.error.set(readApiError(e, 'This channel could not be loaded.'));
+    } finally {
+      this.kindLoading.set(false);
+    }
+  }
+
+  protected patchExtra(change: Partial<CampaignDraft>): void {
+    this.draft.update((d) => ({ ...d, ...change }));
+    this.error.set(null);
   }
 
   protected async chooseChannel(channelId: string): Promise<void> {
@@ -115,7 +203,10 @@ export class ArCampaignForm implements OnInit {
 
   protected async save(): Promise<void> {
     const currentDraft = this.draft();
-    const hasTemplates = this.approvedTemplates().length > 0;
+    const hasTemplates =
+      this.kind() === ChannelKind.Sms
+        ? this.smsTemplates().length > 0
+        : this.approvedTemplates().length > 0;
     const validationError = validateCampaignDraft(currentDraft, hasTemplates);
 
     if (validationError) {
@@ -131,6 +222,7 @@ export class ArCampaignForm implements OnInit {
         currentDraft.name,
         currentDraft.channelId,
         currentDraft.templateId,
+        campaignExtras(currentDraft),
       );
       this.toasts.success(`Campaign “${currentDraft.name.trim()}” created as draft.`);
       void this.router.navigate(['/campaigns'], { queryParams: { open: id } });

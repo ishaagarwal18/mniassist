@@ -50,7 +50,17 @@
                   <button type="button" class="bp__link" (click)="returned(g)">Returned</button>
                   ·
                   <button type="button" class="bp__link" (click)="invoked(g)">Invoked</button>
+                  ·
                 }
+                <button
+                  type="button"
+                  class="bp__link"
+                  [disabled]="busy()"
+                  [attr.aria-label]="'Delete guarantee ' + g.number"
+                  (click)="remove(g)"
+                >
+                  Delete
+                </button>
               </td>
             </tr>
           }

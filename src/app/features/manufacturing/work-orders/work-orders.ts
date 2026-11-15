@@ -1,3 +1,6 @@
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../../core/auth/permission';
+import { ConfirmService } from '../../../core/ui/confirm.service';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -288,6 +291,21 @@ export function progressPercent(
                   (click)="openCompleteWo()"
                 >
                   Complete and receive goods
+                </button>
+              }
+              @if (
+                canCancel() &&
+                wo.status !== WorkOrderStatus.Completed &&
+                wo.status !== WorkOrderStatus.Cancelled
+              ) {
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="busy()"
+                  (click)="cancelWo()"
+                >
+                  Cancel work order
                 </button>
               }
               <button
@@ -1092,6 +1110,11 @@ export function progressPercent(
 })
 export class WorkOrdersComponent {
   private readonly workOrderService = inject(WorkOrderService);
+  private readonly dialogs = inject(ConfirmService);
+  protected readonly canCancel = grantedPolicy(
+    'AutoReach.WorkOrders.Cancel',
+    inject(PermissionService),
+  );
   private readonly toasts = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -1327,6 +1350,31 @@ export class WorkOrdersComponent {
         this.toasts.success(`${updated.workOrderNumber} released to the floor.`);
       },
       error: (err) => this.fail(err, 'The work order could not be released.'),
+    });
+  }
+
+  async cancelWo(): Promise<void> {
+    const sel = this.selectedWo();
+    if (!sel?.id) return;
+    if (
+      !(await this.dialogs.confirm({
+        title: `Cancel ${sel.workOrderNumber}?`,
+        message:
+          'The order stops here and stays on record as cancelled. Material already issued to it is not returned to stock automatically.',
+        confirmText: 'Cancel work order',
+        cancelText: 'Keep it',
+        tone: 'danger',
+      }))
+    )
+      return;
+    this.busy.set(true);
+    this.workOrderService.cancel(sel.id).subscribe({
+      next: (updated) => {
+        this.busy.set(false);
+        this.updateWoInState(updated);
+        this.toasts.success(`${updated.workOrderNumber} cancelled.`);
+      },
+      error: (err) => this.fail(err, 'The work order could not be cancelled.'),
     });
   }
 

@@ -1,3 +1,6 @@
+import { ToastService } from '../../core/ui/toast.service';
+import { readApiError } from '../../core/util/api-error';
+import { IdentityUserService } from '../../proxy/identity/identity-user.service';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -292,6 +295,38 @@ export class ArPlatformConsole {
   // ---- At-risk queue (M15-3) -----------------------------------------
   protected readonly alerts = this.atRisk.alerts;
   protected readonly showResolvedAlerts = this.atRisk.showResolved;
+
+  private readonly userApi = inject(IdentityUserService);
+  private readonly toasts = inject(ToastService);
+  /** Platform staff who can work an alert; loaded the first time an assign list is opened. */
+  protected readonly staff = signal<{ id: string; name: string }[]>([]);
+
+  protected loadStaff(): void {
+    if (this.staff().length) return;
+    firstValueFrom(this.userApi.getList({ maxResultCount: 200, skipCount: 0 }))
+      .then((r) =>
+        this.staff.set(
+          (r.items ?? [])
+            .filter((u) => u.isActive !== false && u.id)
+            .map((u) => ({
+              id: u.id!,
+              name: [u.name, u.surname].filter((x) => x).join(' ') || u.userName || u.email || '',
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name)),
+        ),
+      )
+      .catch(() => undefined);
+  }
+
+  protected async assignAlert(id: string, userId: string): Promise<void> {
+    if (!userId) return;
+    try {
+      await this.atRisk.assign(id, userId);
+      this.toasts.success('Alert assigned.', 'At-risk');
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The alert could not be assigned.'), 'At-risk');
+    }
+  }
 
   protected ackAlert(id: string): void {
     void this.atRisk.acknowledge(id);

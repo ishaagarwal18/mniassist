@@ -169,6 +169,55 @@ export class ArInvoices {
     );
   }
 
+  /** A draft becomes a numbered tax invoice with a due date; after this it can only be credited, never edited. */
+  protected async issue(v: Invoice): Promise<void> {
+    const ok = await this.dialogs.confirm({
+      title: `Issue ${v.number}?`,
+      message: 'The invoice is sent to the workspace with a due date. After this it can only be reversed with a credit note.',
+      confirmText: 'Issue invoice',
+    });
+    if (!ok) return;
+    await this.adminAction(
+      () => firstValueFrom(this.invoiceApi.issue(v.id, { skipHandleError: true })),
+      'Invoice issued.',
+    );
+  }
+
+  /** Only a draft can be cancelled; an issued invoice needs a credit note. */
+  protected async cancelDraft(v: Invoice): Promise<void> {
+    const ok = await this.dialogs.confirm({
+      title: `Cancel draft ${v.number}?`,
+      message: 'The draft is set aside and never issued.',
+      confirmText: 'Cancel draft',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    await this.adminAction(
+      () => firstValueFrom(this.invoiceApi.cancel(v.id, { skipHandleError: true })),
+      'Draft cancelled.',
+    );
+  }
+
+  protected readonly downloading = signal<string | null>(null);
+
+  /** The tax invoice as a PDF, or a printable page when the server could not make one. */
+  protected async downloadPdf(v: Invoice): Promise<void> {
+    this.downloading.set(v.id);
+    try {
+      const blob = await firstValueFrom(this.invoiceApi.downloadPdf(v.id, { skipHandleError: true }));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${v.number || 'invoice'}.${blob.type.includes('html') ? 'html' : 'pdf'}`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The invoice could not be downloaded.'), 'Invoice');
+    } finally {
+      this.downloading.set(null);
+    }
+  }
+
   private async adminAction(work: () => Promise<unknown>, done: string): Promise<void> {
     this.adminBusy.set(true);
     try {

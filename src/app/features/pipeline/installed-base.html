@@ -98,6 +98,126 @@
       </label>
     </div>
 
+    <div
+      class="ar-field-row"
+      style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px"
+    >
+      <label class="ar-field" for="ib-partNumber">
+        <span class="ar-field__label">Part number</span>
+        <input
+          id="ib-partNumber"
+          class="ar-field__input ar-mono"
+          [value]="f().partNumber"
+          (input)="patchAsset('partNumber', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field" for="ib-model">
+        <span class="ar-field__label">Model</span>
+        <input
+          id="ib-model"
+          class="ar-field__input"
+          [value]="f().model"
+          (input)="patchAsset('model', $any($event.target).value)"
+        />
+      </label>
+    </div>
+
+    <div
+      class="ar-field-row"
+      style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px"
+    >
+      <label class="ar-field" for="ib-siteCity">
+        <span class="ar-field__label">Site city</span>
+        <input
+          id="ib-siteCity"
+          class="ar-field__input"
+          [value]="f().siteCity"
+          (input)="patchAsset('siteCity', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field" for="ib-commissionedOn">
+        <span class="ar-field__label">Commissioned on</span>
+        <input
+          id="ib-commissionedOn"
+          type="date"
+          class="ar-field__input"
+          [value]="f().commissionedOn"
+          (input)="patchAsset('commissionedOn', $any($event.target).value)"
+        />
+      </label>
+    </div>
+
+    <div
+      class="ar-field-row"
+      style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px"
+    >
+      <label class="ar-field" for="ib-warrantyEndsOn">
+        <span class="ar-field__label">Warranty ends on</span>
+        <input
+          id="ib-warrantyEndsOn"
+          type="date"
+          class="ar-field__input"
+          [value]="f().warrantyEndsOn"
+          (input)="patchAsset('warrantyEndsOn', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field" for="ib-amcValue">
+        <span class="ar-field__label">AMC value (₹, before GST)</span>
+        <input
+          id="ib-amcValue"
+          class="ar-field__input"
+          inputmode="decimal"
+          [value]="f().amcValue"
+          (input)="patchAsset('amcValue', $any($event.target).value)"
+        />
+      </label>
+    </div>
+
+    <div
+      class="ar-field-row"
+      style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px"
+    >
+      <label class="ar-field" for="ib-amcTermMonths">
+        <span class="ar-field__label">AMC term (months)</span>
+        <input
+          id="ib-amcTermMonths"
+          class="ar-field__input"
+          inputmode="numeric"
+          placeholder="12"
+          [value]="f().amcTermMonths"
+          (input)="patchAsset('amcTermMonths', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field" for="ib-calibrationDueOn">
+        <span class="ar-field__label">Calibration due on</span>
+        <input
+          id="ib-calibrationDueOn"
+          type="date"
+          class="ar-field__input"
+          [value]="f().calibrationDueOn"
+          (input)="patchAsset('calibrationDueOn', $any($event.target).value)"
+        />
+      </label>
+    </div>
+
+    <div
+      class="ar-field-row"
+      style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px"
+    >
+      <label class="ar-field" for="ib-pmIntervalDays">
+        <span class="ar-field__label">Maintenance every (days)</span>
+        <input
+          id="ib-pmIntervalDays"
+          class="ar-field__input"
+          inputmode="numeric"
+          placeholder="e.g. 90"
+          [value]="f().pmIntervalDays"
+          (input)="patchAsset('pmIntervalDays', $any($event.target).value)"
+        />
+      </label>
+      <span></span>
+    </div>
+
     @if (error(); as err) {
       <p class="ib__err" role="alert" style="margin-top: 10px">{{ err }}</p>
     }
@@ -110,7 +230,7 @@
         ar-button
         type="button"
         variant="primary"
-        [disabled]="saving()"
+        [disabled]="saving() || loadingAsset()"
         (click)="registerMachine()"
       >
         {{ saving() ? 'Saving…' : editingAssetId() ? 'Update machine' : 'Register machine' }}

@@ -10,7 +10,11 @@ import {
 import { SalesInvoiceDto } from '../../proxy/sales/sales-invoice.models';
 import { SalesOrderDto } from '../../proxy/sales/sales-order.models';
 import {
+  canCancelChallan,
+  canCancelInvoice,
+  canCancelOrder,
   canConfirmOrder,
+  canDeleteOrder,
   canDeliverChallan,
   canDispatchChallan,
   canFulfilOrder,
@@ -139,5 +143,35 @@ describe('sales records', () => {
     expect(listQuery(account)).toEqual({ account: 'a1', name: 'Kalyani' });
     expect(newRecordQuery(contact)).toEqual({ customer: 'c1', customerName: 'Suresh' });
     expect(newRecordQuery(account)).toEqual({});
+  });
+});
+
+describe('cancelling sales documents', () => {
+  const order = (status: SalesOrderStatus, dispatched = 0) =>
+    ({
+      status,
+      lines: [{ dispatchedQuantity: dispatched, invoicedQuantity: 0 }],
+    }) as unknown as SalesOrderDto;
+
+  it('cancels an order only before anything is shipped or billed', () => {
+    expect(canCancelOrder(order(SalesOrderStatus.Confirmed))).toBe(true);
+    expect(canCancelOrder(order(SalesOrderStatus.Confirmed, 2))).toBe(false);
+    expect(canCancelOrder(order(SalesOrderStatus.Completed))).toBe(false);
+    expect(canDeleteOrder(order(SalesOrderStatus.Draft))).toBe(true);
+    expect(canDeleteOrder(order(SalesOrderStatus.Confirmed))).toBe(false);
+  });
+
+  it('cancels an invoice only while nothing is paid', () => {
+    const inv = (status: SalesInvoiceStatus, paid = 0) =>
+      ({ status, paidAmountInPaise: paid }) as SalesInvoiceDto;
+    expect(canCancelInvoice(inv(SalesInvoiceStatus.Issued))).toBe(true);
+    expect(canCancelInvoice(inv(SalesInvoiceStatus.PartiallyPaid, 100))).toBe(false);
+    expect(canCancelInvoice(inv(SalesInvoiceStatus.Cancelled))).toBe(false);
+  });
+
+  it('cancels a challan until it is invoiced', () => {
+    const dc = (status: DeliveryChallanStatus) => ({ status }) as DeliveryChallanDto;
+    expect(canCancelChallan(dc(DeliveryChallanStatus.Dispatched))).toBe(true);
+    expect(canCancelChallan(dc(DeliveryChallanStatus.Invoiced))).toBe(false);
   });
 });

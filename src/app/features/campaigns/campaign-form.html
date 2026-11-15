@@ -1,6 +1,6 @@
 <ar-topbar
   title="New Campaign"
-  subtitle="Configure campaign identity, dispatch channel, and approved message template"
+  subtitle="Name the campaign, choose how it is sent, and what it says"
   help="A campaign ties one channel, one approved template, one audience, and a schedule together. Every send runs through pre-flight checks before anything actually goes out."
 >
   <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
@@ -9,7 +9,7 @@
     type="button"
     variant="primary"
     icon="check"
-    [disabled]="busy() || templatesLoading()"
+    [disabled]="busy() || templatesLoading() || kindLoading()"
     (click)="save()"
   >
     {{ busy() ? 'Creating draft…' : 'Create Draft' }}
@@ -28,7 +28,7 @@
         <span class="step-num">1</span>
         <div class="step-text">
           <strong>Channel &amp; Template</strong>
-          <span>Name &amp; approved WhatsApp message</span>
+          <span>Name, channel &amp; message</span>
         </div>
       </div>
       <div class="workflow-arrow">→</div>
@@ -78,105 +78,335 @@
               />
             </div>
 
-            <!-- WhatsApp Channel Selector -->
-            <div class="ar-field form-grid--col2">
-              <label for="campaign-channel" class="ar-field__label">
-                WhatsApp Business Channel <span class="ar-field__req">*</span>
-              </label>
-              <span class="ar-field__hint">
-                Select the verified phone number to send broadcast messages from. Templates are tied
-                to specific numbers.
-              </span>
-              <select
-                id="campaign-channel"
-                name="channelId"
-                required
-                class="ar-field__input"
-                [value]="draft().channelId"
-                (change)="chooseChannel($any($event.target).value)"
-              >
-                @for (ch of channels(); track ch.id) {
-                  <option [value]="ch.id" [selected]="ch.id === draft().channelId">
-                    {{ ch.displayName }} · {{ ch.displayPhone }}
-                  </option>
+            <!-- How the campaign is sent -->
+            <fieldset class="ar-field form-grid--col2 kind-picker">
+              <legend class="ar-field__label">Send by <span class="ar-field__req">*</span></legend>
+              <div class="kind-picker__options" role="radiogroup">
+                @for (k of kinds; track k.value) {
+                  <label
+                    class="kind-picker__option"
+                    [class.kind-picker__option--on]="kind() === k.value"
+                  >
+                    <input
+                      type="radio"
+                      name="kind"
+                      [value]="k.value"
+                      [checked]="kind() === k.value"
+                      (change)="chooseKind(k.value)"
+                    />
+                    {{ k.label }}
+                  </label>
                 }
-              </select>
-            </div>
+              </div>
+            </fieldset>
+
+            @switch (kind()) {
+              @case (K.WhatsApp) {
+                <div class="ar-field form-grid--col2">
+                  <label for="campaign-channel" class="ar-field__label">
+                    WhatsApp Business Channel <span class="ar-field__req">*</span>
+                  </label>
+                  <span class="ar-field__hint">
+                    Select the verified phone number to send broadcast messages from. Templates are
+                    tied to specific numbers.
+                  </span>
+                  <select
+                    id="campaign-channel"
+                    name="channelId"
+                    required
+                    class="ar-field__input"
+                    [value]="draft().channelId"
+                    (change)="chooseChannel($any($event.target).value)"
+                  >
+                    @for (ch of channels(); track ch.id) {
+                      <option [value]="ch.id" [selected]="ch.id === draft().channelId">
+                        {{ ch.displayName }} · {{ ch.displayPhone }}
+                      </option>
+                    }
+                  </select>
+                </div>
+              }
+              @case (K.Email) {
+                <div class="ar-field form-grid--col2">
+                  <span class="ar-field__label">Sent from</span>
+                  @if (kindLoading()) {
+                    <span class="ar-field__hint">Loading the email sender…</span>
+                  } @else if (emailSender(); as e) {
+                    @if (e.ready) {
+                      <span class="sender" translate="no">{{ e.label }}</span>
+                    } @else {
+                      <span class="ar-field__hint">
+                        The email sender is not set up yet. Add your sender name and address under
+                        <a routerLink="/settings/email-sending">Settings → Email sending</a>.
+                      </span>
+                    }
+                  }
+                </div>
+              }
+              @case (K.Sms) {
+                <div class="ar-field form-grid--col2">
+                  <span class="ar-field__label">Sender ID</span>
+                  @if (kindLoading()) {
+                    <span class="ar-field__hint">Loading SMS…</span>
+                  } @else if (smsSender()?.label; as label) {
+                    <span class="sender" translate="no">{{ label }}</span>
+                  } @else {
+                    <span class="ar-field__hint">
+                      No SMS sender ID yet. Set one up under
+                      <a routerLink="/channels/sms">Channels → SMS</a>.
+                    </span>
+                  }
+                </div>
+              }
+              @case (K.Instagram) {
+                <div class="ar-field form-grid--col2">
+                  <label for="campaign-ig" class="ar-field__label">
+                    Instagram account <span class="ar-field__req">*</span>
+                  </label>
+                  @if (kindLoading()) {
+                    <span class="ar-field__hint">Loading connected accounts…</span>
+                  } @else if (instagramAccounts().length) {
+                    <select
+                      id="campaign-ig"
+                      class="ar-field__input"
+                      (change)="patchExtra({ channelId: $any($event.target).value })"
+                    >
+                      @for (a of instagramAccounts(); track a.id) {
+                        <option
+                          [value]="a.id"
+                          [selected]="a.id === draft().channelId"
+                          translate="no"
+                        >
+                          {{ '@' + a.username }}
+                        </option>
+                      }
+                    </select>
+                    <span class="ar-field__hint">
+                      Instagram only lets you message people who wrote to you in the last 24 hours.
+                    </span>
+                  } @else {
+                    <span class="ar-field__hint">
+                      No Instagram account is connected. Connect one under
+                      <a routerLink="/channels">Channels</a>.
+                    </span>
+                  }
+                </div>
+              }
+            }
           </div>
         </div>
       </ar-card>
 
-      <!-- Card 2: Approved WhatsApp Message Template -->
-      <ar-card heading="Approved WhatsApp Message Template">
-        <div class="form-section-body">
-          <div class="form-grid">
-            <div class="ar-field form-grid--col2">
-              <label for="campaign-template" class="ar-field__label">
-                Template <span class="ar-field__req">*</span>
-              </label>
-              <span class="ar-field__hint">
-                Meta requires marketing campaigns to use pre-approved WhatsApp templates to
-                guarantee message deliverability.
-              </span>
+      @if (kind() === K.WhatsApp) {
+        <!-- Card 2: Approved WhatsApp Message Template -->
+        <ar-card heading="Approved WhatsApp Message Template">
+          <div class="form-section-body">
+            <div class="form-grid">
+              <div class="ar-field form-grid--col2">
+                <label for="campaign-template" class="ar-field__label">
+                  Template <span class="ar-field__req">*</span>
+                </label>
+                <span class="ar-field__hint">
+                  Meta requires marketing campaigns to use pre-approved WhatsApp templates to
+                  guarantee message deliverability.
+                </span>
 
-              @if (templatesLoading()) {
-                <div class="template-loading-box">
-                  <ar-icon name="sparkle" [size]="15" />
-                  <span>Loading approved templates for this phone number…</span>
-                </div>
-              } @else if (approvedTemplates().length) {
-                <select
-                  id="campaign-template"
-                  name="templateId"
-                  required
-                  class="ar-field__input"
-                  [value]="draft().templateId"
-                  (change)="patch('templateId', $any($event.target).value)"
-                >
-                  @for (t of approvedTemplates(); track t.id) {
-                    <option [value]="t.id" [selected]="t.id === draft().templateId">
-                      {{ t.name }} · {{ t.languageCode }} (Category:
-                      {{ t.category ?? 'Marketing' }})
-                    </option>
-                  }
-                </select>
-
-                <!-- Selected Template Details Card -->
-                @if (selectedTemplate(); as t) {
-                  <div class="template-preview-card">
-                    <div class="template-preview-card__head">
-                      <strong class="template-name">{{ t.name }}</strong>
-                      <div class="template-tags">
-                        <ar-chip tone="good">Approved</ar-chip>
-                        <span class="template-lang">{{ t.languageCode }}</span>
-                      </div>
-                    </div>
-                    @if (t.category) {
-                      <div class="template-category">
-                        Category: <strong>{{ t.category }}</strong>
-                      </div>
+                @if (templatesLoading()) {
+                  <div class="template-loading-box">
+                    <ar-icon name="sparkle" [size]="15" />
+                    <span>Loading approved templates for this phone number…</span>
+                  </div>
+                } @else if (approvedTemplates().length) {
+                  <select
+                    id="campaign-template"
+                    name="templateId"
+                    required
+                    class="ar-field__input"
+                    [value]="draft().templateId"
+                    (change)="patch('templateId', $any($event.target).value)"
+                  >
+                    @for (t of approvedTemplates(); track t.id) {
+                      <option [value]="t.id" [selected]="t.id === draft().templateId">
+                        {{ t.name }} · {{ t.languageCode }} (Category:
+                        {{ t.category ?? 'Marketing' }})
+                      </option>
                     }
-                    <p class="template-tip">
-                      Audience filters and variable values (e.g. <code>{{ '{{1}}' }}</code> customer
-                      name, <code>{{ '{{2}}' }}</code> machine model) will be mapped on the next
-                      screen.
-                    </p>
+                  </select>
+
+                  <!-- Selected Template Details Card -->
+                  @if (selectedTemplate(); as t) {
+                    <div class="template-preview-card">
+                      <div class="template-preview-card__head">
+                        <strong class="template-name">{{ t.name }}</strong>
+                        <div class="template-tags">
+                          <ar-chip tone="good">Approved</ar-chip>
+                          <span class="template-lang">{{ t.languageCode }}</span>
+                        </div>
+                      </div>
+                      @if (t.category) {
+                        <div class="template-category">
+                          Category: <strong>{{ t.category }}</strong>
+                        </div>
+                      }
+                      <p class="template-tip">
+                        Audience filters and variable values (e.g.
+                        <code>{{ '{{1}}' }}</code> customer name, <code>{{ '{{2}}' }}</code> machine
+                        model) will be mapped on the next screen.
+                      </p>
+                    </div>
+                  }
+                } @else {
+                  <div class="template-empty-box">
+                    <ar-icon name="alert" [size]="16" class="template-empty-icon" />
+                    <div class="template-empty-text">
+                      <strong>No approved templates on this number yet.</strong>
+                      <p>
+                        Before sending a campaign, create and submit a template under
+                        <a routerLink="/templates">Templates</a>. Meta typically approves industrial
+                        notification and marketing templates within minutes.
+                      </p>
+                    </div>
                   </div>
                 }
-              } @else {
-                <div class="template-empty-box">
-                  <ar-icon name="alert" [size]="16" class="template-empty-icon" />
-                  <div class="template-empty-text">
-                    <strong>No approved templates on this number yet.</strong>
-                    <p>
-                      Before sending a campaign, create and submit a template under
-                      <a routerLink="/templates">Templates</a>. Meta typically approves industrial
-                      notification and marketing templates within minutes.
-                    </p>
-                  </div>
-                </div>
-              }
+              </div>
             </div>
+          </div>
+        </ar-card>
+      }
+
+      @if (kind() === K.Email) {
+        <ar-card heading="Email">
+          <div class="form-section-body">
+            <div class="form-grid">
+              <div class="ar-field form-grid--col2">
+                <label for="campaign-subject" class="ar-field__label">
+                  Subject <span class="ar-field__req">*</span>
+                </label>
+                <input
+                  id="campaign-subject"
+                  class="ar-field__input"
+                  maxlength="200"
+                  [value]="draft().emailSubject ?? ''"
+                  (input)="patchExtra({ emailSubject: $any($event.target).value })"
+                />
+              </div>
+              <div class="ar-field form-grid--col2">
+                <label for="campaign-body" class="ar-field__label">
+                  Message <span class="ar-field__req">*</span>
+                </label>
+                <span class="ar-field__hint">
+                  Leave a blank line between paragraphs. Merge tags such as
+                  <code>{{ '{{name}}' }}</code> are filled per recipient. An unsubscribe link is
+                  added for you.
+                </span>
+                <textarea
+                  id="campaign-body"
+                  class="ar-field__input"
+                  rows="10"
+                  [value]="draft().emailHtmlBody ?? ''"
+                  (input)="patchExtra({ emailHtmlBody: $any($event.target).value })"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </ar-card>
+      }
+
+      @if (kind() === K.Sms) {
+        <ar-card heading="Approved SMS template">
+          <div class="form-section-body">
+            @if (smsTemplates().length) {
+              <label for="campaign-sms-template" class="ar-field__label">
+                DLT template <span class="ar-field__req">*</span>
+              </label>
+              <select
+                id="campaign-sms-template"
+                class="ar-field__input"
+                (change)="patchExtra({ templateId: $any($event.target).value })"
+              >
+                @for (t of smsTemplates(); track t.id) {
+                  <option [value]="t.id" [selected]="t.id === draft().templateId">
+                    {{ t.name }}
+                  </option>
+                }
+              </select>
+              @for (t of smsTemplates(); track t.id) {
+                @if (t.id === draft().templateId) {
+                  <p class="template-tip">{{ t.content }}</p>
+                }
+              }
+            } @else if (!kindLoading()) {
+              <p class="template-tip">
+                An SMS campaign needs a DLT template approved for your sender. Add one under
+                <a routerLink="/channels/sms">Channels → SMS</a>.
+              </p>
+            }
+          </div>
+        </ar-card>
+      }
+
+      @if (kind() === K.Instagram) {
+        <ar-card heading="Instagram message">
+          <div class="form-section-body">
+            <label for="campaign-ig-text" class="ar-field__label">
+              Message <span class="ar-field__req">*</span>
+            </label>
+            <textarea
+              id="campaign-ig-text"
+              class="ar-field__input"
+              rows="5"
+              [attr.maxlength]="instagramMax"
+              [value]="draft().instagramText ?? ''"
+              (input)="patchExtra({ instagramText: $any($event.target).value })"
+            ></textarea>
+            <span class="ar-field__hint">
+              {{ (draft().instagramText ?? '').length }} / {{ instagramMax }} characters
+            </span>
+          </div>
+        </ar-card>
+      }
+
+      <ar-card heading="Sending options">
+        <div class="form-section-body">
+          <div class="form-grid">
+            <div class="ar-field">
+              <label for="campaign-throttle" class="ar-field__label">Send rate</label>
+              <span class="ar-field__hint">Messages a second, from 1 to 1,000.</span>
+              <input
+                id="campaign-throttle"
+                class="ar-field__input"
+                inputmode="numeric"
+                [value]="draft().throttle ?? '10'"
+                (input)="patchExtra({ throttle: $any($event.target).value })"
+              />
+            </div>
+            @if (kind() === K.WhatsApp) {
+              <label class="option-check form-grid--col2" for="campaign-lang">
+                <input
+                  id="campaign-lang"
+                  type="checkbox"
+                  [checked]="!!draft().matchRecipientLanguage"
+                  (change)="patchExtra({ matchRecipientLanguage: $any($event.target).checked })"
+                />
+                <span>
+                  <strong>Send in each person's language</strong>
+                  Uses the template's version in the contact's language when it has one.
+                </span>
+              </label>
+              <label class="option-check form-grid--col2" for="campaign-lite">
+                <input
+                  id="campaign-lite"
+                  type="checkbox"
+                  [checked]="!!draft().sendViaMarketingLite"
+                  (change)="patchExtra({ sendViaMarketingLite: $any($event.target).checked })"
+                />
+                <span>
+                  <strong>Send through Marketing Messages Lite</strong>
+                  Meta's marketing route, which can reach more people. Needs Marketing Lite set up
+                  on this number.
+                </span>
+              </label>
+            }
           </div>
         </div>
       </ar-card>
@@ -189,7 +419,7 @@
           type="button"
           variant="primary"
           icon="check"
-          [disabled]="busy() || templatesLoading()"
+          [disabled]="busy() || templatesLoading() || kindLoading()"
           (click)="save()"
         >
           {{ busy() ? 'Creating draft…' : 'Create Draft & Continue' }}

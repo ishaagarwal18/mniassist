@@ -1,4 +1,5 @@
 import { ArFieldVisitsCard } from './field-visits-card';
+import { ArTicketLinksCard } from './ticket-links-card';
 import { ArTicketDetailsEditor } from './ticket-details-editor';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
@@ -62,6 +63,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
     ArRecordFixCard,
     ArDiagnosisPanel,
     ArFieldVisitsCard,
+    ArTicketLinksCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -233,6 +235,11 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
               <ar-diagnosis-panel [ticket]="t" />
               <ar-record-fix-card [ticket]="t" [canEdit]="canUpdate()" (saved)="fixSaved($event)" />
             }
+            <ar-ticket-links-card
+              [ticket]="t"
+              [canEdit]="canUpdate()"
+              (saved)="mergeTicket($event)"
+            />
             <ar-field-visits-card [ticketId]="t.id" />
             <ar-card heading="Ticket Settings & Assignment">
               @if (canUpdate()) {
@@ -623,7 +630,7 @@ export class ArTicketDetailPage implements OnInit {
     });
   }
 
-  private mergeTicket(update: ServiceTicketDto): void {
+  protected mergeTicket(update: ServiceTicketDto): void {
     this.loaded.update((t) => (t ? { ...t, ...update } : t));
   }
 

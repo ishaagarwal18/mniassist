@@ -1,3 +1,5 @@
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../../core/auth/permission';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -225,6 +227,16 @@ import { initialSearch } from '../../../core/util/customer-scope';
               >
                 Resolve Ticket
               </button>
+              @if (canClose() && ticket.status === ServiceTicketStatus.Resolved) {
+                <button
+                  ar-button="ghost"
+                  type="button"
+                  [disabled]="closing()"
+                  (click)="closeTicket(ticket)"
+                >
+                  Close ticket
+                </button>
+              }
             </div>
           </div>
 
@@ -851,6 +863,21 @@ import { initialSearch } from '../../../core/util/customer-scope';
 })
 export class FieldServiceTicketsComponent {
   private readonly ticketService = inject(FieldServiceTicketService);
+  readonly canClose = grantedPolicy('AutoReach.ServiceTickets.Close', inject(PermissionService));
+  readonly closing = signal(false);
+
+  /** Closes a resolved ticket once the customer is satisfied; nothing more is done on it. */
+  closeTicket(t: FieldServiceTicketDto): void {
+    if (!t.id) return;
+    this.closing.set(true);
+    this.ticketService.close(t.id).subscribe({
+      next: (updated) => {
+        this.closing.set(false);
+        this.updateTicketInState(updated);
+      },
+      error: () => this.closing.set(false),
+    });
+  }
 
   readonly tickets = signal<FieldServiceTicketDto[]>([]);
   readonly selectedTicket = signal<FieldServiceTicketDto | null>(null);

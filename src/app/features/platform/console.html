@@ -98,6 +98,19 @@
                 </button>
               }
               @if (a.status !== 'resolved') {
+                <label class="alert__assign">
+                  <span class="alert__sr">Assign {{ a.detail }} to</span>
+                  <select
+                    class="ar-field__input"
+                    (focus)="loadStaff()"
+                    (change)="assignAlert(a.id, $any($event.target).value)"
+                  >
+                    <option value="" selected>Assign to…</option>
+                    @for (u of staff(); track u.id) {
+                      <option [value]="u.id" translate="no">{{ u.name }}</option>
+                    }
+                  </select>
+                </label>
                 <button ar-button type="button" variant="ghost" (click)="resolveAlert(a.id)">
                   Resolve
                 </button>

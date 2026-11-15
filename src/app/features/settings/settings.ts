@@ -474,6 +474,15 @@ export class ArSettings {
       keywords: ['qr', 'link', 'wa.me', 'chat button', 'widget', 'website'],
     },
     {
+      id: 'canned-replies',
+      title: 'Canned replies',
+      description: 'Saved answers the team inserts in the inbox with a /shortcut.',
+      category: 'Lead capture',
+      icon: 'document',
+      route: '/canned-replies',
+      keywords: ['canned', 'saved reply', 'quick reply', 'shortcut', 'snippet', 'macro'],
+    },
+    {
       id: 'auto-replies',
       title: 'Auto-replies',
       description: 'Away messages, greetings and keyword replies sent without anyone typing.',

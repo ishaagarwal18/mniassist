@@ -299,9 +299,76 @@
             </button>
           }
         }
-        <button ar-button variant="ghost" icon="user">Assign</button>
-        <button ar-button variant="ghost" icon="check">Resolve</button>
+        @if (canAssign()) {
+          <span class="thread__snooze">
+            <button
+              ar-button
+              variant="ghost"
+              type="button"
+              icon="user"
+              [disabled]="threadBusy() !== null"
+              [attr.aria-expanded]="assignOpen()"
+              (click)="openAssign()"
+            >
+              {{
+                threadBusy() === 'assign-to'
+                  ? 'Assigning…'
+                  : thread.assignedUserName
+                    ? thread.assignedUserName
+                    : 'Assign'
+              }}
+            </button>
+            @if (assignOpen()) {
+              <span class="thread__snooze-menu" role="menu" aria-label="Assign to">
+                @if (thread.assignedUserId) {
+                  <button type="button" role="menuitem" (click)="assignTo(thread.id, null)">
+                    Unassign
+                  </button>
+                }
+                @for (p of people(); track p.userId) {
+                  <button
+                    type="button"
+                    role="menuitem"
+                    translate="no"
+                    [attr.aria-current]="p.userId === thread.assignedUserId ? 'true' : null"
+                    (click)="assignTo(thread.id, p.userId!)"
+                  >
+                    {{ p.name }}
+                  </button>
+                } @empty {
+                  <span class="thread__menu-empty">Loading people…</span>
+                }
+              </span>
+            }
+          </span>
+        }
+        @if (canReply()) {
+          @if (thread.closed) {
+            <button
+              ar-button
+              variant="ghost"
+              type="button"
+              icon="check"
+              [disabled]="threadBusy() !== null"
+              (click)="reopen(thread.id)"
+            >
+              {{ threadBusy() === 'reopen' ? 'Reopening…' : 'Reopen' }}
+            </button>
+          } @else {
+            <button
+              ar-button
+              variant="ghost"
+              type="button"
+              icon="check"
+              [disabled]="threadBusy() !== null"
+              (click)="resolve(thread.id)"
+            >
+              {{ threadBusy() === 'resolve' ? 'Resolving…' : 'Resolve' }}
+            </button>
+          }
+        }
       </header>
+      <ar-conversation-notes [conversationId]="thread.id" />
 
       @if (summary(); as s) {
         @if (s.conversationId === thread.id) {

@@ -5,11 +5,13 @@ import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { grantedPolicy } from '../../core/auth/permission';
+import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
 import {
   AcceptanceTestKind,
   AcceptanceTestService,
+  AcceptanceTestStatus,
   AcceptanceTestSummaryDto,
 } from '../../proxy/project-billing/acceptance-test.service';
 import { ArButton, ArChip } from '../../ui';
@@ -63,6 +65,9 @@ import { TEST_KIND_TEXT, TEST_STATUS_TEXT, TEST_STATUS_TONE } from './tests.logi
                 <th scope="col" class="bp__num">Open punch</th>
                 <th scope="col">Status</th>
                 <th scope="col">Signed</th>
+                @if (canPlan()) {
+                  <th scope="col" aria-label="Actions"></th>
+                }
               </tr>
             </thead>
             <tbody>
@@ -84,6 +89,21 @@ import { TEST_KIND_TEXT, TEST_STATUS_TEXT, TEST_STATUS_TONE } from './tests.logi
                       {{ t.signedByName }} · {{ t.signedAtUtc | date: 'd MMM yyyy' }}
                     }
                   </td>
+                  @if (canPlan()) {
+                    <td class="bp__actions">
+                      @if (deletable(t)) {
+                        <button
+                          type="button"
+                          class="bp__link"
+                          [disabled]="busy()"
+                          [attr.aria-label]="'Delete ' + t.title"
+                          (click)="remove(t)"
+                        >
+                          Delete
+                        </button>
+                      }
+                    </td>
+                  }
                 </tr>
               }
             </tbody>
@@ -98,6 +118,7 @@ export class ArAcceptanceTestsPanel {
   private readonly api = inject(AcceptanceTestService);
   private readonly toasts = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
 
   readonly orderId = input.required<string>();
@@ -140,6 +161,26 @@ export class ArAcceptanceTestsPanel {
       this.tests.set([]);
     } finally {
       this.loaded.set(true);
+    }
+  }
+
+  /** Only a test not yet sent for signature can be deleted; after that it is part of the record. */
+  protected deletable(t: AcceptanceTestSummaryDto): boolean {
+    return t.status === AcceptanceTestStatus.Draft || t.status === AcceptanceTestStatus.InProgress;
+  }
+
+  protected async remove(t: AcceptanceTestSummaryDto): Promise<void> {
+    if (!(await this.dialogs.delete('test', t.title, 'Its checks and results are removed too.')))
+      return;
+    this.busy.set(true);
+    try {
+      await firstValueFrom(this.api.delete(t.id));
+      this.toasts.success('Test deleted.');
+      await this.load(this.orderId());
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The test could not be deleted.'));
+    } finally {
+      this.busy.set(false);
     }
   }
 

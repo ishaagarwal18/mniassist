@@ -217,6 +217,7 @@ export class OpsService {
     durationHours: number;
     allowsWrite: boolean;
     ticketRef?: string | null;
+    grantedToSupportUserId?: string | null;
   }): Promise<void> {
     await firstValueFrom(this.supportApi.grant(input));
     this.grantsResource.reload();
@@ -262,6 +263,32 @@ export class OpsService {
       }),
     );
     this.webhooksResource.reload();
+  }
+
+  /** Changes where an endpoint points and what it receives; whether it is on stays as it was. */
+  async updateWebhook(
+    id: string,
+    url: string,
+    description: string,
+    events: WebhookEvent[],
+    enabled: boolean,
+  ): Promise<void> {
+    await firstValueFrom(
+      this.webhookApi.update(id, {
+        url: url.trim(),
+        description: description.trim() || undefined,
+        events,
+        isEnabled: enabled,
+      }),
+    );
+    this.webhooksResource.reload();
+  }
+
+  /** Stops sending to an endpoint for good; its delivery history goes with it. */
+  async deleteWebhook(id: string): Promise<void> {
+    await firstValueFrom(this.webhookApi.delete(id));
+    this.webhooksResource.reload();
+    this.deliveriesResource.reload();
   }
 
   /** A new signing secret; the old one stops working at once. The only time the secret is ever shown. */

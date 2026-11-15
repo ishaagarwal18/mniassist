@@ -1,3 +1,4 @@
+import { ConversationState } from '../../proxy/messaging/conversation-state.enum';
 import {
   ChannelDto,
   ChannelHealthDto,
@@ -195,6 +196,9 @@ export function toConversation(
         dto.isWindowOpen && dto.windowExpiresAtUtc ? new Date(dto.windowExpiresAtUtc) : null,
     },
     messages,
+    closed: dto.state === ConversationState.Closed ? true : undefined,
+    assignedUserId: dto.assignedUserId ?? undefined,
+    assignedUserName: dto.assignedUserName ?? undefined,
   };
 }
 

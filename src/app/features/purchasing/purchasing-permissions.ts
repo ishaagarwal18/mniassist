@@ -8,6 +8,7 @@ export const PURCHASING_PERMISSIONS = {
   manageInventory: 'AutoReach.Inventory.Manage',
   createGrn: 'AutoReach.GoodsReceiptNotes.Create',
   inspectGrn: 'AutoReach.GoodsReceiptNotes.Inspect',
+  cancelGrn: 'AutoReach.GoodsReceiptNotes.Cancel',
   createBill: 'AutoReach.VendorBills.Create',
   approveBill: 'AutoReach.VendorBills.Approve',
   payBill: 'AutoReach.VendorBills.RecordPayment',

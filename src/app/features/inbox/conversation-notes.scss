@@ -1,0 +1,166 @@
+:host {
+  display: block;
+}
+
+.cn {
+  border-bottom: 1px solid var(--ar-line-200);
+  background: var(--ar-white);
+}
+
+.cn__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 16px;
+  border: 0;
+  background: transparent;
+  font: 500 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cn__toggle:focus-visible {
+  outline: 2px solid var(--ar-primary);
+  outline-offset: -2px;
+}
+
+.cn__title {
+  font-weight: 600;
+  color: var(--ar-ink-900);
+}
+
+.cn__count {
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--ar-line-200);
+  font: 600 11px/18px var(--ar-font-sans);
+  text-align: center;
+}
+
+.cn__hint {
+  flex: 1;
+  color: var(--ar-ink-500);
+  font-weight: 400;
+}
+
+.cn__panel {
+  padding: 0 16px 12px;
+}
+
+.cn__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.cn__note + .cn__note {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--ar-line-200);
+}
+
+.cn__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+
+.cn__meta strong {
+  color: var(--ar-ink-900);
+  font-weight: 600;
+}
+
+.cn__delete {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--ar-ink-500);
+  font: 500 12px var(--ar-font-sans);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.cn__delete:focus-visible {
+  outline: 2px solid var(--ar-primary);
+}
+
+.cn__body {
+  margin: 2px 0 0;
+  font: 400 13px/1.5 var(--ar-font-sans);
+  color: var(--ar-ink-700);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cn__empty {
+  margin: 0;
+  font: 400 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+
+.cn__compose {
+  margin-top: 10px;
+}
+
+.cn__label {
+  display: block;
+  margin-bottom: 4px;
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}
+
+.cn__box-wrap {
+  position: relative;
+}
+
+.cn__box {
+  width: 100%;
+  resize: vertical;
+}
+
+.cn__people {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  top: 100%;
+  min-width: 220px;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-300);
+  border-radius: var(--ar-radius-control);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 12%);
+}
+
+.cn__people li {
+  padding: 6px 8px;
+  border-radius: 4px;
+  font: 400 13px var(--ar-font-sans);
+  cursor: pointer;
+}
+
+.cn__person--active,
+.cn__people li:hover {
+  background: var(--ar-line-100, var(--ar-line-200));
+}
+
+.cn__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.cn__tip {
+  font: 400 11.5px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}

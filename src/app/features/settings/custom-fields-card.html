@@ -1,0 +1,206 @@
+<section class="wp__card">
+  <div class="wp__row">
+    <h2 class="wp__title wp__grow">Custom fields</h2>
+    @if (canManage()) {
+      <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="openNew()">
+        Add field
+      </button>
+      <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="installPack()">
+        {{ busy() ? 'Working…' : 'Add industrial field pack' }}
+      </button>
+    }
+  </div>
+  <p class="wp__muted">
+    Extra details kept on contacts and enquiries. They show on the contact form and the enquiry
+    drawer. The pack adds the usual industrial ones; fields you already have are kept.
+  </p>
+  <ul class="wp__list">
+    @for (f of fields(); track f.id) {
+      <li class="wp__item">
+        <span class="wp__grow">
+          <span class="wp__name" translate="no">{{ f.label }}</span>
+          <span class="wp__sub">
+            {{ f.appliesTo === enquiry ? 'Enquiry' : 'Contact' }} · {{ type(f.type) }}
+            @if (f.options?.length) {
+              · {{ f.options!.length }} choices
+            }
+            · <span class="ar-mono" translate="no">{{ f.key }}</span>
+          </span>
+        </span>
+        @if (f.isRequired) {
+          <ar-chip tone="warn">Required</ar-chip>
+        }
+        @if (f.isSystem) {
+          <ar-chip tone="neutral">Built in</ar-chip>
+        }
+        @if (canManage()) {
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="busy()"
+            [attr.aria-label]="'Edit ' + f.label"
+            (click)="openEdit(f)"
+          >
+            Edit
+          </button>
+          @if (!f.isSystem) {
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="busy()"
+              [attr.aria-label]="'Delete ' + f.label"
+              (click)="remove(f)"
+            >
+              Delete
+            </button>
+          }
+        }
+      </li>
+    } @empty {
+      <li class="wp__empty">No custom fields yet.</li>
+    }
+  </ul>
+</section>
+
+@if (draft(); as d) {
+  <ar-dialog [title]="d.id ? 'Edit ' + d.label : 'Add a custom field'" (dismiss)="draft.set(null)">
+    <div class="cfd">
+      <div class="cfd__row">
+        <label class="ar-field" for="cfd-applies">
+          <span class="ar-field__label">Kept on</span>
+          <select
+            id="cfd-applies"
+            class="ar-field__input"
+            [disabled]="!!d.id"
+            [value]="d.appliesTo"
+            (change)="patch({ appliesTo: +$any($event.target).value })"
+          >
+            <option [value]="contact">Contacts</option>
+            <option [value]="enquiry">Enquiries</option>
+          </select>
+        </label>
+        <label class="ar-field" for="cfd-type">
+          <span class="ar-field__label">Type</span>
+          <select
+            id="cfd-type"
+            class="ar-field__input"
+            [disabled]="!!d.id"
+            [value]="d.type"
+            (change)="patch({ type: +$any($event.target).value })"
+          >
+            @for (t of types; track t.value) {
+              <option [value]="t.value">{{ t.label }}</option>
+            }
+          </select>
+        </label>
+      </div>
+      @if (d.id) {
+        <p class="cfd__note">
+          Where it is kept, its type and its key are fixed once created, because segments and
+          imports refer to them.
+        </p>
+      }
+
+      <label class="ar-field" for="cfd-label">
+        <span class="ar-field__label">Name</span>
+        <input
+          id="cfd-label"
+          class="ar-field__input"
+          maxlength="128"
+          placeholder="e.g. Plant site"
+          [attr.aria-invalid]="problems()['label'] ? 'true' : null"
+          [attr.aria-describedby]="problems()['label'] ? 'cfd-label-error' : null"
+          [value]="d.label"
+          (input)="patch({ label: $any($event.target).value })"
+        />
+        @if (problems()['label']; as e) {
+          <small class="ar-field__error" id="cfd-label-error">{{ e }}</small>
+        }
+      </label>
+
+      <label class="ar-field" for="cfd-key">
+        <span class="ar-field__label">Key</span>
+        <span class="ar-field__hint">How imports and segment rules refer to the field.</span>
+        <input
+          id="cfd-key"
+          class="ar-field__input ar-mono"
+          translate="no"
+          maxlength="64"
+          [disabled]="!!d.id"
+          [attr.aria-invalid]="problems()['key'] ? 'true' : null"
+          [attr.aria-describedby]="problems()['key'] ? 'cfd-key-error' : null"
+          [value]="d.key"
+          (input)="patch({ key: $any($event.target).value })"
+        />
+        @if (problems()['key']; as e) {
+          <small class="ar-field__error" id="cfd-key-error">{{ e }}</small>
+        }
+      </label>
+
+      @if (hasOptions(d.type)) {
+        <label class="ar-field" for="cfd-options">
+          <span class="ar-field__label">Choices</span>
+          <span class="ar-field__hint">One per line, in the order people should see them.</span>
+          <textarea
+            id="cfd-options"
+            class="ar-field__input"
+            rows="5"
+            [attr.aria-invalid]="problems()['options'] ? 'true' : null"
+            [attr.aria-describedby]="problems()['options'] ? 'cfd-options-error' : null"
+            [value]="d.options"
+            (input)="patch({ options: $any($event.target).value })"
+          ></textarea>
+          @if (problems()['options']; as e) {
+            <small class="ar-field__error" id="cfd-options-error">{{ e }}</small>
+          }
+        </label>
+      }
+
+      <label class="ar-field" for="cfd-help">
+        <span class="ar-field__label">Help text <span class="ar-field__opt">optional</span></span>
+        <input
+          id="cfd-help"
+          class="ar-field__input"
+          maxlength="512"
+          [value]="d.helpText"
+          (input)="patch({ helpText: $any($event.target).value })"
+        />
+      </label>
+
+      <div class="cfd__row">
+        <label class="ar-field" for="cfd-order">
+          <span class="ar-field__label">Position</span>
+          <span class="ar-field__hint">Lower numbers show first.</span>
+          <input
+            id="cfd-order"
+            class="ar-field__input"
+            inputmode="numeric"
+            [attr.aria-invalid]="problems()['order'] ? 'true' : null"
+            [value]="d.order"
+            (input)="patch({ order: $any($event.target).value })"
+          />
+          @if (problems()['order']; as e) {
+            <small class="ar-field__error">{{ e }}</small>
+          }
+        </label>
+        <label class="cfd__check" for="cfd-required">
+          <input
+            id="cfd-required"
+            type="checkbox"
+            [checked]="d.isRequired"
+            (change)="patch({ isRequired: $any($event.target).checked })"
+          />
+          Required on the form
+        </label>
+      </div>
+    </div>
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="draft.set(null)">Cancel</button>
+      <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
+        {{ busy() ? 'Saving…' : d.id ? 'Save field' : 'Add field' }}
+      </button>
+    </div>
+  </ar-dialog>
+}

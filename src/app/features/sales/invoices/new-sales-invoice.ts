@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -12,7 +13,13 @@ import { AccountMasterDataService } from '../../../core/services/account-master-
 import { PickerOption } from '../../../core/services/pipeline.service';
 import type { ProductDto } from '../../../proxy/library/product.service';
 import { WorkspaceProfileService } from '../../../proxy/business/workspace-profile.service';
-import { SalesInvoiceKind } from '../../../proxy/sales/sales-enums';
+import {
+  DeliveryChallanStatus,
+  SalesInvoiceKind,
+  SalesInvoiceStatus,
+} from '../../../proxy/sales/sales-enums';
+import type { DeliveryChallanDto } from '../../../proxy/sales/delivery-challan.models';
+import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.service';
 import { CreateSalesInvoiceDto, SalesInvoiceDto } from '../../../proxy/sales/sales-invoice.models';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { ArButton, ArDialog } from '../../../ui';
@@ -77,8 +84,55 @@ const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
                 <option [value]="Kind.BillOfSupply" [selected]="kind() === Kind.BillOfSupply">
                   Bill of supply (no GST)
                 </option>
+                <option [value]="Kind.CreditNote" [selected]="kind() === Kind.CreditNote">
+                  Credit note
+                </option>
+                <option [value]="Kind.DebitNote" [selected]="kind() === Kind.DebitNote">
+                  Debit note
+                </option>
               </select>
             </label>
+            @if (isNote()) {
+              <label class="ar-field ni__span2" for="ni-original">
+                <span class="ar-field__label">Against invoice</span>
+                <select
+                  id="ni-original"
+                  class="ar-field__input"
+                  (change)="originalInvoiceId.set($any($event.target).value)"
+                >
+                  <option value="" [selected]="!originalInvoiceId()">
+                    {{
+                      priorInvoices().length
+                        ? 'Choose the invoice it adjusts'
+                        : 'No issued invoices for this customer'
+                    }}
+                  </option>
+                  @for (i of priorInvoices(); track i.id) {
+                    <option [value]="i.id" [selected]="i.id === originalInvoiceId()" translate="no">
+                      {{ i.invoiceNumber }} · {{ i.issueDateUtc.slice(0, 10) }}
+                    </option>
+                  }
+                </select>
+              </label>
+            } @else if (challans().length) {
+              <label class="ar-field ni__span2" for="ni-challan">
+                <span class="ar-field__label"
+                  >Against challan <span class="ar-field__opt">optional</span></span
+                >
+                <select
+                  id="ni-challan"
+                  class="ar-field__input"
+                  (change)="challanId.set($any($event.target).value)"
+                >
+                  <option value="" [selected]="!challanId()">Not against a challan</option>
+                  @for (c of challans(); track c.id) {
+                    <option [value]="c.id" [selected]="c.id === challanId()" translate="no">
+                      {{ c.challanNumber }} · {{ c.challanDateUtc.slice(0, 10) }}
+                    </option>
+                  }
+                </select>
+              </label>
+            }
             <label class="ar-field ni__span2">
               <span class="ar-field__label"
                 >Customer GSTIN <span class="ar-field__opt">optional</span></span
@@ -349,6 +403,20 @@ const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
               placeholder="Bank details, delivery terms, thank-you note…"
               [value]="notes()"
               (input)="notes.set($any($event.target).value)"
+            ></textarea>
+          </label>
+          <label class="ar-field ni__notes" for="ni-conditions">
+            <span class="ar-field__label"
+              >Terms and conditions <span class="ar-field__opt">printed on the invoice</span></span
+            >
+            <textarea
+              id="ni-conditions"
+              class="ar-field__input"
+              rows="4"
+              maxlength="4000"
+              placeholder="Payment, warranty and dispute terms"
+              [value]="conditions()"
+              (input)="conditions.set($any($event.target).value)"
             ></textarea>
           </label>
           <dl class="ni__totals">
@@ -724,6 +792,18 @@ export class ArNewSalesInvoice {
   protected readonly shippingAddress = signal('');
   protected readonly shipIndex = signal(-1);
   protected readonly notes = signal('');
+  protected readonly conditions = signal('');
+  /** A credit or debit note adjusts one earlier invoice. */
+  protected readonly isNote = computed(
+    () => this.kind() === SalesInvoiceKind.CreditNote || this.kind() === SalesInvoiceKind.DebitNote,
+  );
+  protected readonly originalInvoiceId = signal('');
+  protected readonly challanId = signal('');
+  /** The customer's issued invoices a note can be raised against. */
+  protected readonly priorInvoices = signal<SalesInvoiceDto[]>([]);
+  /** The customer's challans not yet invoiced, which an invoice can bill. */
+  protected readonly challans = signal<DeliveryChallanDto[]>([]);
+  private readonly challanApi = inject(DeliveryChallanService);
   protected readonly lines = signal<InvoiceLine[]>([blankInvoiceLine()]);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -750,12 +830,58 @@ export class ArNewSalesInvoice {
   });
 
   constructor() {
+    // The invoices and challans a document can point back to belong to the chosen customer.
+    effect(() => {
+      const customerId = this.choice()?.customer?.id;
+      this.originalInvoiceId.set('');
+      this.challanId.set('');
+      this.priorInvoices.set([]);
+      this.challans.set([]);
+      if (customerId) void this.loadReferences(customerId);
+    });
     firstValueFrom(this.workspace.get({ skipHandleError: true }))
       .then((p) => {
         this.ownStateCode = p?.stateCode ?? null;
         if (this.placeCode()) this.setPlaceOfSupply(this.placeCode());
       })
       .catch(() => undefined);
+  }
+
+  private async loadReferences(customerId: string): Promise<void> {
+    try {
+      const [invoices, challans] = await Promise.all([
+        firstValueFrom(
+          this.api.getList(
+            { customerId, maxResultCount: 200, skipCount: 0 },
+            { skipHandleError: true },
+          ),
+        ),
+        firstValueFrom(
+          this.challanApi.getList(
+            { customerId, maxResultCount: 200, skipCount: 0 },
+            { skipHandleError: true },
+          ),
+        ),
+      ]);
+      if (this.choice()?.customer?.id !== customerId) return;
+      this.priorInvoices.set(
+        (invoices.items ?? []).filter(
+          (i) =>
+            (i.kind === SalesInvoiceKind.TaxInvoice || i.kind === SalesInvoiceKind.BillOfSupply) &&
+            i.status !== SalesInvoiceStatus.Draft &&
+            i.status !== SalesInvoiceStatus.Cancelled,
+        ),
+      );
+      this.challans.set(
+        (challans.items ?? []).filter(
+          (c) =>
+            c.status === DeliveryChallanStatus.Dispatched ||
+            c.status === DeliveryChallanStatus.Delivered,
+        ),
+      );
+    } catch {
+      // Without the lists the document can still be made; it just is not linked.
+    }
   }
 
   // ---- Customer ------------------------------------------------------------------
@@ -896,6 +1022,11 @@ export class ArNewSalesInvoice {
       return;
     }
 
+    if (this.isNote() && !this.originalInvoiceId()) {
+      this.error.set('A credit or debit note needs the invoice it adjusts.');
+      return;
+    }
+
     const billOfSupply = this.kind() === SalesInvoiceKind.BillOfSupply;
     const input: CreateSalesInvoiceDto = {
       kind: this.kind(),
@@ -910,6 +1041,9 @@ export class ArNewSalesInvoice {
       dueDateUtc: new Date(`${this.dueDate()}T00:00:00`).toISOString(),
       discountInPaise: 0,
       notes: this.notes().trim() || undefined,
+      termsAndConditions: this.conditions().trim() || undefined,
+      originalInvoiceId: this.isNote() ? this.originalInvoiceId() || undefined : undefined,
+      deliveryChallanId: !this.isNote() ? this.challanId() || undefined : undefined,
       lines: toInvoiceLines(this.lines(), billOfSupply),
     };
 

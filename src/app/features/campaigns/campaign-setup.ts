@@ -92,6 +92,29 @@ import { SmsChannelService } from '../../proxy/sms/sms-channel.service';
         } @empty {
           <p>This template has no body variables.</p>
         }
+        <fieldset class="setup-options" [disabled]="saving()">
+          <legend class="ar-field__label">Sending options</legend>
+          <label class="ar-field" for="setup-throttle">
+            <span class="ar-field__label">Send rate (messages a second)</span>
+            <input
+              id="setup-throttle"
+              class="ar-field__input"
+              inputmode="numeric"
+              [(ngModel)]="throttle"
+              (ngModelChange)="edited.emit()"
+            />
+          </label>
+          @if (c.kind == null || c.kind === K.WhatsApp) {
+            <label class="setup-check">
+              <input type="checkbox" [(ngModel)]="matchLanguage" (ngModelChange)="edited.emit()" />
+              Send in each person's language, when the template has that language
+            </label>
+            <label class="setup-check">
+              <input type="checkbox" [(ngModel)]="marketingLite" (ngModelChange)="edited.emit()" />
+              Send through Marketing Messages Lite
+            </label>
+          }
+        </fieldset>
         <button ar-button variant="primary" [disabled]="saving() || !segmentId" (click)="save()">
           {{ saving() ? 'Saving…' : 'Save and check readiness' }}
         </button>
@@ -101,6 +124,20 @@ import { SmsChannelService } from '../../proxy/sms/sms-channel.service';
     </section>
   `,
   styles: `
+    .setup-options {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 12px 0 0;
+      border: 0;
+      border-top: 1px solid var(--ar-line-200);
+    }
+    .setup-check {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font: 400 13px var(--ar-font-sans);
+    }
     section {
       display: grid;
       gap: 12px;
@@ -139,6 +176,11 @@ export class ArCampaignSetup {
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   segmentId = '';
+  /** Messages a second, as typed; the API takes 1 to 1,000. */
+  throttle = '10';
+  matchLanguage = false;
+  marketingLite = false;
+  protected readonly K = ChannelKind;
   private mapping: Record<string, string> = {};
   private sequence = 0;
 
@@ -169,6 +211,9 @@ export class ArCampaignSetup {
           : null;
       if (sequence !== this.sequence) return;
       this.segmentId = campaign.segmentId ?? '';
+      this.throttle = String(campaign.throttlePerSecond ?? 10);
+      this.matchLanguage = !!campaign.matchRecipientLanguage;
+      this.marketingLite = !!campaign.sendViaMarketingLite;
       let mapping: unknown;
       try {
         mapping = JSON.parse(campaign.variableMappingJson || '{}');
@@ -241,6 +286,12 @@ export class ArCampaignSetup {
       if (v.fallback.trim()) mapping[v.key + '.default'] = v.fallback.trim();
       else delete mapping[v.key + '.default'];
     }
+    const throttle = this.throttle.trim();
+    if (!/^\d+$/.test(throttle) || +throttle < 1 || +throttle > 1000) {
+      this.error.set('The send rate is a whole number from 1 to 1,000 messages a second.');
+      return;
+    }
+    const whatsApp = campaign.kind == null || campaign.kind === ChannelKind.WhatsApp;
     this.saving.set(true);
     this.error.set(null);
     try {
@@ -249,6 +300,9 @@ export class ArCampaignSetup {
           ...campaign,
           name: campaign.name ?? '',
           segmentId: this.segmentId,
+          throttlePerSecond: Number(throttle),
+          matchRecipientLanguage: whatsApp && this.matchLanguage,
+          sendViaMarketingLite: whatsApp && this.marketingLite,
           variableMappingJson: JSON.stringify(mapping),
         }),
       );

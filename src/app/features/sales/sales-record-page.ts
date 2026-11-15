@@ -1,6 +1,7 @@
 import { inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
+import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
 import { readCustomerScope } from '../../core/util/customer-scope';
@@ -16,6 +17,7 @@ export abstract class SalesRecordPage<T extends { id?: string }> {
   protected readonly router = inject(Router);
   protected readonly route = inject(ActivatedRoute);
   protected readonly toasts = inject(ToastService);
+  protected readonly dialogs = inject(ConfirmService);
   private readonly origin = inject(CockpitOriginService);
   private readonly scope = readCustomerScope(this.route);
 
@@ -68,6 +70,46 @@ export abstract class SalesRecordPage<T extends { id?: string }> {
     } catch (e: unknown) {
       this.toasts.error(readApiError(e, failed));
       return null;
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** Asks first, then cancels the record and shows it as the API returns it. */
+  protected async cancelRecord(
+    name: string,
+    consequence: string,
+    call: () => Observable<T>,
+  ): Promise<void> {
+    if (
+      !(await this.dialogs.confirm({
+        title: `Cancel ${name}?`,
+        message: consequence,
+        confirmText: 'Cancel it',
+        cancelText: 'Keep it',
+        tone: 'danger',
+      }))
+    )
+      return;
+    await this.run(call, () => `${name} cancelled.`, `${name} could not be cancelled.`);
+  }
+
+  /** Asks first, then deletes the record and returns to the list. */
+  protected async deleteRecord(name: string, call: () => Observable<unknown>): Promise<void> {
+    if (
+      !(await this.dialogs.delete(
+        name.toLowerCase().startsWith('draft') ? 'draft' : 'record',
+        name,
+      ))
+    )
+      return;
+    this.busy.set(true);
+    try {
+      await firstValueFrom(call());
+      this.toasts.success(`${name} deleted.`);
+      this.back();
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, `${name} could not be deleted.`));
     } finally {
       this.busy.set(false);
     }

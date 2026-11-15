@@ -1,3 +1,11 @@
+import { RecurrenceKind } from '../../proxy/campaigns/recurrence-kind.enum';
+import {
+  ScheduleDraft,
+  WEEKDAYS,
+  defaultScheduleDraft,
+  scheduleProblem,
+  toScheduleInput,
+} from './campaign-schedule.logic';
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
@@ -274,6 +282,59 @@ export class ArCampaignBuilder {
       this.setOpen(null);
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'The action failed.');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  // ---- Scheduling -----------------------------------------------------------------------------
+  protected readonly R = RecurrenceKind;
+  protected readonly weekdays = WEEKDAYS;
+  protected readonly scheduling = signal<Campaign | null>(null);
+  protected readonly scheduleDraft = signal<ScheduleDraft | null>(null);
+  protected readonly scheduleError = signal<string | null>(null);
+
+  protected openSchedule(c: Campaign): void {
+    this.scheduleError.set(null);
+    this.scheduleDraft.set(defaultScheduleDraft());
+    this.scheduling.set(c);
+  }
+
+  protected patchSchedule(change: Partial<ScheduleDraft>): void {
+    this.scheduleDraft.update((d) => (d ? { ...d, ...change } : d));
+    this.scheduleError.set(null);
+  }
+
+  protected toggleDay(day: number): void {
+    this.scheduleDraft.update((d) =>
+      d
+        ? {
+            ...d,
+            daysOfWeek: d.daysOfWeek.includes(day)
+              ? d.daysOfWeek.filter((x) => x !== day)
+              : [...d.daysOfWeek, day],
+          }
+        : d,
+    );
+  }
+
+  protected async saveSchedule(): Promise<void> {
+    const c = this.scheduling();
+    const d = this.scheduleDraft();
+    if (!c || !d) return;
+    const problem = scheduleProblem(d);
+    if (problem) {
+      this.scheduleError.set(problem);
+      return;
+    }
+    this.busy.set(true);
+    try {
+      await this.store.schedule(c.id, toScheduleInput(d));
+      this.toasts.success(`${c.name} is scheduled.`, 'Campaign');
+      this.scheduling.set(null);
+      this.setOpen(null);
+    } catch (e: unknown) {
+      this.scheduleError.set(readApiError(e, 'The campaign could not be scheduled.'));
     } finally {
       this.busy.set(false);
     }

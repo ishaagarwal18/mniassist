@@ -174,6 +174,36 @@ export class InboxService {
 
   select(id: string): void {
     this._selectedId.set(id);
+    // Opening a conversation reads it. Someone without reply rights gets the conversation back unchanged.
+    const c = this.conversations().find((x) => x.id === id);
+    if (c?.unread) {
+      firstValueFrom(this.api.markRead(id, { skipHandleError: true }))
+        .then(() => {
+          this.countsResource.reload();
+          this.listResource.reload();
+        })
+        .catch(() => undefined);
+    }
+  }
+
+  /** Gives the conversation to one person, or to nobody (back to the unassigned queue). */
+  async assignTo(conversationId: string, userId: string | null): Promise<void> {
+    await firstValueFrom(this.api.assign(conversationId, { userId }, { skipHandleError: true }));
+    this.countsResource.reload();
+    this.listResource.reload();
+  }
+
+  /** Resolves the conversation; the customer writing again opens it. */
+  async close(conversationId: string): Promise<void> {
+    await firstValueFrom(this.api.close(conversationId, { skipHandleError: true }));
+    this.countsResource.reload();
+    this.listResource.reload();
+  }
+
+  async reopen(conversationId: string): Promise<void> {
+    await firstValueFrom(this.api.reopen(conversationId, { skipHandleError: true }));
+    this.countsResource.reload();
+    this.listResource.reload();
   }
 
   /** Hides the conversation until the given time; a customer reply brings it back sooner. */

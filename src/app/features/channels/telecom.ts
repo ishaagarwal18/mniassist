@@ -19,7 +19,8 @@ import { TenantDto, TenantService } from '../../proxy/tenant-management';
 import { ToastService } from '../../core/ui/toast.service';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
-import { ArBanner, ArButton, ArChip, ArIcon } from '../../ui';
+import { ArBanner, ArButton, ArChip, ArDialog, ArIcon } from '../../ui';
+import { readApiError } from '../../core/util/api-error';
 
 type ActiveTab = 'inventory' | 'telecom-entity';
 
@@ -36,6 +37,7 @@ type ActiveTab = 'inventory' | 'telecom-entity';
     ArIcon,
     NgTemplateOutlet,
     ArPoolNumbersCard,
+    ArDialog,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './telecom.html',
@@ -128,6 +130,70 @@ export class ArTelecom {
   protected readonly draftCtsoEmail = signal('');
   protected readonly draftCtsoPhone = signal('');
   protected readonly draftCtsoDesignation = signal('');
+  protected readonly draftAuditNotes = signal('');
+  /** The compliance declarations, as the user ticks them; nothing is assumed true. */
+  protected readonly draftDecl = signal({
+    simBindingEnforced: false,
+    antiSpoofingAuditPassed: false,
+    lawfulInterceptionLogging: false,
+    metaTechProviderAgreementSigned: false,
+    prohibitionOfDisposableNumbersAcknowledged: false,
+  });
+
+  protected patchDecl(key: keyof ReturnType<typeof this.draftDecl>, value: boolean): void {
+    this.draftDecl.update((d) => ({ ...d, [key]: value }));
+  }
+
+  // ---- KYC ----------------------------------------------------------------------------------------
+  protected readonly kyc = signal<{
+    id: string;
+    e164: string;
+    status: TelecomKycStatus;
+    documentRef: string;
+    notes: string;
+  } | null>(null);
+
+  protected openKyc(n: {
+    id?: string;
+    e164: string;
+    kycStatus: TelecomKycStatus;
+    notes?: string | null;
+  }): void {
+    if (!n.id) return;
+    this.kyc.set({
+      id: n.id,
+      e164: n.e164,
+      status: n.kycStatus,
+      documentRef: '',
+      notes: n.notes ?? '',
+    });
+  }
+
+  protected patchKyc(
+    change: Partial<{ status: TelecomKycStatus; documentRef: string; notes: string }>,
+  ): void {
+    this.kyc.update((k) => (k ? { ...k, ...change } : k));
+  }
+
+  protected async saveKyc(): Promise<void> {
+    const k = this.kyc();
+    if (!k) return;
+    if (k.status === TelecomKycStatus.Verified && !k.documentRef.trim()) {
+      this.toasts.warning('Add the document the KYC was verified against.', 'KYC');
+      return;
+    }
+    try {
+      await this.store.updateKyc(k.id, {
+        status: k.status,
+        documentRef: k.documentRef.trim() || undefined,
+        notes: k.notes.trim() || undefined,
+      });
+      this.toasts.success(`KYC for ${k.e164} saved.`, 'KYC');
+      this.kyc.set(null);
+    } catch (err: unknown) {
+      this.toasts.error(readApiError(err, 'The KYC could not be saved.'), 'KYC');
+    }
+  }
 
   // Enums for template usage
   protected readonly ResellerNumberStatus = ResellerNumberStatus;
@@ -316,6 +382,14 @@ export class ArTelecom {
     this.draftCtsoEmail.set(s.ctsoEmail ?? '');
     this.draftCtsoPhone.set(s.ctsoPhone ?? '');
     this.draftCtsoDesignation.set(s.ctsoDesignation ?? '');
+    this.draftAuditNotes.set(s.auditNotes ?? '');
+    this.draftDecl.set({
+      simBindingEnforced: !!s.simBindingEnforced,
+      antiSpoofingAuditPassed: !!s.antiSpoofingAuditPassed,
+      lawfulInterceptionLogging: !!s.lawfulInterceptionLogging,
+      metaTechProviderAgreementSigned: !!s.metaTechProviderAgreementSigned,
+      prohibitionOfDisposableNumbersAcknowledged: !!s.prohibitionOfDisposableNumbersAcknowledged,
+    });
     this.editSettingsDialogOpen.set(true);
   }
 
@@ -339,11 +413,8 @@ export class ArTelecom {
         ctsoEmail: this.draftCtsoEmail().trim(),
         ctsoPhone: this.draftCtsoPhone().trim(),
         ctsoDesignation: this.draftCtsoDesignation().trim(),
-        simBindingEnforced: true,
-        antiSpoofingAuditPassed: true,
-        lawfulInterceptionLogging: true,
-        metaTechProviderAgreementSigned: true,
-        prohibitionOfDisposableNumbersAcknowledged: true,
+        ...this.draftDecl(),
+        auditNotes: this.draftAuditNotes().trim() || undefined,
       });
       this.toasts.success('Telecom entity profile updated successfully.', 'Settings Saved');
       this.close();

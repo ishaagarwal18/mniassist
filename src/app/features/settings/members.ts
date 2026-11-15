@@ -117,6 +117,9 @@ export class ArMembers {
   protected readonly inviteEmail = signal('');
   protected readonly inviteRole = signal<string>('Agent');
   protected readonly inviteNote = signal('');
+  /** How long the invite link works; the API allows 1 to 30 days. */
+  protected readonly inviteExpiry = signal(7);
+  protected readonly expiryChoices = [1, 3, 7, 14, 30];
   protected readonly inviteBusy = signal(false);
   protected readonly lastInviteUrl = signal<string | null>(null);
 
@@ -124,6 +127,7 @@ export class ArMembers {
     this.inviteEmail.set('');
     this.inviteRole.set('Agent');
     this.inviteNote.set('');
+    this.inviteExpiry.set(7);
     this.lastInviteUrl.set(null);
     this.inviting.set(true);
   }
@@ -136,7 +140,12 @@ export class ArMembers {
     }
     this.inviteBusy.set(true);
     try {
-      const url = await this.store.invite(email, this.inviteRole(), this.inviteNote() || undefined);
+      const url = await this.store.invite(
+        email,
+        this.inviteRole(),
+        this.inviteNote() || undefined,
+        this.inviteExpiry(),
+      );
       this.lastInviteUrl.set(url);
       this.inviting.set(false);
     } finally {

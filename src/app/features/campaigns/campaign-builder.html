@@ -192,6 +192,15 @@
                 @if (canSendPolicy()) {
                   <button
                     ar-button
+                    variant="ghost"
+                    icon="clock"
+                    [disabled]="busy() || !pf.canSend"
+                    (click)="openSchedule(c)"
+                  >
+                    Schedule…
+                  </button>
+                  <button
+                    ar-button
                     variant="primary"
                     [disabled]="busy() || !pf.canSend"
                     (click)="send(c)"
@@ -292,3 +301,141 @@
     <p class="cm__empty">No campaigns yet.</p>
   }
 </div>
+
+@if (scheduling(); as sc) {
+  <ar-dialog [title]="'Schedule ' + sc.name" (dismiss)="scheduling.set(null)">
+    @if (scheduleDraft(); as d) {
+      <div class="sched">
+        <div class="sched__row">
+          <label class="ar-field" for="sched-date">
+            <span class="ar-field__label">First send</span>
+            <input
+              id="sched-date"
+              type="date"
+              class="ar-field__input"
+              [value]="d.date"
+              (change)="patchSchedule({ date: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field" for="sched-time">
+            <span class="ar-field__label">At (India time)</span>
+            <input
+              id="sched-time"
+              type="time"
+              class="ar-field__input"
+              [value]="d.time"
+              (change)="patchSchedule({ time: $any($event.target).value })"
+            />
+          </label>
+        </div>
+        <label class="ar-field" for="sched-repeat">
+          <span class="ar-field__label">Repeat</span>
+          <select
+            id="sched-repeat"
+            class="ar-field__input"
+            (change)="patchSchedule({ recurrence: +$any($event.target).value })"
+          >
+            <option [value]="R.Once" [selected]="d.recurrence === R.Once">Just once</option>
+            <option [value]="R.Daily" [selected]="d.recurrence === R.Daily">Every day</option>
+            <option [value]="R.Weekly" [selected]="d.recurrence === R.Weekly">Every week</option>
+            <option [value]="R.Monthly" [selected]="d.recurrence === R.Monthly">Every month</option>
+          </select>
+        </label>
+        @if (d.recurrence === R.Weekly) {
+          <fieldset class="sched__days">
+            <legend class="ar-field__label">On</legend>
+            @for (w of weekdays; track w.value) {
+              <label class="sched__day">
+                <input
+                  type="checkbox"
+                  [checked]="d.daysOfWeek.includes(w.value)"
+                  (change)="toggleDay(w.value)"
+                />
+                {{ w.label }}
+              </label>
+            }
+          </fieldset>
+        }
+        @if (d.recurrence === R.Monthly) {
+          <label class="ar-field" for="sched-dom">
+            <span class="ar-field__label">Day of the month (1–28)</span>
+            <input
+              id="sched-dom"
+              class="ar-field__input"
+              inputmode="numeric"
+              [value]="d.dayOfMonth"
+              (input)="patchSchedule({ dayOfMonth: $any($event.target).value })"
+            />
+          </label>
+        }
+        @if (d.recurrence !== R.Once) {
+          <label class="ar-field" for="sched-ends">
+            <span class="ar-field__label">Ends on <span class="ar-field__opt">optional</span></span>
+            <input
+              id="sched-ends"
+              type="date"
+              class="ar-field__input"
+              [value]="d.endsOn"
+              (change)="patchSchedule({ endsOn: $any($event.target).value })"
+            />
+          </label>
+        }
+        <label class="sched__check">
+          <input
+            type="checkbox"
+            [checked]="d.quietHours"
+            (change)="patchSchedule({ quietHours: $any($event.target).checked })"
+          />
+          Hold messages during quiet hours
+        </label>
+        @if (d.quietHours) {
+          <div class="sched__row">
+            <label class="ar-field" for="sched-qfrom">
+              <span class="ar-field__label">Quiet from</span>
+              <input
+                id="sched-qfrom"
+                type="time"
+                class="ar-field__input"
+                [value]="d.quietFrom"
+                (change)="patchSchedule({ quietFrom: $any($event.target).value })"
+              />
+            </label>
+            <label class="ar-field" for="sched-quntil">
+              <span class="ar-field__label">Until</span>
+              <input
+                id="sched-quntil"
+                type="time"
+                class="ar-field__input"
+                [value]="d.quietUntil"
+                (change)="patchSchedule({ quietUntil: $any($event.target).value })"
+              />
+            </label>
+          </div>
+        }
+        <label class="sched__check">
+          <input
+            type="checkbox"
+            [checked]="d.skipSundays"
+            (change)="patchSchedule({ skipSundays: $any($event.target).checked })"
+          />
+          No marketing on Sundays
+        </label>
+        @if (scheduleError(); as e) {
+          <p class="cm__err" role="alert">{{ e }}</p>
+        }
+      </div>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="scheduling.set(null)">Cancel</button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="busy()"
+        (click)="saveSchedule()"
+      >
+        {{ busy() ? 'Scheduling…' : 'Schedule' }}
+      </button>
+    </div>
+  </ar-dialog>
+}

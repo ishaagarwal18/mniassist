@@ -1,3 +1,6 @@
+import { AmcContractService } from '../../../proxy/field-service/amc-contract.service';
+import type { AmcContractDto } from '../../../proxy/field-service/field-service.models';
+import { AmcStatus } from '../../../proxy/manufacturing/manufacturing-enums';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -93,6 +96,26 @@ import { EMPTY_PARTY, defaultShipIndex, shipToText } from '../../sales/sales-par
                 [(ngModel)]="equipmentModel"
               />
             </label>
+            @if (contracts().length) {
+              <label class="ar-field">
+                <span class="ar-field__label"
+                  >Under AMC contract <span class="ar-field__opt">optional</span></span
+                >
+                <select
+                  class="ar-field__input"
+                  name="amc"
+                  (change)="pickContract($any($event.target).value)"
+                >
+                  <option value="" [selected]="!amcContractId">Not under a contract</option>
+                  @for (c of contracts(); track c.id) {
+                    <option [value]="c.id" [selected]="c.id === amcContractId" translate="no">
+                      {{ c.contractNumber }} · {{ c.equipmentModel }} ·
+                      {{ c.equipmentSerialNumber }}
+                    </option>
+                  }
+                </select>
+              </label>
+            }
             <label class="ar-field">
               <span class="ar-field__label"
                 >Serial number <span class="ar-field__req">*</span></span
@@ -256,6 +279,35 @@ export class ArNewFieldTicketPage {
   private lastContactId: string | null = null;
 
   /** A new customer: a new account refills the site; a new person refills the phone. */
+  private readonly amcApi = inject(AmcContractService);
+  /** The customer's live AMC contracts; a ticket under one is billed and tracked against it. */
+  protected readonly contracts = signal<AmcContractDto[]>([]);
+  protected amcContractId = '';
+
+  private loadContracts(contactId: string | null): void {
+    this.contracts.set([]);
+    this.amcContractId = '';
+    if (!contactId) return;
+    this.amcApi.getList({ customerId: contactId, maxResultCount: 100 }).subscribe({
+      next: (r) =>
+        this.contracts.set(
+          (r.items ?? []).filter(
+            (c) => c.status === AmcStatus.Active || c.status === AmcStatus.ExpiringSoon,
+          ),
+        ),
+      error: () => this.contracts.set([]),
+    });
+  }
+
+  protected pickContract(id: string): void {
+    this.amcContractId = id;
+    const c = this.contracts().find((x) => x.id === id);
+    if (!c) return;
+    this.equipmentSerial = c.equipmentSerialNumber;
+    this.equipmentModel = c.equipmentModel;
+    if (!this.site.trim() && c.customerSiteAddress) this.site = c.customerSiteAddress;
+  }
+
   protected onCustomer(choice: SalesCustomerChoice): void {
     this.choice.set(choice);
     this.error.set(null);
@@ -269,6 +321,7 @@ export class ArNewFieldTicketPage {
     if (contactId !== this.lastContactId) {
       this.lastContactId = contactId;
       void this.fillPhone(contactId);
+      this.loadContracts(contactId);
     }
   }
 
@@ -327,6 +380,7 @@ export class ArNewFieldTicketPage {
       ticketType: this.ticketType,
       priority: this.priority,
       issueDescription: this.issue.trim(),
+      amcContractId: this.amcContractId || undefined,
     };
 
     this.busy.set(true);

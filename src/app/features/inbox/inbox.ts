@@ -1,5 +1,7 @@
 import { readApiError } from '../../core/util/api-error';
 import { ArMyMentions } from './my-mentions';
+import { ArConversationNotes } from './conversation-notes';
+import { ActivityDirectory } from '../activities/activity-directory';
 import { ArConversationLabelPicker } from './conversation-label-picker';
 import { ArCannedReplyPicker } from './canned-reply-picker';
 import { SNOOZE_CHOICES, SnoozeChoice, snoozeUntil } from './snooze.logic';
@@ -58,6 +60,7 @@ import { ArShareLocationDialog, SharedLocation } from './share-location-dialog';
   imports: [
     ArMyMentions,
     ArConversationLabelPicker,
+    ArConversationNotes,
     ArCannedReplyPicker,
     ArAuthHref,
     ArAuthSrc,
@@ -229,6 +232,41 @@ ${text}`
         `Snoozed until ${until.toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' })}. A reply from the customer brings it back.`,
         'Inbox',
       );
+    });
+  }
+
+  // ---- Assign, resolve, reopen ---------------------------------------------------------------------
+  private readonly directory = inject(ActivityDirectory);
+  protected readonly people = this.directory.users;
+  protected readonly assignOpen = signal(false);
+  protected readonly canAssign = grantedPolicy('AutoReach.Inbox.Assign', inject(PermissionService));
+  protected readonly canReply = grantedPolicy('AutoReach.Inbox.Reply', inject(PermissionService));
+
+  protected openAssign(): void {
+    this.assignOpen.update((o) => !o);
+    if (this.assignOpen()) void this.directory.load();
+  }
+
+  protected async assignTo(conversationId: string, userId: string | null): Promise<void> {
+    this.assignOpen.set(false);
+    await this.threadAction('assign-to', async () => {
+      await this.inbox.assignTo(conversationId, userId);
+      const who = userId ? this.directory.nameOf(userId) : null;
+      this.toasts.success(who ? `Assigned to ${who}.` : 'Back in the unassigned queue.', 'Inbox');
+    });
+  }
+
+  protected async resolve(conversationId: string): Promise<void> {
+    await this.threadAction('resolve', async () => {
+      await this.inbox.close(conversationId);
+      this.toasts.success('Resolved. A new message from the customer opens it again.', 'Inbox');
+    });
+  }
+
+  protected async reopen(conversationId: string): Promise<void> {
+    await this.threadAction('reopen', async () => {
+      await this.inbox.reopen(conversationId);
+      this.toasts.success('Conversation reopened.', 'Inbox');
     });
   }
 

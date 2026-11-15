@@ -1,0 +1,37 @@
+:host {
+  display: block;
+  height: auto;
+}
+
+.rd {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rd__h {
+  margin: 4px 0 0;
+  font: 600 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rd__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .rd__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rd__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 400 13px var(--ar-font-sans);
+}
