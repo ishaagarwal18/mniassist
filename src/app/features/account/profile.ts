@@ -1,3 +1,4 @@
+import { ArMyTeamsCard } from './my-teams-card';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { CurrentUserService } from '../../core/services/current-user.service';
@@ -26,6 +27,7 @@ import { ArCallingNumberCard } from './calling-number-card';
     ArGoogleCalendarCard,
     ArProfilePictureCard,
     ArCallingNumberCard,
+    ArMyTeamsCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './profile.html',

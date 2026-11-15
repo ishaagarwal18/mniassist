@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { CurrentUserService } from '../../core/services/current-user.service';
@@ -13,7 +21,9 @@ import {
   ExternalLoginService,
   type ExternalLoginProviderDto,
 } from '../../proxy/identity/external-login.service';
-import { beginExternalLogin } from '../../core/auth/external-login';
+import { beginExternalLogin, beginSsoLogin } from '../../core/auth/external-login';
+import { SsoService } from '../../proxy/controllers/sso.service';
+import type { SsoDiscoveryDto } from '../../proxy/identity/models';
 import { ArButton, ArIcon } from '../../ui';
 import { ArThemeToggle } from '../../layout/theme-toggle';
 import { ArLanguageSwitch } from '../../layout/language-switch';
@@ -22,6 +32,11 @@ import { ArAuthShowcase } from './auth-showcase';
 import { ArBrand } from '../../layout/brand';
 import { HostBrandStore } from '../../core/services/host-brand.store';
 import { workspaceSlug } from '../../core/util/workspace-slug';
+
+/** An address worth asking the server about SSO for; usernames and phone numbers are not. */
+export function looksLikeEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
 
 /**
  * The sign-in screen. Username + password (ABP's password grant). Rendered outside the app shell, so a
@@ -237,26 +252,51 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
               </p>
             }
           </div>
-          <div class="lg__field">
-            <label for="login-password">{{ i18n.t('Password') }}</label>
-            <input
-              class="ar-field__input"
-              id="login-password"
-              type="password"
-              name="password"
-              autocomplete="current-password"
-              required
-              [attr.aria-invalid]="passwordMissing() ? 'true' : null"
-              [attr.aria-describedby]="passwordMissing() ? 'login-password-error' : null"
-              [value]="password()"
-              (input)="password.set($any($event.target).value)"
-            />
-            @if (passwordMissing()) {
-              <p class="lg__field-error" id="login-password-error">
-                {{ i18n.t('Enter your password.') }}
+          @if (sso(); as s) {
+            <div class="lg__sso" role="status">
+              <p class="lg__sso-text">
+                {{
+                  s.ssoEnforced
+                    ? i18n.t('Your company signs in with {0}.', s.displayName ?? 'single sign-on')
+                    : i18n.t(
+                        'Your company also lets you sign in with {0}.',
+                        s.displayName ?? 'single sign-on'
+                      )
+                }}
               </p>
-            }
-          </div>
+              <button
+                ar-button
+                type="button"
+                [variant]="s.ssoEnforced ? 'primary' : 'ghost'"
+                [disabled]="busy()"
+                (click)="continueWithSso()"
+              >
+                {{ i18n.t('Continue with {0}', s.displayName ?? 'SSO') }}
+              </button>
+            </div>
+          }
+          @if (!ssoEnforced()) {
+            <div class="lg__field">
+              <label for="login-password">{{ i18n.t('Password') }}</label>
+              <input
+                class="ar-field__input"
+                id="login-password"
+                type="password"
+                name="password"
+                autocomplete="current-password"
+                required
+                [attr.aria-invalid]="passwordMissing() ? 'true' : null"
+                [attr.aria-describedby]="passwordMissing() ? 'login-password-error' : null"
+                [value]="password()"
+                (input)="password.set($any($event.target).value)"
+              />
+              @if (passwordMissing()) {
+                <p class="lg__field-error" id="login-password-error">
+                  {{ i18n.t('Enter your password.') }}
+                </p>
+              }
+            </div>
+          }
           <label class="lg__remember">
             <input
               type="checkbox"
@@ -266,9 +306,11 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
             {{ i18n.t('Keep me signed in') }}
           </label>
 
-          <button ar-button type="submit" variant="primary" [disabled]="busy()">
-            {{ i18n.t(busy() ? 'Signing in…' : 'Sign in') }}
-          </button>
+          @if (!ssoEnforced()) {
+            <button ar-button type="submit" variant="primary" [disabled]="busy()">
+              {{ i18n.t(busy() ? 'Signing in…' : 'Sign in') }}
+            </button>
+          }
 
           @if (externalProviders().length) {
             <div class="lg__or">
@@ -462,6 +504,19 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
       flex: 1;
       border-top: 1px solid var(--ar-line-200);
     }
+    .lg__sso {
+      display: grid;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--ar-teal-200, var(--ar-line-200));
+      border-radius: var(--ar-radius-inset);
+      background: var(--ar-teal-50, var(--ar-bg-100));
+    }
+    .lg__sso-text {
+      margin: 0;
+      font: 500 13px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
     .lg__external {
       display: grid;
       gap: 8px;
@@ -601,6 +656,42 @@ export class ArLogin {
     });
   }
 
+  // ---- Sign in with SSO (M01-7) ---------------------------------------------------------------
+  private readonly ssoApi = inject(SsoService);
+  /** The workspace IdP for the email typed, when it offers browser sign-in. */
+  protected readonly sso = signal<SsoDiscoveryDto | null>(null);
+  /** The workspace asked to hide passwords for this domain: SSO is the only way in. */
+  protected readonly ssoEnforced = computed(() => !!this.sso()?.ssoEnforced);
+  private ssoLookup?: ReturnType<typeof setTimeout>;
+  private readonly watchSso = effect(() => {
+    const email = this.username().trim();
+    clearTimeout(this.ssoLookup);
+    if (!looksLikeEmail(email)) {
+      this.sso.set(null);
+      return;
+    }
+    this.ssoLookup = setTimeout(() => {
+      this.ssoApi.discover(email, { skipHandleError: true }).subscribe({
+        next: (d) => {
+          if (this.username().trim() !== email) return;
+          this.sso.set(d.ssoAvailable && d.clientId && d.authorizationEndpoint ? d : null);
+        },
+        error: () => this.sso.set(null),
+      });
+    }, 400);
+  });
+  private readonly stopSsoLookup = inject(DestroyRef).onDestroy(() => clearTimeout(this.ssoLookup));
+
+  protected continueWithSso(): void {
+    const s = this.sso();
+    if (!s?.clientId || !s.authorizationEndpoint) return;
+    beginSsoLogin(
+      { clientId: s.clientId, authorizationEndpoint: s.authorizationEndpoint },
+      this.username().trim(),
+      { rememberMe: this.rememberMe(), workspace: s.tenantName ?? workspaceSlug(this.tenant()) },
+    );
+  }
+
   protected continueWith(p: ExternalLoginProviderDto): void {
     beginExternalLogin(p, {
       mode: 'signin',
@@ -649,6 +740,10 @@ export class ArLogin {
     }
     if (this.step() !== 'password') return;
     if (this.busy()) return;
+    if (this.ssoEnforced()) {
+      this.continueWithSso();
+      return;
+    }
     this.error.set(null);
     this.submitted.set(true);
     if (!this.canSubmit()) {

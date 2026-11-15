@@ -58,9 +58,11 @@ import { ConversationState } from '../../proxy/messaging/conversation-state.enum
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { ArAuthHref, ArAuthSrc } from '../../core/media/protected-media';
 import { ArShareLocationDialog, SharedLocation } from './share-location-dialog';
+import { ArConversationWorkStatus, workChipFor } from './conversation-work-status';
 @Component({
   selector: 'ar-inbox',
   imports: [
+    ArConversationWorkStatus,
     ArMyMentions,
     ArConversationLabelPicker,
     ArConversationNotes,
@@ -173,6 +175,8 @@ export class ArInbox {
   protected readonly windowOpen = computed(
     () => !!this.selected()?.windowless || this.windowLeft() !== null,
   );
+
+  protected readonly workChipFor = workChipFor;
 
   protected windowChipFor(c: Conversation): { label: string; tone: 'teal' | 'bad' } | null {
     if (c.windowless) return null;
@@ -469,9 +473,10 @@ ${text}`
   } | null>(null);
 
   /** The customer's current answer to a call-permission request, loaded when a WhatsApp conversation opens. */
-  protected readonly permission = signal<{ conversationId: string; value: CallPermissionDto | null } | null>(
-    null,
-  );
+  protected readonly permission = signal<{
+    conversationId: string;
+    value: CallPermissionDto | null;
+  } | null>(null);
   private readonly loadPermission = effect(() => {
     const t = this.selected();
     const id = t && !t.channel && !t.sms ? t.id : null;
@@ -493,7 +498,11 @@ ${text}`
     const day = (d: Date) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
     if (p.state === 'Granted' && p.canCall)
       return {
-        text: p.isPermanent ? 'Calls allowed' : until ? `Calls allowed until ${day(until)}` : 'Calls allowed',
+        text: p.isPermanent
+          ? 'Calls allowed'
+          : until
+            ? `Calls allowed until ${day(until)}`
+            : 'Calls allowed',
         tone: 'good',
       };
     if (p.state === 'Granted') return { text: 'Permission expired', tone: 'warn' };
@@ -534,7 +543,10 @@ ${text}`
     this.ivrCallBusy.set(true);
     try {
       await firstValueFrom(
-        this.voiceChannelApi.placeCall({ contactId, useIvr: true, record: false }, { skipHandleError: true }),
+        this.voiceChannelApi.placeCall(
+          { contactId, useIvr: true, record: false },
+          { skipHandleError: true },
+        ),
       );
       this.toasts.success('Calling. The call shows in the call log.', 'Phone menu');
     } catch (e: unknown) {

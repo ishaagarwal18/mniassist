@@ -145,6 +145,9 @@
                 {{ c.company }}
               </span>
               <span class="conv__snippet" translate="no">{{ c.snippet }}</span>
+              @if (workChipFor(c); as k) {
+                <ar-chip class="conv__chip" [tone]="k.tone">{{ k.label }}</ar-chip>
+              }
               @if (windowChipFor(c); as w) {
                 <ar-chip class="conv__chip" [tone]="w.tone" [dot]="true">{{ w.label }}</ar-chip>
               }
@@ -195,6 +198,12 @@
             }
           </span>
           <ar-conversation-label-picker [conversationId]="thread.id" />
+          <ar-conversation-work-status
+            [conversationId]="thread.id"
+            [status]="thread.status ?? 'open'"
+            [priority]="thread.priority ?? 'normal'"
+            [canEdit]="canReply()"
+          />
         </div>
         @if (thread.windowless) {
           <div class="window window--open">

@@ -11,7 +11,8 @@
       <div class="settings-header__meta">
         <h1 class="settings-header__title">Workspace Settings</h1>
         <p class="settings-header__subtitle">
-          Configure security, authentication, connected accounts, and manage workspace preferences from a single place.
+          Configure security, authentication, connected accounts, and manage workspace preferences
+          from a single place.
         </p>
       </div>
 
@@ -141,11 +142,7 @@
 
                     <div class="setting-card__action">
                       @if (item.tab) {
-                        <button
-                          type="button"
-                          class="setting-btn"
-                          (click)="setTab(item.tab)"
-                        >
+                        <button type="button" class="setting-btn" (click)="setTab(item.tab)">
                           <span>Manage</span>
                           <ar-icon name="chevron" [size]="13" />
                         </button>
@@ -167,10 +164,15 @@
           <ar-icon name="search" [size]="28" class="directory-empty__icon" />
           <h3>No settings found</h3>
           <p>
-            No settings match "{{ searchQuery() }}". Try searching for "SSO", "2FA", "GST", "members",
-            or clear the search filter.
+            No settings match "{{ searchQuery() }}". Try searching for "SSO", "2FA", "GST",
+            "members", or clear the search filter.
           </p>
-          <button ar-button variant="ghost" type="button" (click)="searchQuery.set(''); selectedCategory.set('All')">
+          <button
+            ar-button
+            variant="ghost"
+            type="button"
+            (click)="searchQuery.set(''); selectedCategory.set('All')"
+          >
             Reset filter
           </button>
         </div>
@@ -203,7 +205,8 @@
 
             <p class="tab-muted">
               Point your identity provider's issuer at MNI Assist and map the email domains it owns.
-              People signing in from those domains are provisioned automatically with the role below.
+              People signing in from those domains are provisioned automatically with the role
+              below.
             </p>
 
             @if (error(); as msg) {
@@ -217,13 +220,21 @@
                   <dd>{{ sso().displayName }}</dd>
                   <dt>Issuer</dt>
                   <dd class="ar-mono">{{ sso().issuer }}</dd>
+                  <dt>Client ID</dt>
+                  <dd class="ar-mono">
+                    {{ sso().clientId || 'Not set — people cannot use “Sign in with SSO” yet' }}
+                  </dd>
+                  <dt>Redirect URI</dt>
+                  <dd class="ar-mono">{{ ssoRedirectUri }}</dd>
                   <dt>Email domains</dt>
                   <dd>{{ sso().allowedEmailDomains.join(', ') }}</dd>
                   <dt>New users get</dt>
                   <dd>{{ sso().defaultRoleName }}</dd>
                   <dt>Enforced</dt>
                   <dd>
-                    {{ sso().enforceSso ? 'Yes — password sign-in hidden for these domains' : 'No' }}
+                    {{
+                      sso().enforceSso ? 'Yes — password sign-in hidden for these domains' : 'No'
+                    }}
                   </dd>
                 </dl>
               }
@@ -266,6 +277,22 @@
                     />
                   </label>
                   <label class="field">
+                    <span>Client ID</span>
+                    <input
+                      type="text"
+                      class="ar-mono"
+                      autocomplete="off"
+                      [ngModel]="clientId()"
+                      (ngModelChange)="clientId.set($event)"
+                      placeholder="The application (client) ID your IdP gave MNI Assist"
+                    />
+                    <small class="field__hint"
+                      >Register MNI Assist in your IdP as a single-page app that returns ID tokens,
+                      with redirect URI <span class="ar-mono">{{ ssoRedirectUri }}</span
+                      >. Without a client ID the sign-in screen keeps the password box.</small
+                    >
+                  </label>
+                  <label class="field">
                     <span>Authorization endpoint <em>(optional)</em></span>
                     <input
                       type="url"
@@ -306,8 +333,14 @@
                 </div>
 
                 <label class="check">
-                  <input type="checkbox" [ngModel]="enforce()" (ngModelChange)="enforce.set($event)" />
-                  <span>Hide password sign-in for these domains (advisory to the sign-in screen)</span>
+                  <input
+                    type="checkbox"
+                    [ngModel]="enforce()"
+                    (ngModelChange)="enforce.set($event)"
+                  />
+                  <span
+                    >Hide password sign-in for these domains (advisory to the sign-in screen)</span
+                  >
                 </label>
 
                 <div class="row">
@@ -342,15 +375,18 @@
             <div class="guide-box">
               <h4 class="guide-box__title">OpenID Connect &amp; SAML</h4>
               <p class="guide-box__text">
-                MNI Assist authenticates employees through your enterprise identity provider (Okta, Microsoft Entra ID, Google Workspace).
+                MNI Assist authenticates employees through your enterprise identity provider (Okta,
+                Microsoft Entra ID, Google Workspace).
               </p>
               <h4 class="guide-box__title">Domain mapping</h4>
               <p class="guide-box__text">
-                When users sign in with a mapped domain email address, MNI Assist redirects them to your identity provider automatically.
+                When users sign in with a mapped domain email address, MNI Assist redirects them to
+                your identity provider automatically.
               </p>
               <h4 class="guide-box__title">Just-in-time provisioning</h4>
               <p class="guide-box__text">
-                New users signing in for the first time via SSO are automatically provisioned with the configured default role.
+                New users signing in for the first time via SSO are automatically provisioned with
+                the configured default role.
               </p>
             </div>
           </ar-card>
@@ -377,7 +413,8 @@
         <aside class="tab-layout__side">
           <ar-card heading="Sign-in rules &amp; policies">
             <p class="tab-muted">
-              Looking to enforce password complexity, minimum length, lockout rules, or session expiration workspace-wide?
+              Looking to enforce password complexity, minimum length, lockout rules, or session
+              expiration workspace-wide?
             </p>
             <div class="side-action">
               <a ar-button variant="primary" routerLink="/settings/security-policy">
@@ -404,8 +441,8 @@
         <div class="tab-layout__main">
           <ar-card heading="Signed-in devices">
             <p class="tab-muted">
-              Every device with an active session for your account. Ending one signs that device out — it
-              must sign back in to continue.
+              Every device with an active session for your account. Ending one signs that device out
+              — it must sign back in to continue.
             </p>
 
             @if (sessions().length > 1) {
@@ -519,7 +556,8 @@
         <aside class="tab-layout__side">
           <ar-card heading="Task &amp; meeting alerts">
             <p class="tab-muted">
-              Want to configure automated WhatsApp or SMS messages for team tasks and client meetings?
+              Want to configure automated WhatsApp or SMS messages for team tasks and client
+              meetings?
             </p>
             <div class="side-action">
               <a ar-button variant="primary" routerLink="/settings/tasks-meetings">

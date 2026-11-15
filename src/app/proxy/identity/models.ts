@@ -171,6 +171,7 @@ export interface TenantSsoConfigurationDto {
   issuer?: string | null;
   metadataAddress?: string | null;
   authorizationEndpoint?: string | null;
+  clientId?: string | null;
   allowedEmailDomains: string[];
   defaultRoleName: string;
   enforceSso: boolean;
@@ -181,6 +182,7 @@ export interface SaveSsoConfigurationInput {
   issuer: string;
   metadataAddress?: string | null;
   authorizationEndpoint?: string | null;
+  clientId?: string | null;
   allowedEmailDomains: string[];
   defaultRoleName: string;
   enforceSso: boolean;
@@ -192,6 +194,9 @@ export interface SsoDiscoveryDto {
   ssoEnforced: boolean;
   displayName?: string | null;
   authorizationEndpoint?: string | null;
+  clientId?: string | null;
+  /** The workspace the address belongs to. */
+  tenantName?: string | null;
   issuer?: string | null;
 }
 

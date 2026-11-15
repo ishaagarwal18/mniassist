@@ -330,6 +330,17 @@ export interface ImportDryRunDto {
   rejectedCount?: number;
   countryCodeAdded?: number;
   rejected?: ImportRejectionDto[];
+  /** Custom-field values that do not fit their field; the contact imports without them. Capped at 60. */
+  fieldIssues?: ImportFieldIssueDto[];
+  fieldIssueCount?: number;
+}
+
+export interface ImportFieldIssueDto {
+  rowNumber?: number;
+  field?: string;
+  rawValue?: string | null;
+  /** What the field expects: "a date", "one of: High, Low". */
+  expected?: string;
 }
 
 export interface ImportFieldDto {

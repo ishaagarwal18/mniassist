@@ -357,7 +357,7 @@ export function recentReturnPeriods(
             <div class="card-metric">
               <span class="num">{{ gstr1().b2bInvoiceCount }} Invoices</span>
               <strong class="amt"
-                >₹{{ gstr1().totalTaxableValueInPaise / 100 | number: '1.2-2' }}</strong
+                >₹{{ (gstr1().b2bTaxableValueInPaise ?? 0) / 100 | number: '1.2-2' }}</strong
               >
             </div>
             <p class="desc">
@@ -366,10 +366,23 @@ export function recentReturnPeriods(
           </div>
 
           <div class="summary-card">
+            <h4>Tables 5 & 7: B2C Invoices</h4>
+            <div class="card-metric">
+              <span class="num">{{ gstr1().b2cInvoiceCount }} Invoices</span>
+              <strong class="amt"
+                >₹{{ (gstr1().b2cTaxableValueInPaise ?? 0) / 100 | number: '1.2-2' }}</strong
+              >
+            </div>
+            <p class="desc">Outward supplies to unregistered buyers (B2C Large and B2C Small).</p>
+          </div>
+
+          <div class="summary-card">
             <h4>Table 9B: Credit & Debit Notes</h4>
             <div class="card-metric">
               <span class="num">{{ gstr1().cdnrCount }} Notes</span>
-              <strong class="amt">₹{{ 200000 | number: '1.2-2' }}</strong>
+              <strong class="amt"
+                >₹{{ (gstr1().cdnrTaxableValueInPaise ?? 0) / 100 | number: '1.2-2' }}</strong
+              >
             </div>
             <p class="desc">
               Registered credit notes issued for rate differentials or material returns.
@@ -390,6 +403,12 @@ export function recentReturnPeriods(
               <span>State Tax (SGST):</span>
               <strong>₹{{ gstr1().totalSgstInPaise / 100 | number: '1.2-2' }}</strong>
             </div>
+            @if (gstr1().totalCessInPaise) {
+              <div class="tax-breakdown-row">
+                <span>Cess:</span>
+                <strong>₹{{ (gstr1().totalCessInPaise ?? 0) / 100 | number: '1.2-2' }}</strong>
+              </div>
+            }
             <div class="tax-breakdown-total">
               <span>Total Tax Value:</span>
               <strong class="text-tax"
@@ -934,27 +953,44 @@ export class GstComplianceComponent {
 
   readonly records = signal<GstAuditRegisterDto[]>([]);
 
+  /** The server's GSTR-1 tables for the period (all invoices, B2C and cess included). */
+  readonly gstr1Server = signal<Gstr1SummaryDto | null>(null);
+
+  /** The server's figures; worked out from the loaded register only while they are unavailable. */
   readonly gstr1 = computed<Gstr1SummaryDto>(() => {
+    const server = this.gstr1Server();
+    if (server && server.returnPeriod === this.selectedPeriod()) return server;
     const list = this.records();
-    const b2b = list.filter((r) => r.section === Gstr1Section.B2B_4A).length;
-    const cdnr = list.filter((r) => r.section === Gstr1Section.CDNR_9B).length;
+    const inB2b = list.filter((r) => r.section === Gstr1Section.B2B_4A);
+    const inB2c = list.filter(
+      (r) => r.section === Gstr1Section.B2CL_5 || r.section === Gstr1Section.B2CS_7,
+    );
+    const inCdnr = list.filter((r) => r.section === Gstr1Section.CDNR_9B);
+    const taxableOf = (rs: typeof list) => rs.reduce((acc, r) => acc + r.taxableAmountInPaise, 0);
+    const b2b = inB2b.length;
+    const cdnr = inCdnr.length;
     const taxable = list.reduce((acc, r) => acc + r.taxableAmountInPaise, 0);
     const igst = list.reduce((acc, r) => acc + r.igstAmountInPaise, 0);
     const cgst = list.reduce((acc, r) => acc + r.cgstAmountInPaise, 0);
     const sgst = list.reduce((acc, r) => acc + r.sgstAmountInPaise, 0);
+    const cess = list.reduce((acc, r) => acc + (r.cessAmountInPaise ?? 0), 0);
 
     return {
       returnPeriod: this.selectedPeriod(),
       totalInvoiceCount: list.length,
       b2bInvoiceCount: b2b,
-      b2cInvoiceCount: 0,
+      b2cInvoiceCount: inB2c.length,
       cdnrCount: cdnr,
       totalTaxableValueInPaise: taxable,
       totalIgstInPaise: igst,
       totalCgstInPaise: cgst,
       totalSgstInPaise: sgst,
-      totalTaxValueInPaise: igst + cgst + sgst,
+      totalCessInPaise: cess,
+      totalTaxValueInPaise: igst + cgst + sgst + cess,
       totalInvoiceValueInPaise: list.reduce((acc, r) => acc + r.totalInvoiceValueInPaise, 0),
+      b2bTaxableValueInPaise: taxableOf(inB2b),
+      b2cTaxableValueInPaise: taxableOf(inB2c),
+      cdnrTaxableValueInPaise: taxableOf(inCdnr),
     };
   });
 
@@ -1044,6 +1080,7 @@ export class GstComplianceComponent {
     const period = this.selectedPeriod();
     this.loading.set(true);
     this.gstr3b.set(null);
+    this.gstr1Server.set(null);
     this.summaryError.set(false);
     this.loadError.set(null);
     try {
@@ -1058,6 +1095,14 @@ export class GstComplianceComponent {
         this.gstService.getList({ returnPeriod: period, maxResultCount: 500 }),
       );
       if (period === this.selectedPeriod()) this.records.set(res.items ?? []);
+      try {
+        const gstr1 = await firstValueFrom(
+          this.gstService.getGstr1Summary(period, { skipHandleError: true }),
+        );
+        if (period === this.selectedPeriod()) this.gstr1Server.set(gstr1);
+      } catch {
+        // The tab falls back to the register loaded above.
+      }
       try {
         const summary = await firstValueFrom(this.gstService.getGstr3bSummary(period));
         if (period === this.selectedPeriod()) this.gstr3b.set(summary);

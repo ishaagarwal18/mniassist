@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subject, of } from 'rxjs';
 import { InboxService as InboxApi } from '../../proxy/messaging';
+import { ConversationLabelService } from '../../proxy/messaging/conversation-label.service';
 import { InboxEvent, InboxRealtimeService } from '../realtime/inbox-realtime.service';
 import { InboxService } from './inbox.service';
 
@@ -20,6 +21,7 @@ describe('inbox request scheduling', () => {
       providers: [
         { provide: Router, useValue: { url: '/home', events: navigation } },
         { provide: InboxApi, useValue: { getConversations: list, getCounts: counts } },
+        { provide: ConversationLabelService, useValue: { setStatus: () => of(undefined) } },
         {
           provide: InboxRealtimeService,
           useValue: {

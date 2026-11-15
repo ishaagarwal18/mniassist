@@ -3,6 +3,12 @@ import { rxResource, toSignal, takeUntilDestroyed } from '@angular/core/rxjs-int
 import { firstValueFrom, map, bufferTime, filter } from 'rxjs';
 import { NavigationEnd, Router } from '@angular/router';
 import { InboxService as InboxApi } from '../../proxy/messaging';
+import { ConversationLabelService } from '../../proxy/messaging/conversation-label.service';
+import { WORK_PRIORITY, WORK_STATUS } from '../api/mapping';
+import type {
+  ConversationWorkPriority,
+  ConversationWorkStatus,
+} from '../models/conversation.model';
 import { groupAttachmentRows, toConversation, toMessage } from '../api/mapping';
 import { Conversation } from '../models/conversation.model';
 import { InboxRealtimeService } from '../realtime/inbox-realtime.service';
@@ -29,6 +35,7 @@ export class InboxService {
   );
   private readonly viewingInbox = computed(() => this.path().split('?')[0] === '/inbox');
   private readonly api = inject(InboxApi);
+  private readonly labelsApi = inject(ConversationLabelService);
   private readonly realtime = inject(InboxRealtimeService);
 
   readonly filter = signal('');
@@ -215,6 +222,25 @@ export class InboxService {
   async reopen(conversationId: string): Promise<void> {
     await firstValueFrom(this.api.reopen(conversationId, { skipHandleError: true }));
     this.countsResource.reload();
+    this.listResource.reload();
+  }
+
+  /**
+   * Sets the working status (open / waiting on the customer / resolved) and the priority.
+   * Resolving this way also sends the satisfaction survey when the workspace has it on.
+   */
+  async setWorkStatus(
+    conversationId: string,
+    status: ConversationWorkStatus,
+    priority: ConversationWorkPriority,
+  ): Promise<void> {
+    await firstValueFrom(
+      this.labelsApi.setStatus(
+        conversationId,
+        { status: WORK_STATUS.indexOf(status), priority: WORK_PRIORITY.indexOf(priority) },
+        { skipHandleError: true },
+      ),
+    );
     this.listResource.reload();
   }
 

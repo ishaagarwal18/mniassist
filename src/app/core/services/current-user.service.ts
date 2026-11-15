@@ -32,7 +32,7 @@ import {
   secondFactorParameters,
 } from '../auth/two-factor';
 import { passwordChangeParameters, signInChallenge } from '../auth/sign-in-challenge';
-import { EXTERNAL_LOGIN_GRANT } from '../auth/external-login';
+import { EXTERNAL_LOGIN_GRANT, SSO_LOGIN_GRANT } from '../auth/external-login';
 import { isHostAdministrator, isHostContext } from '../auth/host-access';
 import { ToastService } from '../ui/toast.service';
 import { LanguageService } from '../i18n/language.service';
@@ -338,6 +338,34 @@ export class CurrentUserService {
       if (isTwoFactorChallenge(e)) throw new TwoFactorRequiredError();
       throw e;
     }
+    const afterLogin = this.injector.get(PIPE_TO_LOGIN_FN_KEY);
+    await firstValueFrom(
+      of(null).pipe(afterLogin({ rememberMe, redirectUrl: this.afterSignInUrl() }, this.injector)),
+    );
+  }
+
+  /**
+   * Signs in with an ID token from the workspace's own identity provider (M01-7 SSO) through
+   * the auth server's `sso_login` grant. The email tells the server whose IdP this is; the IdP
+   * owns any second factor, so there is no code step. The first sign-in creates the user.
+   */
+  async signInSso(
+    email: string,
+    idToken: string,
+    nonce: string,
+    rememberMe: boolean,
+    workspace: string,
+  ): Promise<void> {
+    this.endingSession = false;
+
+    await this.selectTenant(workspace);
+    const tenant = this.session.getTenant();
+    const headers = new HttpHeaders(
+      tenant?.id ? { [this.injector.get(TENANT_KEY)]: tenant.id } : {},
+    );
+    await this.injector
+      .get(OAuthService)
+      .fetchTokenUsingGrant(SSO_LOGIN_GRANT, { email, id_token: idToken, nonce }, headers);
     const afterLogin = this.injector.get(PIPE_TO_LOGIN_FN_KEY);
     await firstValueFrom(
       of(null).pipe(afterLogin({ rememberMe, redirectUrl: this.afterSignInUrl() }, this.injector)),

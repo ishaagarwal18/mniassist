@@ -7,6 +7,9 @@
 import type { ExternalLoginProviderDto } from '../../proxy/identity/external-login.service';
 
 export const EXTERNAL_LOGIN_GRANT = 'external_login';
+/** A workspace's own identity provider ("Sign in with SSO"), traded at the `sso_login` grant. */
+export const SSO_LOGIN_GRANT = 'sso_login';
+export const SSO_PROVIDER = 'sso';
 export const EXTERNAL_LOGIN_CALLBACK = '/login/external';
 const STORAGE_KEY = 'ar.externalLogin';
 
@@ -20,6 +23,8 @@ export interface ExternalLoginState {
   rememberMe: boolean;
   /** The workspace typed on the sign-in screen; blank for the host. */
   workspace: string;
+  /** For SSO: the work email typed, which tells the auth server whose IdP this is. */
+  ssoEmail?: string;
   startedAt: number;
 }
 
@@ -37,6 +42,7 @@ export function authorizeUrl(
   provider: ExternalLoginProviderDto,
   redirectUri: string,
   s: Pick<ExternalLoginState, 'state' | 'nonce'>,
+  loginHint?: string,
 ): string {
   const params = new URLSearchParams({
     client_id: provider.clientId,
@@ -48,6 +54,7 @@ export function authorizeUrl(
     nonce: s.nonce,
     prompt: 'select_account',
   });
+  if (loginHint) params.set('login_hint', loginHint);
   return `${provider.authorizeEndpoint}?${params.toString()}`;
 }
 
@@ -103,7 +110,7 @@ export function takeStart(): ExternalLoginState | null {
 /** Sends the browser to the provider. */
 export function beginExternalLogin(
   provider: ExternalLoginProviderDto,
-  options: Pick<ExternalLoginState, 'mode' | 'rememberMe' | 'workspace'>,
+  options: Pick<ExternalLoginState, 'mode' | 'rememberMe' | 'workspace' | 'ssoEmail'>,
 ): void {
   const start: ExternalLoginState = {
     provider: provider.name,
@@ -114,6 +121,23 @@ export function beginExternalLogin(
   };
   saveStart(start);
   window.location.assign(
-    authorizeUrl(provider, `${window.location.origin}${EXTERNAL_LOGIN_CALLBACK}`, start),
+    authorizeUrl(
+      provider,
+      `${window.location.origin}${EXTERNAL_LOGIN_CALLBACK}`,
+      start,
+      options.ssoEmail,
+    ),
+  );
+}
+
+/** Sends the browser to the workspace's own IdP found for this email ("Sign in with SSO"). */
+export function beginSsoLogin(
+  sso: { clientId: string; authorizationEndpoint: string },
+  email: string,
+  options: Pick<ExternalLoginState, 'rememberMe' | 'workspace'>,
+): void {
+  beginExternalLogin(
+    { name: SSO_PROVIDER, clientId: sso.clientId, authorizeEndpoint: sso.authorizationEndpoint },
+    { mode: 'signin', ssoEmail: email, ...options },
   );
 }

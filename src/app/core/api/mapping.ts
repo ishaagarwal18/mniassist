@@ -199,8 +199,14 @@ export function toConversation(
     closed: dto.state === ConversationState.Closed ? true : undefined,
     assignedUserId: dto.assignedUserId ?? undefined,
     assignedUserName: dto.assignedUserName ?? undefined,
+    status: WORK_STATUS[dto.status ?? 0] ?? 'open',
+    priority: WORK_PRIORITY[dto.priority ?? 1] ?? 'normal',
   };
 }
+
+/** Index = the API's ConversationStatus / ConversationPriority value. */
+export const WORK_STATUS = ['open', 'pending', 'resolved'] as const;
+export const WORK_PRIORITY = ['low', 'normal', 'high', 'urgent'] as const;
 
 export function toMessage(dto: MessageDto, conversationId?: string): Message {
   return {

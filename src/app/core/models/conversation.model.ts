@@ -74,4 +74,10 @@ export interface Conversation {
   readonly closed?: boolean;
   readonly assignedUserId?: string;
   readonly assignedUserName?: string;
+  /** Working status — 'open', 'pending' (waiting on the customer) or 'resolved'. */
+  readonly status?: ConversationWorkStatus;
+  readonly priority?: ConversationWorkPriority;
 }
+
+export type ConversationWorkStatus = 'open' | 'pending' | 'resolved';
+export type ConversationWorkPriority = 'low' | 'normal' | 'high' | 'urgent';

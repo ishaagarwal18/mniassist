@@ -2,7 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { readCallback, takeStart, type ExternalLoginState } from '../../core/auth/external-login';
+import {
+  SSO_PROVIDER,
+  readCallback,
+  takeStart,
+  type ExternalLoginState,
+} from '../../core/auth/external-login';
 import { TwoFactorRequiredError } from '../../core/auth/two-factor';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { ToastService } from '../../core/ui/toast.service';
@@ -133,7 +138,28 @@ export class ArExternalLoginCallback {
     }
     this.start = result.start;
     this.idToken = result.idToken;
-    void (this.start.mode === 'link' ? this.link() : this.signIn());
+    void (this.start.mode === 'link'
+      ? this.link()
+      : this.start.provider === SSO_PROVIDER
+        ? this.signInSso()
+        : this.signIn());
+  }
+
+  /** "Sign in with SSO": the workspace's own IdP vouched for the person. */
+  private async signInSso(): Promise<void> {
+    const s = this.start!;
+    if (!s.ssoEmail) {
+      this.failure.set('This sign-in was not started here. Start again.');
+      return;
+    }
+    this.busy.set(true);
+    try {
+      await this.account.signInSso(s.ssoEmail, this.idToken, s.nonce, s.rememberMe, s.workspace);
+    } catch (e) {
+      this.failure.set(grantError(e));
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   private async link(): Promise<void> {

@@ -18,7 +18,7 @@ import type { ContactExportRequestDto } from '../../proxy/contacts/models';
 import { ArButton, ArChip } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 
-const STATUS: Record<ContactExportStatus, { tone: ChipTone; label: string }> = {
+export const STATUS: Record<ContactExportStatus, { tone: ChipTone; label: string }> = {
   [ContactExportStatus.Pending]: { tone: 'neutral', label: 'Waiting to start' },
   [ContactExportStatus.Running]: { tone: 'warn', label: 'Being prepared' },
   [ContactExportStatus.Completed]: { tone: 'good', label: 'Ready' },

@@ -9,6 +9,13 @@ import { ReportExportService } from '../../proxy/reports/report-export.service';
 import type { ReportExportDto } from '../../proxy/reports/models';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArCard, ArChip } from '../../ui';
+import { RouterLink } from '@angular/router';
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../core/auth/permission';
+import { ContactExportService } from '../../proxy/contacts/contact-export.service';
+import { ContactExportStatus } from '../../proxy/contacts/contact-export-status.enum';
+import type { ContactExportRequestDto } from '../../proxy/contacts/models';
+import { STATUS as CONTACT_EXPORT_STATUS, exportToken } from '../contacts/contact-export-page';
 
 /** "1.2 MB" */
 export function fileSize(bytes: number): string {
@@ -23,7 +30,7 @@ export function fileSize(bytes: number): string {
  */
 @Component({
   selector: 'ar-my-exports',
-  imports: [ArTopbar, ArCard, ArButton, ArChip, DatePipe],
+  imports: [ArTopbar, ArCard, ArButton, ArChip, DatePipe, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -79,12 +86,73 @@ export function fileSize(bytes: number): string {
           }
         </ul>
       </ar-card>
+
+      @if (canExportContacts()) {
+        <ar-card heading="Contact exports">
+          <p class="me__muted me__note">
+            Everyone in your workspace who can export contacts sees these. Files can be downloaded
+            until they expire.
+          </p>
+          <ul class="me__list">
+            @for (c of contactExports(); track c.id) {
+              <li class="me__row">
+                <span class="me__what">
+                  <a [routerLink]="['/contacts/exports', c.id]">
+                    <strong translate="no">{{ c.fileName || 'Contacts export' }}</strong>
+                  </a>
+                  <span class="me__muted">
+                    Asked {{ c.requestedAtUtc | date: 'dd MMM, HH:mm' }}
+                    @if (c.rowCount) {
+                      · {{ c.rowCount }} contacts
+                    }
+                    @if (c.expiresAtUtc && c.status === ready) {
+                      · until {{ c.expiresAtUtc | date: 'dd MMM, HH:mm' }}
+                    }
+                  </span>
+                </span>
+                <span class="me__act">
+                  @if (c.status === ready && c.downloadUrl) {
+                    <span class="me__muted">{{ size(c.sizeBytes ?? 0) }}</span>
+                    <button
+                      ar-button
+                      type="button"
+                      variant="ghost"
+                      icon="download"
+                      [disabled]="busy() === c.id"
+                      (click)="downloadContacts(c)"
+                    >
+                      Download
+                    </button>
+                  } @else {
+                    <ar-chip
+                      [tone]="contactStatus(c.status).tone"
+                      [dot]="true"
+                      [title]="c.error ?? ''"
+                      >{{ contactStatus(c.status).label }}</ar-chip
+                    >
+                  }
+                </span>
+              </li>
+            } @empty {
+              <li class="me__muted">No contact exports yet. Use Export on Contacts.</li>
+            }
+          </ul>
+        </ar-card>
+      }
     </div>
   `,
   styles: `
     .me {
       padding: 20px;
       max-width: 820px;
+    }
+    .me {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+    .me__note {
+      margin: 0 0 8px;
     }
     .me__list {
       margin: 0;
@@ -137,6 +205,48 @@ export class ArMyExports {
 
   protected label(kind: string): string {
     return kind === 'AuditLog' ? 'Audit log' : 'Analytics';
+  }
+
+  // ---- Contact exports ---------------------------------------------------------------------------
+  private readonly contactApi = inject(ContactExportService);
+  protected readonly canExportContacts = grantedPolicy(
+    'AutoReach.Contacts.Export',
+    inject(PermissionService),
+  );
+  private readonly contactResource = rxResource({
+    params: () => (this.canExportContacts() ? { t: this.tick() } : undefined),
+    stream: () => this.contactApi.getList({ skipHandleError: true }),
+    defaultValue: { items: [] as ContactExportRequestDto[] },
+  });
+  protected readonly contactExports = computed(
+    () => settled(this.contactResource, { items: [] }).items ?? [],
+  );
+  protected readonly ready = ContactExportStatus.Completed;
+
+  protected contactStatus(s: ContactExportStatus | undefined) {
+    return CONTACT_EXPORT_STATUS[s ?? ContactExportStatus.Pending];
+  }
+
+  protected async downloadContacts(c: ContactExportRequestDto): Promise<void> {
+    const token = exportToken(c.downloadUrl);
+    if (!token || !c.id) {
+      this.toasts.error('The download link has expired. Export the contacts again.');
+      return;
+    }
+    this.busy.set(c.id);
+    try {
+      const blob = await firstValueFrom(this.contactApi.download(c.id, token));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = c.fileName || 'contacts.csv';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      this.toasts.error(readApiError(err, 'Could not download the export.'));
+    } finally {
+      this.busy.set(null);
+    }
   }
 
   protected reload(): void {

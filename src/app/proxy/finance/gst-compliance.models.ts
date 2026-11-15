@@ -141,6 +141,11 @@ export interface Gstr1SummaryDto {
   totalSgstInPaise: number;
   totalTaxValueInPaise: number;
   totalInvoiceValueInPaise: number;
+  totalCessInPaise?: number;
+  /** Taxable value by table: B2B (4), B2C (5 + 7), credit/debit notes (9B). Absent from an older API. */
+  b2bTaxableValueInPaise?: number;
+  b2cTaxableValueInPaise?: number;
+  cdnrTaxableValueInPaise?: number;
 }
 
 /** An amount split by tax head, in paise. */

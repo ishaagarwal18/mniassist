@@ -1,3 +1,4 @@
+import { EXTERNAL_LOGIN_CALLBACK } from '../../core/auth/external-login';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -110,6 +111,9 @@ export class ArSettings {
   protected readonly displayName = signal('');
   protected readonly issuer = signal('');
   protected readonly authorizationEndpoint = signal('');
+  protected readonly clientId = signal('');
+  /** Where the IdP sends people back; it must be registered there. */
+  protected readonly ssoRedirectUri = `${window.location.origin}${EXTERNAL_LOGIN_CALLBACK}`;
   protected readonly metadataAddress = signal('');
   protected readonly domains = signal('');
   protected readonly defaultRole = signal('Agent');
@@ -847,6 +851,7 @@ export class ArSettings {
     this.displayName.set(c.displayName ?? '');
     this.issuer.set(c.issuer ?? '');
     this.authorizationEndpoint.set(c.authorizationEndpoint ?? '');
+    this.clientId.set(c.clientId ?? '');
     this.metadataAddress.set(c.metadataAddress ?? '');
     this.domains.set(c.allowedEmailDomains.join(', '));
     this.defaultRole.set(c.defaultRoleName || 'Agent');
@@ -872,6 +877,7 @@ export class ArSettings {
         displayName: this.displayName().trim(),
         issuer: this.issuer().trim(),
         authorizationEndpoint: this.authorizationEndpoint().trim() || undefined,
+        clientId: this.clientId().trim() || undefined,
         metadataAddress: this.metadataAddress().trim() || undefined,
         allowedEmailDomains: this.domainList(),
         defaultRoleName: this.defaultRole(),

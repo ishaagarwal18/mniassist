@@ -270,6 +270,23 @@ const MAX_BYTES = 8 * 1024 * 1024;
                 Rejected rows are skipped. Fix them in the file and import it again.
               </p>
             }
+            @if (d.fieldIssueCount) {
+              <p class="im__warn" role="alert">
+                {{ d.fieldIssueCount }} custom-field
+                {{ d.fieldIssueCount === 1 ? 'value does' : 'values do' }} not fit the field. Those
+                contacts still import, without that value.
+              </p>
+              <div class="im__rejects">
+                <div class="im__map-head"><span>Row</span><span>Value</span><span>Why</span></div>
+                @for (f of d.fieldIssues ?? []; track $index) {
+                  <div class="im__map-row">
+                    <span>{{ f.rowNumber }}</span>
+                    <span class="im__sample">{{ f.rawValue }}</span>
+                    <span>{{ f.field }} must be {{ f.expected }}</span>
+                  </div>
+                }
+              </div>
+            }
             @if ((d.willCreate ?? 0) + (d.willUpdate ?? 0) === 0) {
               <p class="im__warn" role="alert">Nothing in this file can be imported.</p>
             }

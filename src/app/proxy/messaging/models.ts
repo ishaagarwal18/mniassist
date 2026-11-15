@@ -142,6 +142,9 @@ export interface ConversationDto extends EntityDto<string> {
   unreadCount?: number;
   lastMessagePreview?: string | null;
   snoozedUntilUtc?: string | null;
+  /** Working status: 0 Open, 1 Pending (waiting on the customer), 2 Resolved. */
+  status?: ConversationStatus;
+  priority?: ConversationPriority;
 }
 
 export interface ConversationLabelDto extends EntityDto<string> {
