@@ -38,10 +38,12 @@ import { ArGrid } from '../../../ui/grid';
   template: `
     <ar-topbar title="Chart of Accounts (General Ledger)">
       <div actions class="topbar-actions">
-        <button ar-button="ghost" (click)="seedStandardAccounts()">
-          &#9881; Bootstrap Standard COA
-        </button>
-        <a ar-button="primary" routerLink="/finance/chart-of-accounts/new">+ Add Account</a>
+        @if (canCreate()) {
+          <button ar-button="ghost" (click)="seedStandardAccounts()">
+            &#9881; Bootstrap Standard COA
+          </button>
+          <a ar-button="primary" routerLink="/finance/chart-of-accounts/new">+ Add Account</a>
+        }
       </div>
     </ar-topbar>
 
@@ -593,6 +595,10 @@ export class ChartOfAccountsComponent {
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
+  protected readonly canCreate = grantedPolicy(
+    'AutoReach.ChartOfAccounts.Create',
+    this.permissions,
+  );
   protected readonly canUpdate = grantedPolicy(
     'AutoReach.ChartOfAccounts.Update',
     this.permissions,

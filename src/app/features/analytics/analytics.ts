@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -78,6 +80,8 @@ const OUTCOME_LABEL: Record<Outcome, string> = { won: 'Won', lost: 'Lost', open:
   styleUrl: './analytics.scss',
 })
 export class ArAnalytics {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canExport = grantedPolicy('AutoReach.Analytics.Export', this.permissionGate);
   private readonly store = inject(AnalyticsStore);
   private readonly api = inject(AnalyticsService);
   private readonly route = inject(ActivatedRoute, { optional: true });

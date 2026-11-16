@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -93,15 +95,17 @@ import { IntegrationState } from '../../proxy/integrations/integration-state.enu
           }
 
           <div class="erp__actions">
-            <button
-              ar-button
-              type="button"
-              variant="ghost"
-              [disabled]="running() === c.connectionId || !anyOn(c)"
-              (click)="run(c)"
-            >
-              {{ running() === c.connectionId ? 'Syncing…' : 'Sync now' }}
-            </button>
+            @if (canManageSync()) {
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                [disabled]="running() === c.connectionId || !anyOn(c)"
+                (click)="run(c)"
+              >
+                {{ running() === c.connectionId ? 'Syncing…' : 'Sync now' }}
+              </button>
+            }
             <button ar-button type="button" variant="ghost" (click)="openSettings(c)">
               What to sync
             </button>
@@ -479,6 +483,11 @@ import { IntegrationState } from '../../proxy/integrations/integration-state.enu
   `,
 })
 export class ArErpSyncSection {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canManageSync = grantedPolicy(
+    'AutoReach.Integrations.Manage',
+    this.permissionGate,
+  );
   private readonly erp = inject(ErpSyncService);
   private readonly integrations = inject(IntegrationService);
 

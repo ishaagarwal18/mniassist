@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -66,64 +68,66 @@ export function sourceLabel(s: ConsentSource | undefined): string {
     }
   `,
   template: `
-    <section class="wp__card">
-      <h2 class="wp__title">Record consent</h2>
-      <p class="wp__muted">Write down where the customer agreed, so it can be shown if asked.</p>
-      <div class="wp__grid">
-        <label class="wp__field">
-          <span>Agreed to</span>
-          <select
-            class="ar-field__input"
-            [value]="scope()"
-            (change)="scope.set(+$any($event.target).value)"
+    @if (canManageConsent()) {
+      <section class="wp__card">
+        <h2 class="wp__title">Record consent</h2>
+        <p class="wp__muted">Write down where the customer agreed, so it can be shown if asked.</p>
+        <div class="wp__grid">
+          <label class="wp__field">
+            <span>Agreed to</span>
+            <select
+              class="ar-field__input"
+              [value]="scope()"
+              (change)="scope.set(+$any($event.target).value)"
+            >
+              <option [value]="marketing">Marketing and service messages</option>
+              <option [value]="utility">Service messages only</option>
+            </select>
+          </label>
+          <label class="wp__field">
+            <span>How</span>
+            <select
+              class="ar-field__input"
+              [value]="source()"
+              (change)="source.set(+$any($event.target).value)"
+            >
+              @for (s of manualSources; track s) {
+                <option [value]="s">{{ label(s) }}</option>
+              }
+            </select>
+          </label>
+          <label class="wp__field wp__field--wide">
+            <span>Evidence (form link, call note, signed paper reference)</span>
+            <input
+              class="ar-field__input"
+              maxlength="512"
+              [value]="evidence()"
+              (input)="evidence.set($any($event.target).value)"
+            />
+          </label>
+        </div>
+        <div class="wp__actions">
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="busy() !== null"
+            (click)="grant()"
           >
-            <option [value]="marketing">Marketing and service messages</option>
-            <option [value]="utility">Service messages only</option>
-          </select>
-        </label>
-        <label class="wp__field">
-          <span>How</span>
-          <select
-            class="ar-field__input"
-            [value]="source()"
-            (change)="source.set(+$any($event.target).value)"
+            {{ busy() === 'grant' ? 'Saving…' : 'Record consent' }}
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="danger"
+            [disabled]="busy() !== null"
+            (click)="withdraw()"
           >
-            @for (s of manualSources; track s) {
-              <option [value]="s">{{ label(s) }}</option>
-            }
-          </select>
-        </label>
-        <label class="wp__field wp__field--wide">
-          <span>Evidence (form link, call note, signed paper reference)</span>
-          <input
-            class="ar-field__input"
-            maxlength="512"
-            [value]="evidence()"
-            (input)="evidence.set($any($event.target).value)"
-          />
-        </label>
-      </div>
-      <div class="wp__actions">
-        <button
-          ar-button
-          type="button"
-          variant="primary"
-          [disabled]="busy() !== null"
-          (click)="grant()"
-        >
-          {{ busy() === 'grant' ? 'Saving…' : 'Record consent' }}
-        </button>
-        <button
-          ar-button
-          type="button"
-          variant="danger"
-          [disabled]="busy() !== null"
-          (click)="withdraw()"
-        >
-          {{ busy() === 'withdraw' ? 'Withdrawing…' : 'Withdraw marketing consent' }}
-        </button>
-      </div>
-    </section>
+            {{ busy() === 'withdraw' ? 'Withdrawing…' : 'Withdraw marketing consent' }}
+          </button>
+        </div>
+      </section>
+    }
 
     <section class="wp__card" style="margin-top: 14px">
       <h2 class="wp__title">Consent history</h2>
@@ -156,6 +160,11 @@ export function sourceLabel(s: ConsentSource | undefined): string {
   `,
 })
 export class ArContactConsent {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canManageConsent = grantedPolicy(
+    'AutoReach.Contacts.ManageConsent',
+    this.permissionGate,
+  );
   private readonly api = inject(ContactService);
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);

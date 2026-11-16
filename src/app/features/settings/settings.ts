@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../core/auth/permission';
+import { checkPolicy } from '../../core/auth/permission';
 import { EXTERNAL_LOGIN_CALLBACK } from '../../core/auth/external-login';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -58,6 +60,8 @@ export interface SettingDirectoryItem {
   readonly badge?: () => string | null;
   readonly badgeTone?: () => 'good' | 'amber' | 'neutral' | 'bad';
   readonly keywords: readonly string[];
+  /** A permission the card needs, for an in-page tab that has no route of its own. */
+  readonly permission?: string;
 }
 
 @Component({
@@ -88,6 +92,7 @@ export class ArSettings {
   private readonly router = inject(Router);
   private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
+  protected readonly canManageSso = grantedPolicy('AutoReach.Members.ManageSso', this.permissions);
   private readonly plans = inject(PlanService);
   private readonly account = inject(CurrentUserService);
   private readonly store = inject(SettingsStore);
@@ -144,6 +149,7 @@ export class ArSettings {
       category: 'Security & Access',
       icon: 'shield',
       tab: 'Single Sign-On',
+      permission: 'AutoReach.Members.ManageSso',
       badge: () =>
         this.sso().isEnabled
           ? 'Enabled'
@@ -696,6 +702,7 @@ export class ArSettings {
     this.account.permissionState();
     this.plans.features();
     return this.directoryItems.filter((item) => {
+      if (item.permission && !checkPolicy(item.permission, this.permissions)) return false;
       if (!item.route) return true;
       return showsInMenu(item.route, this.permissions, this.plans, this.account);
     });

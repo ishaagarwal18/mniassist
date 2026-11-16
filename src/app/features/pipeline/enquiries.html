@@ -25,6 +25,12 @@
   </div>
 </ar-topbar>
 
+@if (!canViewAll()) {
+  <p class="enq-scope" role="note">
+    Showing the enquiries you own. Seeing the whole team's needs the View all enquiries permission.
+  </p>
+}
+
 @if (dialogOpen()) {
   <ar-dialog title="New enquiry" (dismiss)="dialogOpen.set(false)">
     <div class="ar-field">

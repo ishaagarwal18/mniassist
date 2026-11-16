@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
 import {
   SupportAccessService,
@@ -44,6 +46,8 @@ import { ArGrid } from '../../ui/grid';
   styleUrl: './support-access.scss',
 })
 export class ArSupportAccess {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canGrant = grantedPolicy('AutoReach.SupportAccess.Grant', this.permissionGate);
   private readonly ops = inject(OpsService);
   private readonly dialogs = inject(ConfirmService);
   private readonly route = inject(ActivatedRoute, { optional: true });

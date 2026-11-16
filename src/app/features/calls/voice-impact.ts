@@ -1,4 +1,5 @@
-import { RestService } from '@abp/ng.core';
+import { grantedPolicy } from '../../core/auth/permission';
+import { RestService, PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -157,24 +158,26 @@ export function shareOf(part: number, whole: number): number {
         }
       </select>
       <ar-period-picker [comparable]="false" />
-      <button
-        ar-button
-        type="button"
-        variant="ghost"
-        [disabled]="busy() || !report()"
-        (click)="download('pdf')"
-      >
-        PDF
-      </button>
-      <button
-        ar-button
-        type="button"
-        variant="ghost"
-        [disabled]="busy() || !report()"
-        (click)="download('csv')"
-      >
-        CSV
-      </button>
+      @if (canExport()) {
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="busy() || !report()"
+          (click)="download('pdf')"
+        >
+          PDF
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="busy() || !report()"
+          (click)="download('csv')"
+        >
+          CSV
+        </button>
+      }
     </ar-topbar>
 
     <div class="vi ar-scroll" [attr.aria-busy]="busy()">
@@ -766,6 +769,8 @@ export function shareOf(part: number, whole: number): number {
   `,
 })
 export class ArVoiceImpact {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canExport = grantedPolicy('AutoReach.Analytics.Export', this.permissionGate);
   private readonly api = inject(VoiceImpactService);
   private readonly channelsApi = inject(ChannelService);
   protected readonly period = inject(ReportPeriodStore);

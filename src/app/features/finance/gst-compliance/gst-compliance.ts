@@ -308,7 +308,7 @@ export function recentReturnPeriods(
                 <ng-template #template let-doc>
                   <div class="actions-cell">
                     <button
-                      *ngIf="doc.canGenerateEInvoice"
+                      *ngIf="doc.canGenerateEInvoice && canEInvoice()"
                       ar-button="ghost"
                       class="btn-xs"
                       [disabled]="generatingIrns().has(doc.id)"
@@ -328,6 +328,7 @@ export function recentReturnPeriods(
                     </a>
                     <button
                       *ngIf="
+                        canEInvoice() &&
                         doc.eInvoiceStatus === EInvoiceStatus.Generated &&
                         doc.eWayBillStatus !== EWayBillStatus.Active
                       "
@@ -931,6 +932,11 @@ export function recentReturnPeriods(
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GstComplianceComponent {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canEInvoice = grantedPolicy(
+    'AutoReach.GstCompliance.GenerateEInvoice',
+    this.permissionGate,
+  );
   private readonly gstService = inject(GstComplianceService);
   private readonly toasts = inject(ToastService);
 

@@ -13,7 +13,9 @@
     [subtitle]="subtitle()"
     help="Grant MNI Assist's own support team temporary, logged access to help you troubleshoot — revoke it the moment the issue's resolved."
   >
-    <button ar-button variant="primary" icon="plus" (click)="goGrant()">Grant access</button>
+    @if (canGrant()) {
+      <button ar-button variant="primary" icon="plus" (click)="goGrant()">Grant access</button>
+    }
   </ar-topbar>
 
   <div class="sa ar-scroll">
@@ -57,9 +59,11 @@
 
           <div class="grant__right">
             <p class="grant__expiry ar-mono">{{ expiresIn(g.expiresAt) }}</p>
-            <button ar-button variant="ghost" [disabled]="busy()" (click)="revoke(g)">
-              Revoke now
-            </button>
+            @if (canGrant()) {
+              <button ar-button variant="ghost" [disabled]="busy()" (click)="revoke(g)">
+                Revoke now
+              </button>
+            }
           </div>
         </header>
 

@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -74,7 +76,12 @@ export function labelProblem(
       help="Agents put labels on a conversation from the inbox, and the inbox can be filtered by them."
     />
     <div class="wp">
-      <section class="wp__card">
+      @if (!canManage()) {
+        <p class="wp__muted">
+          Adding, renaming or deleting labels needs the Manage labels permission.
+        </p>
+      }
+      <section class="wp__card" [hidden]="!canManage()">
         <h2 class="wp__title">{{ editingId() ? 'Edit label' : 'New label' }}</h2>
         <div class="wp__grid">
           <label class="wp__field">
@@ -131,16 +138,18 @@ export function labelProblem(
                 <span class="wp__name" translate="no">{{ l.name }}</span>
                 <span class="wp__sub">{{ l.conversationCount ?? 0 }} conversation(s)</span>
               </span>
-              <button ar-button type="button" variant="ghost" (click)="edit(l)">Edit</button>
-              <button
-                ar-button
-                type="button"
-                variant="ghost"
-                [disabled]="busy()"
-                (click)="remove(l)"
-              >
-                Delete
-              </button>
+              @if (canManage()) {
+                <button ar-button type="button" variant="ghost" (click)="edit(l)">Edit</button>
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="busy()"
+                  (click)="remove(l)"
+                >
+                  Delete
+                </button>
+              }
             </li>
           } @empty {
             <li class="wp__empty">No labels yet.</li>
@@ -151,6 +160,8 @@ export function labelProblem(
   `,
 })
 export class ArConversationLabels implements OnInit {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canManage = grantedPolicy('AutoReach.Inbox.ManageLabels', this.permissionGate);
   private readonly api = inject(ConversationLabelService);
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);

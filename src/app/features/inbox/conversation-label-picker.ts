@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -62,7 +64,10 @@ export function toggleId(ids: readonly string[], id: string): string[] {
             </label>
           } @empty {
             <span class="clp__empty">
-              No labels yet. <a routerLink="/settings/labels">Create some</a>.
+              No labels yet.
+              @if (canManageLabels()) {
+                <a routerLink="/settings/labels">Create some</a>.
+              }
             </span>
           }
         </span>
@@ -71,6 +76,11 @@ export function toggleId(ids: readonly string[], id: string): string[] {
   `,
 })
 export class ArConversationLabelPicker {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canManageLabels = grantedPolicy(
+    'AutoReach.Inbox.ManageLabels',
+    this.permissionGate,
+  );
   private readonly labels = inject(ConversationLabelService);
   private readonly inbox = inject(InboxApi);
   private readonly toasts = inject(ToastService);

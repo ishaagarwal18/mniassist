@@ -72,7 +72,14 @@
 
     @switch (tab()) {
       @case ('negotiations') {
-        @if (!sessions().length) {
+        @if (!canViewSessions()) {
+          <ar-card heading="Negotiations">
+            <p class="ng__note">
+              Seeing negotiations needs the View negotiation sessions permission. Ask an admin to
+              add it to your role.
+            </p>
+          </ar-card>
+        } @else if (!sessions().length) {
           <ar-card heading="No negotiations yet">
             <div class="ng__empty">
               <p>

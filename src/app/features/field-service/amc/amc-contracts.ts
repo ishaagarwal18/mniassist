@@ -44,7 +44,9 @@ import { initialSearch } from '../../../core/util/customer-scope';
       subtitle="Annual maintenance agreements, SLA compliance tracking & scheduled PM visits"
     >
       <div class="topbar-actions">
-        <a ar-button="primary" routerLink="/field-service/amc/new">+ Create AMC Contract</a>
+        <a *ngIf="canCreate()" ar-button="primary" routerLink="/field-service/amc/new"
+          >+ Create AMC Contract</a
+        >
       </div>
     </ar-topbar>
 
@@ -230,7 +232,9 @@ import { initialSearch } from '../../../core/util/customer-scope';
             <div class="cockpit-actions">
               <a
                 *ngIf="
-                  contract.status === AmcStatus.Active || contract.status === AmcStatus.ExpiringSoon
+                  canRenew() &&
+                  (contract.status === AmcStatus.Active ||
+                    contract.status === AmcStatus.ExpiringSoon)
                 "
                 ar-button="primary"
                 [routerLink]="['/field-service/amc/renew', contract.id]"
@@ -357,7 +361,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
                     </td>
                     <td class="text-right">
                       <a
-                        *ngIf="!s.isCompleted"
+                        *ngIf="!s.isCompleted && canUpdate()"
                         ar-button="ghost"
                         class="btn-record-visit"
                         [routerLink]="['/field-service/amc/record-visit', contract.id, s.id]"
@@ -1015,6 +1019,16 @@ import { initialSearch } from '../../../core/util/customer-scope';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AmcContractsComponent {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canCreate = grantedPolicy(
+    'AutoReach.AmcContracts.Create',
+    this.permissionGate,
+  );
+  protected readonly canRenew = grantedPolicy('AutoReach.AmcContracts.Renew', this.permissionGate);
+  protected readonly canUpdate = grantedPolicy(
+    'AutoReach.AmcContracts.Update',
+    this.permissionGate,
+  );
   private readonly amcService = inject(AmcContractService);
   private readonly confirmDialogs = inject(ConfirmService);
   readonly canTerminate = grantedPolicy('AutoReach.AmcContracts.Cancel', inject(PermissionService));

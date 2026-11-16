@@ -271,7 +271,7 @@ import { ArSalesExport } from '../sales-export';
                 Cancel challan
               </button>
             }
-            @if (canDispatch(dc) && !dispatching()) {
+            @if (mayDispatch() && canDispatch(dc) && !dispatching()) {
               <button
                 ar-button
                 variant="primary"
@@ -282,7 +282,7 @@ import { ArSalesExport } from '../sales-export';
                 Dispatch consignment
               </button>
             }
-            @if (canDeliver(dc)) {
+            @if (mayDeliver() && canDeliver(dc)) {
               <button
                 ar-button
                 variant="ghost"
@@ -294,7 +294,7 @@ import { ArSalesExport } from '../sales-export';
                 Mark as delivered
               </button>
             }
-            @if (canInvoice(dc)) {
+            @if (mayInvoice() && canInvoice(dc)) {
               <button
                 ar-button
                 variant="primary"
@@ -313,6 +313,19 @@ import { ArSalesExport } from '../sales-export';
   styles: SALES_RECORD_STYLES,
 })
 export class ArDeliveryChallanPage extends SalesRecordPage<DeliveryChallanDto> {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly mayDispatch = grantedPolicy(
+    'AutoReach.DeliveryChallans.Dispatch',
+    this.permissionGate,
+  );
+  protected readonly mayDeliver = grantedPolicy(
+    'AutoReach.DeliveryChallans.Deliver',
+    this.permissionGate,
+  );
+  protected readonly mayInvoice = grantedPolicy(
+    'AutoReach.SalesInvoices.Create',
+    this.permissionGate,
+  );
   private readonly api = inject(DeliveryChallanService);
 
   /** The record as its printed PDF or an Excel workbook. */

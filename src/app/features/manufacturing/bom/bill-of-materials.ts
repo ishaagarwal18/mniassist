@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -40,7 +42,9 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
       title="Bill of Materials (BOM)"
       subtitle="Multi-level product structures, component routing, scrap allowances & costing"
     >
-      <a ar-button variant="primary" routerLink="/manufacturing/bom/new">+ Create New BOM</a>
+      @if (canCreate()) {
+        <a ar-button variant="primary" routerLink="/manufacturing/bom/new">+ Create New BOM</a>
+      }
     </ar-topbar>
 
     <div class="page-content">
@@ -194,7 +198,7 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
                   <button
                     ar-button
                     variant="primary"
-                    *ngIf="b.status === BomStatus.Active"
+                    *ngIf="b.status === BomStatus.Active && canCreateWo()"
                     (click)="createWorkOrderFromBom(b)"
                   >
                     Create WO
@@ -202,7 +206,7 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
                   <button
                     ar-button
                     variant="ghost"
-                    *ngIf="b.status === BomStatus.Draft"
+                    *ngIf="b.status === BomStatus.Draft && canUpdate()"
                     (click)="activateBom(b)"
                   >
                     Activate
@@ -522,6 +526,19 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
   ],
 })
 export class BillOfMaterialsComponent {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canCreate = grantedPolicy(
+    'AutoReach.BillOfMaterials.Create',
+    this.permissionGate,
+  );
+  protected readonly canUpdate = grantedPolicy(
+    'AutoReach.BillOfMaterials.Update',
+    this.permissionGate,
+  );
+  protected readonly canCreateWo = grantedPolicy(
+    'AutoReach.WorkOrders.Create',
+    this.permissionGate,
+  );
   private readonly router = inject(Router);
   private readonly bomService = inject(BillOfMaterialService);
 

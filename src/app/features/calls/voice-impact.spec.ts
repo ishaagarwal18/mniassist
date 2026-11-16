@@ -1,3 +1,4 @@
+import { PermissionService } from '@abp/ng.core';
 import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
@@ -65,6 +66,10 @@ describe('AI impact report', () => {
       imports: [ArVoiceImpact],
       providers: [
         { provide: VoiceImpactService, useValue: api },
+        {
+          provide: PermissionService,
+          useValue: { getGrantedPolicy: () => true, getGrantedPolicy$: () => of(true) },
+        },
         { provide: ChannelService, useValue: { getList: () => of({ items: [] }) } },
       ],
     }).overrideComponent(ArVoiceImpact, {

@@ -43,7 +43,9 @@ import { initialSearch } from '../../../core/util/customer-scope';
   template: `
     <ar-topbar title="Field Service & Breakdown Tickets (Field ERP)">
       <div actions class="topbar-actions">
-        <a ar-button="primary" routerLink="/field-service/tickets/new">+ Raise Service Ticket</a>
+        <a *ngIf="canCreate()" ar-button="primary" routerLink="/field-service/tickets/new"
+          >+ Raise Service Ticket</a
+        >
       </div>
     </ar-topbar>
 
@@ -208,8 +210,9 @@ import { initialSearch } from '../../../core/util/customer-scope';
             <div class="cockpit-actions">
               <a
                 *ngIf="
-                  ticket.status === ServiceTicketStatus.Open ||
-                  ticket.status === ServiceTicketStatus.Assigned
+                  canAssign() &&
+                  (ticket.status === ServiceTicketStatus.Open ||
+                    ticket.status === ServiceTicketStatus.Assigned)
                 "
                 ar-button="ghost"
                 [routerLink]="['/field-service/tickets', ticket.id, 'assign']"
@@ -218,9 +221,10 @@ import { initialSearch } from '../../../core/util/customer-scope';
               </a>
               <button
                 *ngIf="
-                  ticket.status === ServiceTicketStatus.InProgress ||
-                  ticket.status === ServiceTicketStatus.Assigned ||
-                  ticket.status === ServiceTicketStatus.InTransit
+                  canResolve() &&
+                  (ticket.status === ServiceTicketStatus.InProgress ||
+                    ticket.status === ServiceTicketStatus.Assigned ||
+                    ticket.status === ServiceTicketStatus.InTransit)
                 "
                 ar-button="primary"
                 (click)="openResolveModal(ticket)"
@@ -262,6 +266,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
                 </span>
                 <a
                   *ngIf="
+                    canUpdate() &&
                     ticket.status !== ServiceTicketStatus.Resolved &&
                     ticket.status !== ServiceTicketStatus.Closed
                   "
@@ -862,6 +867,23 @@ import { initialSearch } from '../../../core/util/customer-scope';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FieldServiceTicketsComponent {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canCreate = grantedPolicy(
+    'AutoReach.ServiceTickets.Create',
+    this.permissionGate,
+  );
+  protected readonly canAssign = grantedPolicy(
+    'AutoReach.ServiceTickets.Assign',
+    this.permissionGate,
+  );
+  protected readonly canResolve = grantedPolicy(
+    'AutoReach.ServiceTickets.Resolve',
+    this.permissionGate,
+  );
+  protected readonly canUpdate = grantedPolicy(
+    'AutoReach.ServiceTickets.Update',
+    this.permissionGate,
+  );
   private readonly ticketService = inject(FieldServiceTicketService);
   readonly canClose = grantedPolicy('AutoReach.ServiceTickets.Close', inject(PermissionService));
   readonly closing = signal(false);

@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -75,6 +77,8 @@ interface PartyDraft {
   styleUrl: './project-page.scss',
 })
 export class ArProjectPage {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canDelete = grantedPolicy('AutoReach.Projects.Delete', this.permissionGate);
   private readonly api = inject(ProjectService);
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);

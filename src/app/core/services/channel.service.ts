@@ -1,6 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { forkJoin, map } from 'rxjs';
+import { forkJoin, map, of } from 'rxjs';
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../auth/permission';
 import { ChannelHealthDto, ChannelService as ChannelApi } from '../../proxy/channels';
 import { Channel, TIER_LIMIT } from '../models/channel.model';
 import { toChannel } from '../api/mapping';
@@ -17,13 +19,18 @@ import { settled } from '../util/resource';
 @Injectable({ providedIn: 'root' })
 export class ChannelService {
   private readonly api = inject(ChannelApi);
+  /** Health needs Channels.ViewHealth. Without it the list still loads, with no health figures. */
+  readonly canViewHealth = grantedPolicy(
+    'AutoReach.Channels.ViewHealth',
+    inject(PermissionService),
+  );
 
   private readonly channelsResource = rxResource({
-    params: () => ({}),
-    stream: () =>
+    params: () => ({ health: this.canViewHealth() }),
+    stream: ({ params }) =>
       forkJoin({
         list: this.api.getList({ skipCount: 0, maxResultCount: 50 }),
-        health: this.api.getAllHealth(),
+        health: params.health ? this.api.getAllHealth() : of({ items: [] as ChannelHealthDto[] }),
       }).pipe(
         map(({ list, health }) => {
           const byId = new Map(health.items?.map((h) => [h.channelId!, h] as const) ?? []);

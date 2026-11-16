@@ -1,3 +1,4 @@
+import { grantedPolicy } from '../../core/auth/permission';
 import { firstValueFrom } from 'rxjs';
 import { readApiError } from '../../core/util/api-error';
 import { ActivityDirectoryService } from '../../proxy/activities/activity.service';
@@ -118,6 +119,15 @@ export class ArCompliance {
   /** Recording and working breaches is its own permission (AutoReach.Compliance.ManageBreaches). */
   protected readonly canManageBreaches = inject(PermissionService).getGrantedPolicy(
     'AutoReach.Compliance.ManageBreaches',
+  );
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canHandle = grantedPolicy(
+    'AutoReach.Compliance.HandleRequests',
+    this.permissionGate,
+  );
+  protected readonly canRetention = grantedPolicy(
+    'AutoReach.Compliance.ManageRetention',
+    this.permissionGate,
   );
   protected readonly severities = [
     { value: BreachSeverity.Low, label: 'Low — little or no harm likely' },

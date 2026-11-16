@@ -240,7 +240,7 @@ import { ArGuaranteesPanel } from '../../project-billing/guarantees-panel';
               [fileName]="o.orderNumber"
               hint="This sales order"
             />
-            @if (canConfirm(o)) {
+            @if (mayConfirm() && canConfirm(o)) {
               <button
                 ar-button
                 variant="primary"
@@ -332,6 +332,7 @@ export class ArSalesOrderPage extends SalesRecordPage<SalesOrderDto> {
   protected readonly canCancelOrder = canCancelOrder;
   protected readonly canDeleteOrder = canDeleteOrder;
   private readonly permissions = inject(PermissionService);
+  protected readonly mayConfirm = grantedPolicy('AutoReach.SalesOrders.Confirm', this.permissions);
   protected readonly mayCancel = grantedPolicy('AutoReach.SalesOrders.Cancel', this.permissions);
   protected readonly mayDelete = grantedPolicy('AutoReach.SalesOrders.Delete', this.permissions);
   protected readonly mayEdit = grantedPolicy('AutoReach.SalesOrders.Update', this.permissions);

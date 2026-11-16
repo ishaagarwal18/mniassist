@@ -27,7 +27,12 @@
         You chose the <strong>{{ r.name }}</strong> plan · {{ r.price }}/month + GST. Activate it to
         unlock its features and limits. WhatsApp message charges are paid from the wallet below.
         <span banner-actions class="bl__req-actions">
-          <button ar-button variant="primary" [disabled]="busy()" (click)="activateRequested()">
+          <button
+            ar-button
+            variant="primary"
+            [disabled]="busy() || !canManagePlan()"
+            (click)="activateRequested()"
+          >
             Activate {{ r.name }}
           </button>
           <button ar-button variant="quiet" (click)="dismissRequested()">Not now</button>
@@ -101,7 +106,8 @@
             [class.plan--current]="p === d().plan"
             [class.plan--chosen]="p === requested()?.plan"
             [attr.aria-pressed]="p === requested()?.plan"
-            [disabled]="busy()"
+            [disabled]="busy() || !canManagePlan()"
+            [title]="canManagePlan() ? '' : 'Changing the plan needs the Manage plan permission'"
             (click)="changePlan(p)"
           >
             <span class="plan__name">{{ planLabel(p) }}</span>

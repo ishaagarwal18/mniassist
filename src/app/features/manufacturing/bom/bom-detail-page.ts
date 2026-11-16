@@ -165,7 +165,7 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
           <button
             ar-button
             variant="primary"
-            *ngIf="b.status === BomStatus.Active"
+            *ngIf="b.status === BomStatus.Active && canCreateWo()"
             (click)="generateWorkOrder(b)"
           >
             Generate Work Order
@@ -173,7 +173,7 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
           <button
             ar-button
             variant="ghost"
-            *ngIf="b.status === BomStatus.Draft"
+            *ngIf="b.status === BomStatus.Draft && canUpdate()"
             (click)="releaseToProduction(b)"
           >
             Release to Production
@@ -399,6 +399,7 @@ export class ArBomDetailPage implements OnInit {
 
   private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
+  protected readonly canCreateWo = grantedPolicy('AutoReach.WorkOrders.Create', this.permissions);
   protected readonly canUpdate = grantedPolicy(
     'AutoReach.BillOfMaterials.Update',
     this.permissions,

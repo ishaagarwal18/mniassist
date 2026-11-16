@@ -67,6 +67,10 @@ export class ArBillingPlanPanel {
   private readonly dialogs = inject(ConfirmService);
   private readonly router = inject(Router);
   private readonly permissions = inject(PermissionService);
+  protected readonly canOverride = grantedPolicy(
+    'AutoReach.ProjectBilling.Override',
+    this.permissions,
+  );
   private readonly advancesApi = inject(AdvanceReceiptService);
 
   readonly orderId = input.required<string>();

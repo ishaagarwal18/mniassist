@@ -13,10 +13,12 @@
   >
     <ar-period-picker />
     <div class="rangepick">
-      @for (f of exportFormats; track f.value) {
-        <button ar-button type="button" variant="ghost" icon="download" (click)="export(f.value)">
-          {{ f.label }}
-        </button>
+      @if (canExport()) {
+        @for (f of exportFormats; track f.value) {
+          <button ar-button type="button" variant="ghost" icon="download" (click)="export(f.value)">
+            {{ f.label }}
+          </button>
+        }
       }
     </div>
   </ar-topbar>

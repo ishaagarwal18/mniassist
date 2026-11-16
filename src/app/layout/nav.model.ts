@@ -1029,7 +1029,8 @@ export const NAV: readonly NavGroup[] = [
         icon: 'document',
         route: '/billing/invoices',
         menu: 'settings',
-        permission: 'AutoReach.Billing',
+        // InvoiceAppService needs ViewInvoices, not just Billing.
+        permission: 'AutoReach.Billing.ViewInvoices',
         //tenantOnly: true,
       },
     ],

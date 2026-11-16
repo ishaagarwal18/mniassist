@@ -57,6 +57,7 @@ const columnKey = (stageId: string | undefined, stage: string) => stageId ?? sta
 })
 export class ArEnquiries {
   private readonly permissions = inject(PermissionService);
+  protected readonly canViewAll = grantedPolicy('AutoReach.Pipeline.ViewAll', this.permissions);
   private readonly toasts = inject(ToastService);
   private readonly store = inject(PipelineStore);
   private readonly router = inject(Router);

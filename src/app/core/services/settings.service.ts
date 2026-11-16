@@ -1,3 +1,5 @@
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../auth/permission';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
@@ -18,8 +20,13 @@ export class SettingsStore {
   private readonly ssoApi = inject(SsoService);
   private readonly tick = signal(0);
 
+  /** The SSO settings need Members.ManageSso; without it nothing is requested. */
+  private readonly canManageSso = grantedPolicy(
+    'AutoReach.Members.ManageSso',
+    inject(PermissionService),
+  );
   private readonly ssoResource = rxResource({
-    params: () => ({ tick: this.tick() }),
+    params: () => (this.canManageSso() ? { tick: this.tick() } : undefined),
     stream: () => this.ssoApi.get(),
     defaultValue: SSO_SEED,
   });

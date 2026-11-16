@@ -17,9 +17,11 @@
         Log an incident
       </button>
     }
-    <button ar-button type="button" variant="primary" icon="plus" (click)="goNew()">
-      Log a request
-    </button>
+    @if (canHandle()) {
+      <button ar-button type="button" variant="primary" icon="plus" (click)="goNew()">
+        Log a request
+      </button>
+    }
   </ar-topbar>
 
   <div class="cx ar-scroll">
@@ -98,7 +100,7 @@
           </e-column>
           <e-column headerText="Assigned to" width="170">
             <ng-template #template let-r>
-              @if (r.state === 'received' || r.state === 'inProgress') {
+              @if (canHandle() && (r.state === 'received' || r.state === 'inProgress')) {
                 <select
                   class="ar-field__input"
                   aria-label="Assign request"
@@ -130,7 +132,7 @@
                     (click)="downloadResponse(r)"
                   ></button>
                 }
-                @if (r.state === 'received' || r.state === 'inProgress') {
+                @if (canHandle() && (r.state === 'received' || r.state === 'inProgress')) {
                   <button
                     ar-button
                     variant="ghost"
@@ -188,7 +190,7 @@
                   max="3650"
                   [attr.aria-label]="'Retention days for ' + p.dataClass"
                   [value]="p.days"
-                  [disabled]="isConsentClass(p.dataClass) || !!busy()"
+                  [disabled]="isConsentClass(p.dataClass) || !!busy() || !canRetention()"
                   (change)="onDaysChange(p.id, p.enabled, $event)"
                 />
                 <span>days</span>
@@ -204,7 +206,7 @@
                   <input
                     type="checkbox"
                     [checked]="p.enabled"
-                    [disabled]="!!busy()"
+                    [disabled]="!!busy() || !canRetention()"
                     (change)="togglePolicy(p.id, p.days, $any($event.target).checked)"
                   />
                   {{ p.enabled ? 'on' : 'off' }}

@@ -21,6 +21,7 @@
         <button
           type="button"
           class="status-pill"
+          [hidden]="!canManageSso()"
           [class.status-pill--active]="tab() === 'Single Sign-On'"
           (click)="setTab('Single Sign-On')"
           title="Single Sign-On settings"
@@ -181,7 +182,7 @@
   }
 
   <!-- TAB 2: SINGLE SIGN-ON (SSO) -->
-  @if (tab() === 'Single Sign-On') {
+  @if (tab() === 'Single Sign-On' && canManageSso()) {
     <div class="tab-pane">
       <div class="tab-pane__subnav">
         <button type="button" class="back-link" (click)="setTab('All Settings')">

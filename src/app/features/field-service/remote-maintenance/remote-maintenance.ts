@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -183,9 +185,11 @@ type Tab = (typeof TABS)[number];
       >
         Refresh
       </button>
-      <a ar-button variant="ai" icon="sparkle" routerLink="/field-service/remote-maintenance/new">
-        New session
-      </a>
+      @if (canDiagnose()) {
+        <a ar-button variant="ai" icon="sparkle" routerLink="/field-service/remote-maintenance/new">
+          New session
+        </a>
+      }
     </ar-topbar>
 
     <div class="rm ar-scroll" [attr.aria-busy]="isLoading()">
@@ -257,7 +261,12 @@ type Tab = (typeof TABS)[number];
               </div>
             </div>
             <div class="rm__bar">
-              <div class="rm__seg" role="radiogroup" aria-label="Channel for this session">
+              <div
+                class="rm__seg"
+                role="radiogroup"
+                aria-label="Channel for this session"
+                [hidden]="!canDiagnose()"
+              >
                 <button
                   type="button"
                   role="radio"
@@ -393,7 +402,7 @@ type Tab = (typeof TABS)[number];
                 }
               </ol>
 
-              <div class="rm__compose">
+              <div class="rm__compose" [hidden]="!canDiagnose()">
                 @if (isClosed(s)) {
                   <p class="rm__muted">
                     This session is {{ getStatusLabel(s.status).toLowerCase() }}: no more replies.
@@ -531,6 +540,7 @@ type Tab = (typeof TABS)[number];
                   type="button"
                   ar-button
                   variant="primary"
+                  [hidden]="!canResolve()"
                   [disabled]="isClosed(s)"
                   (click)="markResolvedRemotely()"
                 >
@@ -540,6 +550,7 @@ type Tab = (typeof TABS)[number];
                   type="button"
                   ar-button
                   variant="danger"
+                  [hidden]="!canEscalate()"
                   [disabled]="isClosed(s)"
                   (click)="openEscalateModal()"
                 >
@@ -557,14 +568,16 @@ type Tab = (typeof TABS)[number];
                 Start one when a customer reports a breakdown. The AI diagnoses it and guides their
                 technician over WhatsApp or the IVR line.
               </p>
-              <a
-                ar-button
-                variant="ai"
-                icon="sparkle"
-                routerLink="/field-service/remote-maintenance/new"
-              >
-                New session
-              </a>
+              @if (canDiagnose()) {
+                <a
+                  ar-button
+                  variant="ai"
+                  icon="sparkle"
+                  routerLink="/field-service/remote-maintenance/new"
+                >
+                  New session
+                </a>
+              }
             </div>
           </ar-card>
         }
@@ -1250,6 +1263,19 @@ type Tab = (typeof TABS)[number];
   `,
 })
 export class ArRemoteMaintenance implements OnInit {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canDiagnose = grantedPolicy(
+    'AutoReach.RemoteMaintenance.Diagnose',
+    this.permissionGate,
+  );
+  protected readonly canResolve = grantedPolicy(
+    'AutoReach.RemoteMaintenance.Resolve',
+    this.permissionGate,
+  );
+  protected readonly canEscalate = grantedPolicy(
+    'AutoReach.RemoteMaintenance.Escalate',
+    this.permissionGate,
+  );
   private service = inject(RemoteMaintenanceService);
   private contacts = inject(ContactService);
   private toasts = inject(ToastService);

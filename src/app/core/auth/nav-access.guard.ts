@@ -41,6 +41,23 @@ const ACTION_PERMISSIONS: Readonly<Record<string, string>> = {
   '/settings/teams/:id/edit': 'AutoReach.Teams.Manage',
   '/settings/email-templates/new': 'AutoReach.TextTemplates.Edit',
   '/platform/rates/new': 'AutoReach.Administration.ManageRateCards',
+  '/finance/journal-entries/new': 'AutoReach.JournalEntries.Create',
+  '/finance/journal-entries/:id/edit': 'AutoReach.JournalEntries.Create',
+  '/finance/chart-of-accounts/new': 'AutoReach.ChartOfAccounts.Create',
+  '/field-service/tickets/new': 'AutoReach.ServiceTickets.Create',
+  '/field-service/tickets/:id/assign': 'AutoReach.ServiceTickets.Assign',
+  '/field-service/tickets/:id/spares': 'AutoReach.ServiceTickets.Update',
+  '/field-service/amc/new': 'AutoReach.AmcContracts.Create',
+  '/field-service/amc/renew/:id': 'AutoReach.AmcContracts.Renew',
+  '/field-service/amc/record-visit/:contractId/:visitId': 'AutoReach.AmcContracts.Update',
+  '/manufacturing/bom/new': 'AutoReach.BillOfMaterials.Create',
+  '/manufacturing/bom/:id/edit': 'AutoReach.BillOfMaterials.Update',
+  '/manufacturing/work-orders/new': 'AutoReach.WorkOrders.Create',
+  '/billing/invoices/reconcile': 'AutoReach.Billing.Reconcile',
+  '/compliance/requests/new': 'AutoReach.Compliance.HandleRequests',
+  '/field-service/remote-maintenance/new': 'AutoReach.RemoteMaintenance.Diagnose',
+  '/channels/:id/health': 'AutoReach.Channels.ViewHealth',
+  '/settings/support-access/grant': 'AutoReach.SupportAccess.Grant',
 };
 
 /**

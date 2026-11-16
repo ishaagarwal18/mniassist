@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -148,7 +150,7 @@ import {
               {{ doc.transporterName || doc.transporterGstin || '—' }} ·
               {{ doc.distanceInKm ?? '—' }} km
             </p>
-            <div class="ewb__actions">
+            <div class="ewb__actions" [hidden]="!canEWay()">
               <button
                 ar-button
                 type="button"
@@ -170,7 +172,13 @@ import {
           </ar-banner>
         }
 
-        @if (showForm(doc)) {
+        @if (showForm(doc) && !canEWay()) {
+          <ar-banner tone="warn"
+            >You can see this e-way bill. Generating or cancelling one needs the Generate e-way bill
+            permission.</ar-banner
+          >
+        }
+        @if (showForm(doc) && canEWay()) {
           @if (problems().length) {
             <ar-banner tone="warn">
               <strong>Fix these first, then generate the e-way bill:</strong>
@@ -420,6 +428,11 @@ import {
   `,
 })
 export class ArGenerateEWayPage implements OnInit {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canEWay = grantedPolicy(
+    'AutoReach.GstCompliance.GenerateEWayBill',
+    this.permissionGate,
+  );
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly gstService = inject(GstComplianceService);

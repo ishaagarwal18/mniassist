@@ -89,9 +89,11 @@ export function progressPercent(
       >
         Refresh
       </button>
-      <a ar-button variant="primary" icon="plus" routerLink="/manufacturing/work-orders/new">
-        New work order
-      </a>
+      @if (canCreate()) {
+        <a ar-button variant="primary" icon="plus" routerLink="/manufacturing/work-orders/new">
+          New work order
+        </a>
+      }
     </ar-topbar>
 
     <div class="wo ar-scroll" [attr.aria-busy]="isLoading()">
@@ -160,9 +162,16 @@ export function progressPercent(
             <span class="wo__empty-icon"><ar-icon name="machine" [size]="24" /></span>
             <h2>No work orders yet</h2>
             <p>Create one for a production batch, or start it from a bill of materials.</p>
-            <a ar-button variant="primary" icon="plus" routerLink="/manufacturing/work-orders/new">
-              New work order
-            </a>
+            @if (canCreate()) {
+              <a
+                ar-button
+                variant="primary"
+                icon="plus"
+                routerLink="/manufacturing/work-orders/new"
+              >
+                New work order
+              </a>
+            }
           </div>
         } @else {
           <ejs-grid
@@ -271,7 +280,10 @@ export function progressPercent(
               }
             </div>
             <div class="wo__head-actions">
-              @if (wo.status === WorkOrderStatus.Draft || wo.status === WorkOrderStatus.Scheduled) {
+              @if (
+                canRelease() &&
+                (wo.status === WorkOrderStatus.Draft || wo.status === WorkOrderStatus.Scheduled)
+              ) {
                 <button
                   ar-button
                   type="button"
@@ -282,7 +294,7 @@ export function progressPercent(
                   Release to the floor
                 </button>
               }
-              @if (wo.status === WorkOrderStatus.InProgress) {
+              @if (canComplete() && wo.status === WorkOrderStatus.InProgress) {
                 <button
                   ar-button
                   type="button"
@@ -408,7 +420,9 @@ export function progressPercent(
                         }
                       </div>
                     </div>
-                    @if (!step.isCompleted && wo.status === WorkOrderStatus.InProgress) {
+                    @if (
+                      canUpdate() && !step.isCompleted && wo.status === WorkOrderStatus.InProgress
+                    ) {
                       <button
                         ar-button
                         type="button"
@@ -431,7 +445,9 @@ export function progressPercent(
             <div class="wo__mat-head">
               <span class="wo__muted">Components issued from stores to this batch.</span>
               @if (
-                wo.status === WorkOrderStatus.InProgress || wo.status === WorkOrderStatus.Scheduled
+                canUpdate() &&
+                (wo.status === WorkOrderStatus.InProgress ||
+                  wo.status === WorkOrderStatus.Scheduled)
               ) {
                 <button
                   ar-button
@@ -1109,6 +1125,17 @@ export function progressPercent(
   `,
 })
 export class WorkOrdersComponent {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canCreate = grantedPolicy('AutoReach.WorkOrders.Create', this.permissionGate);
+  protected readonly canRelease = grantedPolicy(
+    'AutoReach.WorkOrders.Release',
+    this.permissionGate,
+  );
+  protected readonly canComplete = grantedPolicy(
+    'AutoReach.WorkOrders.Complete',
+    this.permissionGate,
+  );
+  protected readonly canUpdate = grantedPolicy('AutoReach.WorkOrders.Update', this.permissionGate);
   private readonly workOrderService = inject(WorkOrderService);
   private readonly dialogs = inject(ConfirmService);
   protected readonly canCancel = grantedPolicy(

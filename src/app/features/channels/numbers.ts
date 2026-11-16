@@ -90,6 +90,10 @@ const REVIEW: Record<DisplayNameStatus, NameReviewState> = {
 })
 export class ArNumbers {
   private readonly permissions = inject(PermissionService);
+  protected readonly canViewHealth = grantedPolicy(
+    'AutoReach.Channels.ViewHealth',
+    this.permissions,
+  );
   private readonly toasts = inject(ToastService);
   private readonly api = inject(ChannelApi);
   private readonly route = inject(ActivatedRoute, { optional: true });

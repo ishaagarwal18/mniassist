@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -196,7 +198,7 @@ import { ArSalesExport } from '../sales-export';
                   <button class="action-btn" title="View details" (click)="openOrder(order)">
                     View
                   </button>
-                  @if (canConfirm(order)) {
+                  @if (mayConfirm() && canConfirm(order)) {
                     <button class="action-btn primary" (click)="confirmOrder(order)">
                       Confirm
                     </button>
@@ -396,6 +398,11 @@ import { ArSalesExport } from '../sales-export';
   ],
 })
 export class ArSalesOrders {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly mayConfirm = grantedPolicy(
+    'AutoReach.SalesOrders.Confirm',
+    this.permissionGate,
+  );
   private readonly orderService = inject(SalesOrderService);
   private readonly challanService = inject(DeliveryChallanService);
   private readonly invoiceService = inject(SalesInvoiceService);

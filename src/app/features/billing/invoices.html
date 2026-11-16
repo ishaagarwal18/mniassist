@@ -11,9 +11,11 @@
     [subtitle]="subtitle()"
     help="GST invoices and reconciliation in one place. An unresolved variance — a mismatch nobody's confirmed yet — is called out separately from what's simply outstanding."
   >
-    <button ar-button type="button" variant="ghost" icon="refresh" (click)="goReconcile()">
-      Check Meta's invoice
-    </button>
+    @if (canReconcile()) {
+      <button ar-button type="button" variant="ghost" icon="refresh" (click)="goReconcile()">
+        Check Meta's invoice
+      </button>
+    }
     <button ar-button type="button" variant="primary" icon="plus" (click)="goGenerate()">
       Generate invoice
     </button>
@@ -282,7 +284,7 @@
             {{ r.source }} · {{ count(r.ourCount) }}
             {{ r.unit === 'messages' ? 'paid messages' : 'conversations' }} metered,
             {{ count(r.metaCount) }} on Meta's side
-            @if (r.needsAttention) {
+            @if (r.needsAttention && canReconcile()) {
               <button type="button" class="rec__ack" (click)="acknowledge(r)">
                 Mark as checked
               </button>
@@ -469,7 +471,7 @@
         <button ar-button type="button" variant="ghost" (click)="close()">
           {{ recResult() ? 'Done' : 'Cancel' }}
         </button>
-        @if (!recResult()) {
+        @if (!recResult() && canReconcile()) {
           <button
             ar-button
             type="button"

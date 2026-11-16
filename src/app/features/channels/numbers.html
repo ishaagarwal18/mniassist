@@ -48,9 +48,11 @@
             @if (!n.isRegistered) {
               <ar-chip tone="bad">Not registered</ar-chip>
             }
-            <a ar-button variant="ghost" [routerLink]="['/channels', n.channelId, 'health']">
-              Health & profile
-            </a>
+            @if (canViewHealth()) {
+              <a ar-button variant="ghost" [routerLink]="['/channels', n.channelId, 'health']">
+                Health & profile
+              </a>
+            }
           </div>
         </header>
 

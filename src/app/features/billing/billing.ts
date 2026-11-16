@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import { ArAutoTopUpCard } from './auto-top-up-card';
 import { ArRateHistoryCard } from './rate-history-card';
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
@@ -99,6 +101,11 @@ const EMPTY = {
   styleUrl: './billing.scss',
 })
 export class ArBilling {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canManagePlan = grantedPolicy(
+    'AutoReach.Billing.ManagePlan',
+    this.permissionGate,
+  );
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
   private readonly walletApi = inject(WalletService);

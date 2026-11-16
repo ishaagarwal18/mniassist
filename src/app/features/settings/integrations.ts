@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -145,6 +147,11 @@ const DELIVERY_TONE: Record<string, ChipTone> = {
   styleUrl: './integrations.scss',
 })
 export class ArIntegrations {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canManageSync = grantedPolicy(
+    'AutoReach.Integrations.Manage',
+    this.permissionGate,
+  );
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
   private readonly ops = inject(OpsService);

@@ -417,7 +417,7 @@ import { ArSalesExport } from '../sales-export';
                 Cancel invoice
               </button>
             }
-            @if (canIssue(inv)) {
+            @if (mayIssue() && canIssue(inv)) {
               <button
                 ar-button
                 variant="primary"
@@ -448,6 +448,8 @@ import { ArSalesExport } from '../sales-export';
   styles: SALES_RECORD_STYLES,
 })
 export class ArSalesInvoicePage extends SalesRecordPage<SalesInvoiceDto> {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly mayIssue = grantedPolicy('AutoReach.SalesInvoices.Issue', this.permissionGate);
   private readonly api = inject(SalesInvoiceService);
 
   /** The record as its printed PDF or an Excel workbook. */

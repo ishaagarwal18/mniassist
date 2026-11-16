@@ -76,6 +76,11 @@ const STATE_TONE: Record<InvoiceState, ChipTone> = {
   styleUrl: './invoices.scss',
 })
 export class ArInvoices {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canReconcile = grantedPolicy(
+    'AutoReach.Billing.Reconcile',
+    this.permissionGate,
+  );
   private readonly toasts = inject(ToastService);
   private readonly checkout = inject(PlatformCheckoutRunner);
   private readonly checkoutApi = inject(PlatformCheckoutService);

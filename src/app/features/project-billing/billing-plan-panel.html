@@ -109,7 +109,11 @@
                     >
                       Prepare invoice
                     </button>
-                  } @else if (canPlan() && m.status === Status.Waiting) {
+                  } @else if (
+                    canPlan() &&
+                    m.status === Status.Waiting &&
+                    (m.trigger === Trigger.Manual || canOverride())
+                  ) {
                     <button type="button" class="bp__link" (click)="markReady(m)">
                       Mark ready
                     </button>

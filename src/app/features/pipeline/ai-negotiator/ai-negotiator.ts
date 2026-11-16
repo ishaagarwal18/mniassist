@@ -99,6 +99,10 @@ export class ArAiNegotiator implements OnInit {
   private readonly quotationsApi = inject(QuotationService);
   private readonly toasts = inject(ToastService);
   private readonly permissions = inject(PermissionService);
+  protected readonly canViewSessions = grantedPolicy(
+    'AutoReach.NegotiationAgent.ViewSessions',
+    this.permissions,
+  );
 
   protected readonly canManageRules = grantedPolicy(
     'AutoReach.NegotiationAgent.ManagePolicy',
@@ -179,7 +183,10 @@ export class ArAiNegotiator implements OnInit {
     try {
       const [rules, page] = await Promise.all([
         firstValueFrom(this.api.getActivePolicy()).catch(() => null),
-        firstValueFrom(this.api.getSessions({ maxResultCount: 100, skipCount: 0 })),
+        // Seeing negotiations needs ViewSessions; without it the rules still load.
+        this.canViewSessions()
+          ? firstValueFrom(this.api.getSessions({ maxResultCount: 100, skipCount: 0 }))
+          : Promise.resolve({ items: [], totalCount: 0 }),
       ]);
       if (rules) {
         this.rules.set(rules);

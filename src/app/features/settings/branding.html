@@ -11,6 +11,12 @@
   @if (saved() && !error()) {
     <ar-banner tone="good">Saved.</ar-banner>
   }
+  @if (!canManage()) {
+    <ar-banner tone="teal"
+      >You can see your workspace's branding. Ask an admin with the Manage branding permission to
+      change it.</ar-banner
+    >
+  }
 
   <section class="block">
     <h2 class="block__t">Logo</h2>
@@ -22,7 +28,7 @@
           <span class="logo-preview__empty">No logo</span>
         }
       </div>
-      <div class="logo-actions">
+      <div class="logo-actions" [hidden]="!canManage()">
         <input
           #fileInput
           type="file"
@@ -64,12 +70,14 @@
           <input
             type="color"
             class="swatch"
+            [disabled]="!canManage()"
             [value]="primaryDraft()"
             (input)="primaryDraft.set($any($event.target).value)"
           />
           <input
             class="fld__in ar-mono"
             type="text"
+            [disabled]="!canManage()"
             [value]="primaryDraft()"
             (input)="primaryDraft.set($any($event.target).value)"
           />
@@ -82,12 +90,14 @@
           <input
             type="color"
             class="swatch"
+            [disabled]="!canManage()"
             [value]="accentDraft()"
             (input)="accentDraft.set($any($event.target).value)"
           />
           <input
             class="fld__in ar-mono"
             type="text"
+            [disabled]="!canManage()"
             [value]="accentDraft()"
             (input)="accentDraft.set($any($event.target).value)"
           />
@@ -95,7 +105,7 @@
         <span class="fld__hint">The active-item indicator in the sidebar.</span>
       </label>
     </div>
-    <div class="block__actions">
+    <div class="block__actions" [hidden]="!canManage()">
       <button ar-button type="button" variant="ghost" [disabled]="saving()" (click)="resetColors()">
         Reset to default
       </button>

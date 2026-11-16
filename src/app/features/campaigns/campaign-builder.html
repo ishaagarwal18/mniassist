@@ -117,11 +117,16 @@
           @if (busy() && !preflight() && !report()) {
             <p class="panel__loading">Loading…</p>
           }
-          <p class="panel__abtest">
-            <a [routerLink]="['/campaigns', c.id, 'ab-test']">
-              {{ c.state === 'draft' ? 'Set up an A/B test' : 'A/B test results' }}
-            </a>
-          </p>
+          @if (c.state === 'draft' || canViewReport()) {
+            <p class="panel__abtest">
+              <a [routerLink]="['/campaigns', c.id, 'ab-test']">
+                {{ c.state === 'draft' ? 'Set up an A/B test' : 'A/B test results' }}
+              </a>
+            </p>
+          }
+          @if (c.state !== 'draft' && c.state !== 'scheduled' && !canViewReport()) {
+            <p class="panel__loading">Results need the View campaign reports permission.</p>
+          }
 
           @if (c.state === 'draft' || c.state === 'scheduled') {
             @if (canUpdate()) {

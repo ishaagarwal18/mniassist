@@ -71,6 +71,10 @@ const STATE_TONE: Record<CState, ChipTone> = {
 })
 export class ArCampaignBuilder {
   private readonly permissions = inject(PermissionService);
+  protected readonly canViewReport = grantedPolicy(
+    'AutoReach.Campaigns.ViewReport',
+    this.permissions,
+  );
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(CampaignStore);
@@ -227,7 +231,7 @@ export class ArCampaignBuilder {
     try {
       if (c.state === 'draft' || c.state === 'scheduled') {
         this.preflight.set(await this.store.preflight(c.id));
-      } else {
+      } else if (this.canViewReport()) {
         this.report.set(await this.store.report(c.id));
       }
     } catch {

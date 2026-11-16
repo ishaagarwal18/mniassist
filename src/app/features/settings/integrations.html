@@ -330,15 +330,17 @@
             Inbound webhook: <code>{{ c.inboundWebhookPath }}</code>
           </p>
           <div class="crm__actions">
-            <button
-              ar-button
-              type="button"
-              variant="ghost"
-              [disabled]="resyncing() === c.connectionId"
-              (click)="resync(c.connectionId)"
-            >
-              {{ resyncing() === c.connectionId ? 'Resyncing…' : 'Resync open enquiries' }}
-            </button>
+            @if (canManageSync()) {
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                [disabled]="resyncing() === c.connectionId"
+                (click)="resync(c.connectionId)"
+              >
+                {{ resyncing() === c.connectionId ? 'Resyncing…' : 'Resync open enquiries' }}
+              </button>
+            }
             <button ar-button type="button" variant="ghost" (click)="goMapping(c)">
               Field mapping & currency
             </button>

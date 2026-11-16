@@ -5,7 +5,9 @@
 >
   @if (p?.canEdit) {
     <a ar-button variant="ghost" [routerLink]="['/projects', p!.id, 'edit']">Edit details</a>
-    <button ar-button type="button" variant="ghost" (click)="remove()">Delete</button>
+    @if (canDelete()) {
+      <button ar-button type="button" variant="ghost" (click)="remove()">Delete</button>
+    }
   }
 </ar-topbar>
 

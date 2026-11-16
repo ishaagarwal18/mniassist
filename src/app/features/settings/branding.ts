@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -30,6 +32,8 @@ const DEFAULT_ACCENT = '#1769FF'; // --ar-blue-500, the sidebar's active marker
   styleUrl: './branding.scss',
 })
 export class ArBranding {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canManage = grantedPolicy('AutoReach.Branding.Manage', this.permissionGate);
   protected readonly store = inject(BrandingStore);
 
   protected readonly saving = signal(false);

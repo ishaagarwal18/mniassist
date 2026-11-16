@@ -1,6 +1,7 @@
+import { grantedPolicy } from '../../core/auth/permission';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { ConfigStateService } from '@abp/ng.core';
+import { ConfigStateService, PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -39,6 +40,11 @@ export function visitState(
   styleUrl: './agency.scss',
 })
 export class ArAgency {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canManageClients = grantedPolicy(
+    'AutoReach.Agency.ManageClients',
+    this.permissionGate,
+  );
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(AgencyService);
   protected readonly acting = inject(AgencyActingStore);

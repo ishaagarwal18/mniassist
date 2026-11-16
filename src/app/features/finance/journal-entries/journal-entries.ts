@@ -1,3 +1,5 @@
+import { grantedPolicy } from '../../../core/auth/permission';
+import { PermissionService } from '@abp/ng.core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -40,7 +42,9 @@ import { ArGrid } from '../../../ui/grid';
   template: `
     <ar-topbar title="Journal Vouchers (Double-Entry General Ledger)">
       <div actions class="topbar-actions">
-        <a ar-button="primary" routerLink="/finance/journal-entries/new">+ New Journal Voucher</a>
+        <a *ngIf="canCreate()" ar-button="primary" routerLink="/finance/journal-entries/new"
+          >+ New Journal Voucher</a
+        >
       </div>
     </ar-topbar>
 
@@ -192,21 +196,21 @@ import { ArGrid } from '../../../ui/grid';
             </div>
             <div class="cockpit-actions">
               <button
-                *ngIf="entry.status === JournalVoucherStatus.Draft"
+                *ngIf="entry.status === JournalVoucherStatus.Draft && canPost()"
                 ar-button="primary"
                 (click)="postEntry(entry)"
               >
                 Post to General Ledger
               </button>
               <a
-                *ngIf="entry.status === JournalVoucherStatus.Draft"
+                *ngIf="entry.status === JournalVoucherStatus.Draft && canCreate()"
                 ar-button="ghost"
                 [routerLink]="['/finance/journal-entries', entry.id, 'edit']"
               >
                 ✏ Edit Voucher
               </a>
               <button
-                *ngIf="entry.status === JournalVoucherStatus.Draft"
+                *ngIf="entry.status === JournalVoucherStatus.Draft && canCreate()"
                 ar-button="ghost"
                 class="text-danger"
                 (click)="deleteEntry(entry)"
@@ -214,7 +218,7 @@ import { ArGrid } from '../../../ui/grid';
                 🗑 Delete Voucher
               </button>
               <button
-                *ngIf="entry.status === JournalVoucherStatus.Posted"
+                *ngIf="entry.status === JournalVoucherStatus.Posted && canCancel()"
                 ar-button="ghost"
                 (click)="cancelEntry(entry)"
               >
@@ -717,6 +721,16 @@ import { ArGrid } from '../../../ui/grid';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JournalEntriesComponent {
+  private readonly permissionGate = inject(PermissionService);
+  protected readonly canCreate = grantedPolicy(
+    'AutoReach.JournalEntries.Create',
+    this.permissionGate,
+  );
+  protected readonly canPost = grantedPolicy('AutoReach.JournalEntries.Post', this.permissionGate);
+  protected readonly canCancel = grantedPolicy(
+    'AutoReach.JournalEntries.Cancel',
+    this.permissionGate,
+  );
   protected readonly docLink = documentLink;
   private readonly journalService = inject(JournalEntryService);
   private readonly confirmService = inject(ConfirmService);
