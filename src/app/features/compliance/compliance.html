@@ -153,6 +153,20 @@
           </e-column>
         </e-columns>
       </ejs-grid>
+      @if (requestTotal() > requests().length) {
+        <p class="card__more">
+          Showing the newest {{ requests().length }} of {{ requestTotal() }} requests.
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="loading()"
+            (click)="showMoreRequests()"
+          >
+            Show more
+          </button>
+        </p>
+      }
     </section>
 
     <section class="card">

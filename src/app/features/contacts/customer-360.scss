@@ -175,6 +175,8 @@
   border: 1px solid var(--ar-line-300);
   background: var(--ar-white);
   color: var(--ar-ink-700);
+  font-family: inherit;
+  cursor: pointer;
 
   &:hover:not(.disabled) {
     background: var(--ar-bg-50);

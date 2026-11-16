@@ -1,3 +1,6 @@
+import { readApiError } from '../../core/util/api-error';
+import { ArContactPicker } from '../pipeline/contact-picker';
+import type { PickerOption } from '../../core/services/pipeline.service';
 import { LocalizationPipe, PermissionService } from '@abp/ng.core';
 import { DatePipe } from '@angular/common';
 import {
@@ -54,6 +57,7 @@ const toMinute = (clock: string) => {
 @Component({
   selector: 'ar-voice-call-batches',
   imports: [
+    ArContactPicker,
     FormsModule,
     DatePipe,
     LocalizationPipe,
@@ -308,6 +312,43 @@ const toMinute = (clock: string) => {
                       (change)="upload($event)"
                     />
                   </label>
+                </div>
+              }
+
+              @if (canCreate() && batch.status !== 'Completed' && batch.status !== 'Cancelled') {
+                <div class="add-contacts">
+                  <strong class="upload-title">Add contacts from your list</strong>
+                  <p class="upload-desc">
+                    Pick people already in Contacts. Anyone already in this batch is skipped.
+                  </p>
+                  <ar-contact-picker [multiple]="true" (picked)="pickContact($event)" />
+                  @if (pickedContacts().length) {
+                    <ul class="add-contacts__chips">
+                      @for (c of pickedContacts(); track c.id) {
+                        <li class="add-contacts__chip">
+                          <span translate="no">{{ c.label }}</span>
+                          <button
+                            type="button"
+                            class="add-contacts__x"
+                            [attr.aria-label]="'Remove ' + c.label"
+                            (click)="unpickContact(c.id)"
+                          >
+                            ×
+                          </button>
+                        </li>
+                      }
+                    </ul>
+                    <button
+                      ar-button
+                      type="button"
+                      variant="primary"
+                      [disabled]="busy()"
+                      (click)="addPickedContacts()"
+                    >
+                      Add {{ pickedContacts().length }}
+                      {{ pickedContacts().length === 1 ? 'contact' : 'contacts' }}
+                    </button>
+                  }
                 </div>
               }
 
@@ -673,6 +714,41 @@ const toMinute = (clock: string) => {
       color: #027a48 !important;
     }
 
+    /* Add existing contacts */
+    .add-contacts {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 16px;
+      border: 1px dashed var(--ar-line-200);
+      border-radius: var(--ar-radius-inset);
+    }
+    .add-contacts__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .add-contacts__chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--ar-bg-100);
+      font: 400 12px var(--ar-font-sans);
+    }
+    .add-contacts__x {
+      border: 0;
+      background: none;
+      cursor: pointer;
+      color: var(--ar-ink-500);
+      font-size: 14px;
+      line-height: 1;
+    }
+
     /* CSV Upload Box */
     .upload-box {
       display: flex;
@@ -1009,6 +1085,42 @@ export class ArVoiceCallBatches implements OnInit {
     } finally {
       this.busy.set(false);
       input.value = '';
+    }
+  }
+
+  // ---- Add existing contacts ---------------------------------------------------------------------
+  protected readonly pickedContacts = signal<PickerOption[]>([]);
+
+  protected pickContact(c: PickerOption | null): void {
+    if (!c) return;
+    this.pickedContacts.update((list) => (list.some((x) => x.id === c.id) ? list : [...list, c]));
+  }
+
+  protected unpickContact(id: string): void {
+    this.pickedContacts.update((list) => list.filter((x) => x.id !== id));
+  }
+
+  protected async addPickedContacts(): Promise<void> {
+    const sel = this.selected();
+    const ids = this.pickedContacts().map((c) => c.id);
+    if (!sel || !ids.length || this.busy()) return;
+    this.busy.set(true);
+    this.error.set('');
+    this.importNotes.set([]);
+    try {
+      const result = await firstValueFrom(this.api.addRecipients(sel.id, ids));
+      this.importNotes.set([
+        `Added ${result.added}` +
+          (result.alreadyIn ? `, ${result.alreadyIn} already in the batch` : '') +
+          '.',
+        ...result.problems,
+      ]);
+      this.pickedContacts.set([]);
+      await this.refresh();
+    } catch (e: unknown) {
+      this.error.set(readApiError(e, 'The contacts could not be added.'));
+    } finally {
+      this.busy.set(false);
     }
   }
 

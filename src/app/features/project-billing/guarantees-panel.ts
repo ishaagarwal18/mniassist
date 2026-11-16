@@ -28,6 +28,11 @@ function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
 }
 
+/** "2026-11-16" from an ISO date or date-time. */
+export function dateOnly(value: string): string {
+  return value.slice(0, 10);
+}
+
 function rupees(paise: number): string {
   return '₹' + (paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 }
@@ -62,6 +67,8 @@ export class ArGuaranteesPanel {
   protected readonly returnCondition = signal(BankGuaranteeReturnCondition.RetentionReleased);
   protected readonly returnOn = signal('');
   protected readonly busy = signal(false);
+  /** The guarantee being corrected; null while recording a new one. */
+  protected readonly editingId = signal<string | null>(null);
 
   protected readonly Kind = BankGuaranteeKind;
   protected readonly Back = BankGuaranteeReturnCondition;
@@ -117,34 +124,78 @@ export class ArGuaranteesPanel {
     }
   }
 
+  protected startAdd(): void {
+    this.editingId.set(null);
+    this.kind.set(BankGuaranteeKind.Performance);
+    this.number.set('');
+    this.bank.set('');
+    this.amount.set('');
+    this.issuedOn.set(today());
+    this.validTo.set('');
+    this.claimDays.set('30');
+    this.returnCondition.set(defaultReturn(BankGuaranteeKind.Performance));
+    this.returnOn.set('');
+    this.adding.set(true);
+  }
+
+  /** Opens the form filled with this guarantee, to extend its expiry or fix a detail. */
+  protected startEdit(g: BankGuaranteeDto): void {
+    this.editingId.set(g.id);
+    this.kind.set(g.kind);
+    this.number.set(g.number);
+    this.bank.set(g.bank);
+    this.amount.set(String(g.amountInPaise / 100));
+    this.issuedOn.set(dateOnly(g.issuedOn));
+    this.validTo.set(dateOnly(g.validTo));
+    this.claimDays.set(g.claimPeriodDays != null ? String(g.claimPeriodDays) : '');
+    this.returnCondition.set(g.returnCondition);
+    this.returnOn.set(g.returnOn ? dateOnly(g.returnOn) : '');
+    this.adding.set(true);
+  }
+
+  protected cancelForm(): void {
+    this.adding.set(false);
+    this.editingId.set(null);
+  }
+
   protected async add(): Promise<void> {
     const amount = Math.round(Number(this.amount().replace(/[₹,\s]/g, '')) * 100);
     if (!this.number().trim() || !this.bank().trim() || !(amount > 0) || !this.validTo()) return;
     this.busy.set(true);
     try {
+      const editing = this.editingId();
+      const body = {
+        kind: this.kind(),
+        number: this.number().trim(),
+        bank: this.bank().trim(),
+        amountInPaise: amount,
+        issuedOn: this.issuedOn(),
+        validTo: this.validTo(),
+        claimPeriodDays: this.claimDays() ? Number(this.claimDays()) : null,
+        returnCondition: this.returnCondition(),
+        returnOn:
+          this.returnCondition() === BankGuaranteeReturnCondition.OnDate
+            ? this.returnOn() || null
+            : null,
+      };
       await firstValueFrom(
-        this.api.create(this.orderId(), {
-          kind: this.kind(),
-          number: this.number().trim(),
-          bank: this.bank().trim(),
-          amountInPaise: amount,
-          issuedOn: this.issuedOn(),
-          validTo: this.validTo(),
-          claimPeriodDays: this.claimDays() ? Number(this.claimDays()) : null,
-          returnCondition: this.returnCondition(),
-          returnOn:
-            this.returnCondition() === BankGuaranteeReturnCondition.OnDate
-              ? this.returnOn() || null
-              : null,
-        }),
+        editing ? this.api.update(editing, body) : this.api.create(this.orderId(), body),
       );
       this.adding.set(false);
+      this.editingId.set(null);
       this.number.set('');
       this.amount.set('');
-      this.toasts.success('Bank guarantee recorded.');
+      this.toasts.success(editing ? 'Bank guarantee updated.' : 'Bank guarantee recorded.');
       await this.load(this.orderId());
     } catch (e) {
-      this.toasts.error(readApiError(e, 'The guarantee could not be recorded.'));
+      this.toasts.error(
+        readApiError(
+          e,
+          this.editingId()
+            ? 'The guarantee could not be updated.'
+            : 'The guarantee could not be recorded.',
+        ),
+      );
     } finally {
       this.busy.set(false);
     }

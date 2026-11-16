@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { NavigationEnd, Router } from '@angular/router';
-import { PermissionService } from '@abp/ng.core';
+import { ConfigStateService, PermissionService } from '@abp/ng.core';
 import { BehaviorSubject, of } from 'rxjs';
 import { AgencyService } from '../../proxy/agencies';
 import { NotificationService } from '../../proxy/notifications';
@@ -28,6 +28,7 @@ describe('app shell optional feature access', () => {
     getCredentials = vi.fn(() => of({ ready: false }));
     TestBed.configureTestingModule({
       providers: [
+        { provide: ConfigStateService, useValue: { getOne$: () => of(null) } },
         {
           provide: Router,
           useValue: { url: '/settings/integrations', events: new BehaviorSubject(null) },

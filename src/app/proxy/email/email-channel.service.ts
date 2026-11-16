@@ -81,6 +81,15 @@ export interface UpdateEmailSmtpInput {
 }
 
 /** Routes follow ABP's conventional-controller naming for EmailChannelAppService. */
+export interface SendEmailInput {
+  contactId: string;
+  subject: string;
+  htmlBody: string;
+  textBody?: string | null;
+  /** True for a promotional send (adds the unsubscribe link, needs marketing consent). */
+  isMarketing?: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class EmailChannelService {
   private restService = inject(RestService);
@@ -137,6 +146,16 @@ export class EmailChannelService {
   removeImap = (config?: Partial<Rest.Config>) =>
     this.restService.request<any, EmailChannelDto>(
       { method: 'DELETE', url: '/api/auto-reach/email-channel/imap' },
+      { apiName: this.apiName, ...config },
+    );
+
+  /**
+   * One email to one contact from the workspace's address; kept as an Email conversation in the Inbox.
+   * `isMarketing: false` for a one-to-one message (reaches anyone not opted out of email entirely).
+   */
+  send = (input: SendEmailInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, void>(
+      { method: 'POST', url: '/api/auto-reach/email-channel/send', body: input },
       { apiName: this.apiName, ...config },
     );
 

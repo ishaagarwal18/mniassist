@@ -83,6 +83,11 @@ export class ArCompliance {
   protected readonly failed = this.store.failed;
   protected readonly overview = this.store.overview;
   protected readonly requests = this.store.requests;
+  protected readonly requestTotal = this.store.requestTotal;
+
+  protected showMoreRequests(): void {
+    this.store.showMoreRequests();
+  }
   protected readonly policies = this.store.policies;
   protected readonly breaches = this.store.breaches;
   protected readonly busy = signal<string | null>(null);

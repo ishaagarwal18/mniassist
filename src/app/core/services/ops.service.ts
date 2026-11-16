@@ -1,8 +1,9 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map, filter } from 'rxjs';
 import { NavigationEnd, Router } from '@angular/router';
-import { PermissionService } from '@abp/ng.core';
+import { ConfigStateService, PermissionService } from '@abp/ng.core';
+import type { NotificationSummaryDto } from '../../proxy/notifications/models';
 import { grantedPolicy } from '../auth/permission';
 import { NotificationService as NotificationApi } from '../../proxy/notifications';
 import {
@@ -168,11 +169,93 @@ export class OpsService {
     return base.map((n) => (read.has(n.id) ? { ...n, read: true } : n));
   });
 
-  readonly unreadCount = computed(() => this.notifications().filter((n) => !n.read).length);
+  /**
+   * Unread counts from the server's summary (every notification, not just the latest 100 loaded), less
+   * the ones marked read here since it was fetched. The loaded list is the fallback until it answers.
+   */
+  readonly unreadCount = computed(() => {
+    const s = this.summary();
+    if (!s) return this.notifications().filter((n) => !n.read).length;
+    return Math.max(0, (s.unreadCount ?? 0) - this.readSinceSummary().size);
+  });
 
-  readonly unreadCriticalCount = computed(
-    () => this.notifications().filter((n) => !n.read && n.tone === 'critical').length,
+  readonly unreadCriticalCount = computed(() => {
+    const s = this.summary();
+    const listed = this.notifications().filter((n) => !n.read && n.tone === 'critical').length;
+    if (!s) return listed;
+    const readCritical = this.unreadCriticalReadHere();
+    return Math.max(0, (s.unreadCriticalCount ?? 0) - readCritical);
+  });
+
+  // ---- the bell's poll ------------------------------------------------------
+  // GET notification/summary is the backend's cheap "anything new?" call (two counts and one row).
+  // It runs every minute while the tab is visible and as soon as the tab comes back; when the newest
+  // notification is not the one loaded, the list reloads, so new notifications appear without a refresh.
+
+  static readonly POLL_MS = 60_000;
+  private readonly summary = signal<NotificationSummaryDto | null>(null);
+  /** Ids marked read in this tab after the current summary was fetched (so the badge drops at once). */
+  private readonly readSinceSummary = signal<ReadonlySet<string>>(new Set());
+  private readonly criticalReadHere = signal<ReadonlySet<string>>(new Set());
+  private unreadCriticalReadHere(): number {
+    return this.criticalReadHere().size;
+  }
+  private readonly signedIn = toSignal(
+    inject(ConfigStateService)
+      .getOne$('currentUser')
+      .pipe(map((u) => Boolean((u as { isAuthenticated?: boolean } | null)?.isAuthenticated))),
+    { initialValue: false },
   );
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private polling = false;
+
+  private readonly pollWhileSignedIn = effect(() => {
+    if (this.signedIn()) this.startPolling();
+    else this.stopPolling();
+  });
+
+  private readonly stopOnDestroy = inject(DestroyRef).onDestroy(() => this.stopPolling());
+
+  private readonly onVisible = (): void => {
+    if (document.visibilityState === 'visible') void this.pollSummary();
+  };
+
+  private startPolling(): void {
+    if (this.pollTimer) return;
+    void this.pollSummary();
+    this.pollTimer = setInterval(() => {
+      if (document.visibilityState === 'visible') void this.pollSummary();
+    }, OpsService.POLL_MS);
+    document.addEventListener('visibilitychange', this.onVisible);
+  }
+
+  private stopPolling(): void {
+    if (this.pollTimer) clearInterval(this.pollTimer);
+    this.pollTimer = null;
+    document.removeEventListener('visibilitychange', this.onVisible);
+    this.summary.set(null);
+  }
+
+  /** Asks the server whether anything is new; reloads the list when the newest notification changed. */
+  async pollSummary(): Promise<void> {
+    if (this.polling) return;
+    this.polling = true;
+    try {
+      const s = await firstValueFrom(this.notificationApi.getSummary({ skipHandleError: true }));
+      this.summary.set(s);
+      this.readSinceSummary.set(new Set());
+      this.criticalReadHere.set(new Set());
+      const newest = s.mostRecent?.id ?? null;
+      const loaded = settled(this.notificationsResource)[0]?.id ?? null;
+      if (newest && newest !== loaded && !this.notificationsResource.isLoading()) {
+        this.notificationsResource.reload();
+      }
+    } catch {
+      // Signed out or offline: keep what is shown; the next poll tries again.
+    } finally {
+      this.polling = false;
+    }
+  }
 
   readonly invoices = computed<readonly Invoice[]>(() => settled(this.invoicesResource));
 
@@ -212,6 +295,11 @@ export class OpsService {
   // ---- actions -------------------------------------------------------------
 
   markRead(id: string): void {
+    const n = this.notifications().find((x) => x.id === id);
+    if (n && !n.read) {
+      this.readSinceSummary.update((set) => new Set(set).add(id));
+      if (n.tone === 'critical') this.criticalReadHere.update((set) => new Set(set).add(id));
+    }
     this.readLocally.update((set) => new Set(set).add(id));
 
     this.notificationApi.markRead(id).subscribe();
@@ -219,8 +307,12 @@ export class OpsService {
 
   markAllRead(): void {
     this.readLocally.set(new Set(this.notifications().map((n) => n.id)));
+    const s = this.summary();
+    if (s) this.summary.set({ ...s, unreadCount: 0, unreadCriticalCount: 0 });
+    this.readSinceSummary.set(new Set());
+    this.criticalReadHere.set(new Set());
 
-    this.notificationApi.markAllRead().subscribe();
+    this.notificationApi.markAllRead().subscribe({ next: () => void this.pollSummary() });
   }
 
   // ---- create-dialog actions ---------------------------------------------

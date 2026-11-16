@@ -12,6 +12,13 @@ import {
 import { ChannelService } from '../../proxy/channels/channel.service';
 import { ArDialog } from '../../ui/dialog';
 import { ArVoiceCallBatches } from './voice-call-batches';
+import { ArContactPicker } from '../pipeline/contact-picker';
+
+@Component({ selector: 'ar-contact-picker', template: '' })
+class TestContactPicker {
+  readonly multiple = input(false);
+  readonly picked = output<unknown>();
+}
 
 vi.mock('@syncfusion/ej2-angular-popups', () => ({ DialogComponent: class {} }));
 
@@ -113,8 +120,8 @@ describe('AI call batches', () => {
         { provide: PermissionService, useValue: { getGrantedPolicy: () => true } },
       ],
     }).overrideComponent(ArVoiceCallBatches, {
-      remove: { imports: [ArDialog, ArTopbar, LocalizationPipe] },
-      add: { imports: [TestDialog, TestTopbar, TestLocalization] },
+      remove: { imports: [ArDialog, ArTopbar, LocalizationPipe, ArContactPicker] },
+      add: { imports: [TestDialog, TestTopbar, TestLocalization, TestContactPicker] },
     });
   });
   afterEach(() => TestBed.resetTestingModule());

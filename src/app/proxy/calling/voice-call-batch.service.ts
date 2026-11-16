@@ -91,6 +91,17 @@ export class VoiceCallBatchService {
       { apiName: this.apiName, skipHandleError: true, ...config },
     );
 
+  /** Adds contacts already in the workspace; ones already in the batch are ignored. Up to 1000 at a time. */
+  addRecipients = (id: string, contactIds: string[], config?: Partial<Rest.Config>) =>
+    this.restService.request<any, VoiceCallRecipientImportDto>(
+      {
+        method: 'POST',
+        url: `/api/auto-reach/voice-call-batch/${id}/recipients`,
+        body: { contactIds },
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
   importRecipients = (id: string, csv: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, VoiceCallRecipientImportDto>(
       {

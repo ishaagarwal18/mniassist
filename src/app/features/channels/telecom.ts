@@ -15,6 +15,8 @@ import {
 import { rxResource } from '@angular/core/rxjs-interop';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { TelecomStore } from '../../core/services/telecom.store';
+import { TelecomService } from '../../proxy/channels/telecom.service';
+import { firstValueFrom } from 'rxjs';
 import { TenantDto, TenantService } from '../../proxy/tenant-management';
 import { ToastService } from '../../core/ui/toast.service';
 import { grantedPolicy } from '../../core/auth/permission';
@@ -50,6 +52,7 @@ export class ArTelecom {
   private readonly currentUser = inject(CurrentUserService);
   private readonly tenantApi = inject(TenantService);
   private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly telecomApi = inject(TelecomService);
   private readonly router = inject(Router, { optional: true });
 
   protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
@@ -216,12 +219,26 @@ export class ArTelecom {
       void this.runAudit();
     } else if (this.mode === 'allocate' || this.mode === 'release') {
       const id = this.route?.snapshot?.paramMap?.get('id');
-      const num = this.store.rawNumbers().find((x: ResellerNumberDto) => x.id === id);
-      if (num) {
-        if (this.mode === 'allocate') this.openAllocateDialog(num);
-        else this.openReleaseDialog(num);
+      if (id) void this.openFromLink(id, this.mode);
+    }
+  }
+
+  /**
+   * A link (or a refresh) to /allocate/:id or /release/:id: the list may not have loaded yet, so the
+   * number is read on its own (GET telecom/{id}/number) when it is not in the list already.
+   */
+  private async openFromLink(id: string, mode: 'allocate' | 'release'): Promise<void> {
+    let num = this.store.rawNumbers().find((x: ResellerNumberDto) => x.id === id);
+    if (!num) {
+      try {
+        num = await firstValueFrom(this.telecomApi.getNumber(id, { skipHandleError: true }));
+      } catch (e: unknown) {
+        this.toasts.error(readApiError(e, 'That number could not be found.'));
+        return;
       }
     }
+    if (mode === 'allocate') this.openAllocateDialog(num);
+    else this.openReleaseDialog(num);
   }
 
   protected goAddNumber(): void {

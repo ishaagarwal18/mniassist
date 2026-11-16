@@ -9,7 +9,7 @@
         </p>
       </div>
       @if (!adding()) {
-        <button ar-button type="button" variant="ghost" (click)="adding.set(true)">
+        <button ar-button type="button" variant="ghost" (click)="startAdd()">
           Record a guarantee
         </button>
       }
@@ -51,6 +51,15 @@
                   ·
                   <button type="button" class="bp__link" (click)="invoked(g)">Invoked</button>
                   ·
+                  <button
+                    type="button"
+                    class="bp__link"
+                    [attr.aria-label]="'Edit guarantee ' + g.number"
+                    (click)="startEdit(g)"
+                  >
+                    Edit
+                  </button>
+                  ·
                 }
                 <button
                   type="button"
@@ -69,6 +78,11 @@
     }
 
     @if (adding()) {
+      <h3 class="bp__muted">
+        {{
+          editingId() ? 'Edit guarantee — extend its expiry or fix a detail' : 'Record a guarantee'
+        }}
+      </h3>
       <div class="bp__bar">
         <label class="ar-field">
           <span class="ar-field__label">Kind</span>
@@ -157,8 +171,10 @@
         }
       </div>
       <div class="bp__foot">
-        <button ar-button type="button" variant="ghost" (click)="adding.set(false)">Cancel</button>
-        <button ar-button type="button" [disabled]="busy()" (click)="add()">Save guarantee</button>
+        <button ar-button type="button" variant="ghost" (click)="cancelForm()">Cancel</button>
+        <button ar-button type="button" [disabled]="busy()" (click)="add()">
+          {{ editingId() ? 'Save changes' : 'Save guarantee' }}
+        </button>
       </div>
     }
   </section>

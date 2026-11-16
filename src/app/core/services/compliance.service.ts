@@ -126,6 +126,7 @@ const EMPTY_DATA = {
     suppressed: 0,
   } as Overview,
   requests: [] as DpdpRequest[],
+  requestTotal: 0,
   policies: [] as RetentionPolicy[],
   breaches: [] as Breach[],
 };
@@ -134,13 +135,16 @@ const EMPTY_DATA = {
 export class ComplianceStore {
   private readonly api = inject(ComplianceApi);
   private readonly tick = signal(0);
+  /** How many data-principal requests to show; "Show more" raises it a page at a time. */
+  static readonly REQUEST_PAGE = 100;
+  private readonly requestLimit = signal(ComplianceStore.REQUEST_PAGE);
 
   private readonly resource = rxResource({
-    params: () => ({ tick: this.tick() }),
-    stream: () =>
+    params: () => ({ tick: this.tick(), limit: this.requestLimit() }),
+    stream: ({ params }) =>
       forkJoin({
         overview: this.api.getOverview(),
-        requests: this.api.getRequests({ skipCount: 0, maxResultCount: 100 }),
+        requests: this.api.getRequests({ skipCount: 0, maxResultCount: params.limit }),
         policies: this.api.getRetentionPolicies(),
         breaches: this.api.getBreaches({ skipCount: 0, maxResultCount: 50 }),
       }).pipe(
@@ -171,6 +175,7 @@ export class ComplianceStore {
                 hasResponse: !!d.responseBlobRef,
               }) as DpdpRequest,
           ),
+          requestTotal: r.requests.totalCount ?? (r.requests.items ?? []).length,
           policies: (r.policies.items ?? []).map(
             (p) =>
               ({
@@ -215,6 +220,12 @@ export class ComplianceStore {
   readonly failed = computed(() => this.resource.error() != null);
   readonly overview = computed(() => this.data().overview);
   readonly requests = computed(() => this.data().requests);
+  /** Every request on the register, of which `requests()` holds the newest. */
+  readonly requestTotal = computed(() => this.data().requestTotal);
+
+  showMoreRequests(): void {
+    this.requestLimit.update((n) => n + ComplianceStore.REQUEST_PAGE);
+  }
   readonly policies = computed(() => this.data().policies);
   readonly breaches = computed(() => this.data().breaches);
 

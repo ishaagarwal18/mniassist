@@ -104,9 +104,28 @@
             </a>
           }
           @if (c.email) {
-            <a class="c360-comm-link" [href]="'mailto:' + c.email" title="Send email">
-              <ar-icon name="mail" [size]="14" /> Email
-            </a>
+            @if (canEmail() && !c.isAccountView && (c.contactId ?? c.id)) {
+              <button
+                type="button"
+                class="c360-comm-link"
+                title="Send an email from your workspace address"
+                (click)="emailing.set(true)"
+              >
+                <ar-icon name="mail" [size]="14" /> Email
+              </button>
+            } @else {
+              <a class="c360-comm-link" [href]="'mailto:' + c.email" title="Send email">
+                <ar-icon name="mail" [size]="14" /> Email
+              </a>
+            }
+          }
+          @if (emailing() && c.email && (c.contactId ?? c.id)) {
+            <ar-email-contact-dialog
+              [contactId]="(c.contactId ?? c.id)!"
+              [name]="c.contactName || c.customerName || ''"
+              [email]="c.email"
+              (closed)="emailing.set(false)"
+            />
           }
         </div>
       </div>

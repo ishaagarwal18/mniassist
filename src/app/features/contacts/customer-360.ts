@@ -1,3 +1,4 @@
+import { ArEmailContactDialog } from './email-contact-dialog';
 import { ArContactConsent } from './contact-consent';
 import { ArCustomerInsights } from './customer-insights';
 import { ArAccountProjects } from '../projects/account-projects';
@@ -63,6 +64,7 @@ export type Customer360Tab =
   selector: 'ar-customer-360',
   standalone: true,
   imports: [
+    ArEmailContactDialog,
     ArAtRiskCard,
     ArContactConsent,
     ArCustomerInsights,
@@ -95,6 +97,9 @@ export class ArCustomer360 {
   private readonly destroyRef = inject(DestroyRef);
   private readonly cockpitOrigin = inject(CockpitOriginService);
   private readonly permissions = inject(PermissionService);
+  /** The in-app send needs the Channels permission (EmailChannel); others keep the mailto link. */
+  protected readonly canEmail = grantedPolicy('AutoReach.Channels', this.permissions);
+  protected readonly emailing = signal(false);
 
   readonly data = signal<Customer360Dto | null>(null);
   readonly activeTab = signal<Customer360Tab>('overview');

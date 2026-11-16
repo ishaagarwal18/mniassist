@@ -127,3 +127,12 @@
   font: 400 12px var(--ar-font-sans);
   color: var(--ar-ink-400);
 }
+
+.card__more {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 0;
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}

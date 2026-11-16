@@ -108,6 +108,13 @@ export class BankGuaranteeService {
       { apiName: this.apiName, ...config },
     );
 
+  /** Corrects a guarantee: an extended expiry, a fixed amount or number. */
+  update = (id: string, input: SaveBankGuaranteeInput, config?: Partial<Rest.Config>) =>
+    this.rest.request<SaveBankGuaranteeInput, BankGuaranteeDto>(
+      { method: 'PUT', url: `/api/auto-reach/bank-guarantee/${id}`, body: input },
+      { apiName: this.apiName, ...config },
+    );
+
   markReturned = (id: string, returnedOn: string, config?: Partial<Rest.Config>) =>
     this.rest.request<{ returnedOn: string }, BankGuaranteeDto>(
       {
