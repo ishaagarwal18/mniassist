@@ -24,7 +24,9 @@ import {
   VendorBillService,
 } from '../../../proxy/purchasing';
 import { VendorBillReaderService } from '../../../proxy/purchasing';
-import { ArButton, ArIcon, ArDateInput, ArSelect } from '../../../ui';
+import { ArButton, ArDialog, ArIcon, ArDateInput, ArSelect } from '../../../ui';
+import { ArCatalogueItem } from '../../sales/catalogue-item';
+import { ProductDto, ProductService } from '../../../proxy/library/product.service';
 import {
   ArPfSupplier,
   gstRateOptions,
@@ -57,7 +59,16 @@ import { PickListStore } from '../../../core/pick-lists/pick-list.store';
  */
 @Component({
   selector: 'ar-new-vendor-bill-page',
-  imports: [ArTopbar, ArButton, ArIcon, ArPfSupplier, ArDateInput, ArSelect],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArIcon,
+    ArPfSupplier,
+    ArDateInput,
+    ArSelect,
+    ArDialog,
+    ArCatalogueItem,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -336,6 +347,7 @@ import { PickListStore } from '../../../core/pick-lists/pick-list.store';
             </header>
             <div class="pf__lines" role="table" aria-label="Billed items">
               <div class="pf__line pf__line--bill pf__line--head" role="row">
+                <span role="columnheader">Part name</span>
                 <span role="columnheader">Part no.</span>
                 <span role="columnheader">Description</span>
                 <span role="columnheader">HSN</span>
@@ -348,6 +360,16 @@ import { PickListStore } from '../../../core/pick-lists/pick-list.store';
               </div>
               @for (l of form().lines; track $index; let i = $index) {
                 <div class="pf__line pf__line--bill" role="row">
+                  <span role="cell">
+                    <ar-catalogue-item
+                      placeholder="Search or add an item"
+                      [value]="l.partName ?? ''"
+                      [allowCreate]="canAddItem"
+                      (typed)="patchLine(i, { partName: $event, productId: undefined })"
+                      (picked)="pickItem(i, $event)"
+                      (createNew)="openNewItem(i, $event)"
+                    />
+                  </span>
                   <span role="cell">
                     <input
                       class="ar-field__input ar-mono"
@@ -447,6 +469,102 @@ import { PickListStore } from '../../../core/pick-lists/pick-list.store';
             <button type="button" class="pf__add" (click)="addLine()">
               <ar-icon name="plus" [size]="14" /> Add item
             </button>
+            @if (newItem(); as n) {
+              <ar-dialog title="New catalogue item" (dismiss)="newItem.set(null)">
+                <p class="vb-new__note">
+                  Saved to your item catalogue, so you can pick it on later bills, orders and
+                  quotations.
+                </p>
+                <label class="ar-field">
+                  <span class="ar-field__label">Part name *</span>
+                  <input
+                    class="ar-field__input"
+                    maxlength="256"
+                    [value]="n.name"
+                    (input)="patchNewItem({ name: $any($event.target).value })"
+                  />
+                </label>
+                <label class="ar-field">
+                  <span class="ar-field__label">Part number *</span>
+                  <input
+                    class="ar-field__input ar-mono"
+                    maxlength="64"
+                    placeholder="Maker's part / catalogue number"
+                    [value]="n.partNumber"
+                    (input)="patchNewItem({ partNumber: $any($event.target).value })"
+                  />
+                </label>
+                <div class="vb-new__row">
+                  <label class="ar-field">
+                    <span class="ar-field__label"
+                      >HSN <span class="ar-field__opt">(optional)</span></span
+                    >
+                    <input
+                      class="ar-field__input ar-mono"
+                      inputmode="numeric"
+                      maxlength="8"
+                      [value]="n.hsnCode"
+                      (input)="patchNewItem({ hsnCode: $any($event.target).value })"
+                    />
+                  </label>
+                  <label class="ar-field">
+                    <span class="ar-field__label">GST</span>
+                    <select
+                      class="ar-field__input"
+                      (change)="patchNewItem({ taxRateBasisPoints: +$any($event.target).value })"
+                    >
+                      @for (r of gstRates(); track r.bps) {
+                        <option [value]="r.bps" [selected]="r.bps === n.taxRateBasisPoints">
+                          {{ r.label }}
+                        </option>
+                      }
+                    </select>
+                  </label>
+                </div>
+                <div class="vb-new__row">
+                  <label class="ar-field">
+                    <span class="ar-field__label"
+                      >Purchase rate ₹ <span class="ar-field__opt">(optional)</span></span
+                    >
+                    <input
+                      class="ar-field__input"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      [value]="n.purchaseRate || ''"
+                      (input)="patchNewItem({ purchaseRate: +$any($event.target).value })"
+                    />
+                  </label>
+                  <label class="ar-field">
+                    <span class="ar-field__label"
+                      >Selling price ₹ <span class="ar-field__opt">(optional)</span></span
+                    >
+                    <input
+                      class="ar-field__input"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      [value]="n.salePrice || ''"
+                      (input)="patchNewItem({ salePrice: +$any($event.target).value })"
+                    />
+                  </label>
+                </div>
+                <div dialogActions>
+                  <button ar-button type="button" variant="ghost" (click)="newItem.set(null)">
+                    Cancel
+                  </button>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="primary"
+                    [disabled]="savingItem()"
+                    (click)="saveNewItem()"
+                  >
+                    {{ savingItem() ? 'Adding…' : 'Add item' }}
+                  </button>
+                </div>
+              </ar-dialog>
+            }
 
             <dl class="pf__totals" aria-label="Bill totals">
               <dt>Taxable value</dt>
@@ -504,7 +622,17 @@ import { PickListStore } from '../../../core/pick-lists/pick-list.store';
     PURCHASE_FORM_STYLES,
     `
       .pf__line--bill {
-        grid-template-columns: 1.1fr 2fr 0.9fr 0.7fr 0.9fr 0.6fr 0.7fr 0.9fr 32px;
+        grid-template-columns: 1.6fr 1fr 1.6fr 0.8fr 0.6fr 0.8fr 0.6fr 0.7fr 0.8fr 32px;
+      }
+      .vb-new__note {
+        margin: 0 0 12px;
+        font: 400 12.5px var(--ar-font-sans);
+        color: var(--ar-ink-500);
+      }
+      .vb-new__row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 12px;
       }
       .vb-up {
         border-style: dashed;
@@ -726,6 +854,80 @@ export class ArNewVendorBillPage {
     this.form.update((f) => ({ ...f, ...p }));
   }
 
+  // ---- Part name: pick from the catalogue, or add a new item here ----
+  private readonly productApi = inject(ProductService);
+  protected readonly canAddItem = checkPolicy('AutoReach.Library.Create', inject(PermissionService));
+  protected readonly newItem = signal<NewItemForm | null>(null);
+  protected readonly savingItem = signal(false);
+
+  /** A catalogue item fills the line; a rate already typed on the bill is kept. */
+  protected pickItem(index: number, p: ProductDto): void {
+    const line = this.form().lines[index];
+    this.patchLine(index, {
+      productId: p.id,
+      partName: p.name ?? '',
+      partNumber: p.partNumber ?? '',
+      description: p.description ?? '',
+      hsnCode: p.hsnCode ?? line.hsnCode,
+      taxRateBasisPoints: p.taxRateBasisPoints ?? line.taxRateBasisPoints,
+      rate: line.rate || (p.purchasePriceInPaise ?? 0) / 100,
+    });
+  }
+
+  protected openNewItem(index: number, typed: string): void {
+    const line = this.form().lines[index];
+    this.newItem.set({
+      line: index,
+      name: typed || line.partName || '',
+      partNumber: line.partNumber,
+      hsnCode: line.hsnCode,
+      taxRateBasisPoints: line.taxRateBasisPoints,
+      purchaseRate: line.rate,
+      salePrice: 0,
+    });
+  }
+
+  protected patchNewItem(p: Partial<NewItemForm>): void {
+    this.newItem.update((n) => (n ? { ...n, ...p } : n));
+  }
+
+  protected async saveNewItem(): Promise<void> {
+    const n = this.newItem();
+    if (!n) return;
+    if (!n.name.trim() || !n.partNumber.trim()) {
+      this.toasts.warning('Enter the part name and part number.', 'New item');
+      return;
+    }
+    if (n.hsnCode.trim() && !/^\d{4,8}$/.test(n.hsnCode.trim())) {
+      this.toasts.warning('HSN is 4 to 8 digits.', 'New item');
+      return;
+    }
+    this.savingItem.set(true);
+    try {
+      const created = await firstValueFrom(
+        this.productApi.create(
+          {
+            name: n.name.trim(),
+            partNumber: n.partNumber.trim(),
+            hsnCode: n.hsnCode.trim() || null,
+            taxRateBasisPoints: n.taxRateBasisPoints,
+            purchasePriceInPaise: n.purchaseRate > 0 ? Math.round(n.purchaseRate * 100) : null,
+            listPriceInPaise: n.salePrice > 0 ? Math.round(n.salePrice * 100) : 0,
+            isActive: true,
+          },
+          { skipHandleError: true },
+        ),
+      );
+      this.pickItem(n.line, created);
+      this.newItem.set(null);
+      this.toasts.success(`${created.name} added to the catalogue.`, 'Item added');
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The item could not be added.'), 'Not added');
+    } finally {
+      this.savingItem.set(false);
+    }
+  }
+
   protected patchLine(index: number, p: Partial<BillFormLine>): void {
     this.form.update((f) => ({
       ...f,
@@ -838,4 +1040,14 @@ export class ArNewVendorBillPage {
     };
     return this.router.createUrlTree(['/purchasing/bills'], { queryParams: params }).toString();
   }
+}
+
+interface NewItemForm {
+  line: number;
+  name: string;
+  partNumber: string;
+  hsnCode: string;
+  taxRateBasisPoints: number;
+  purchaseRate: number;
+  salePrice: number;
 }

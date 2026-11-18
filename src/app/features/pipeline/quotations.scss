@@ -67,6 +67,9 @@
 }
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   justify-content: flex-end;
+  /* Buttons wrap to a second row rather than being cut off at the cell edge. */
+  white-space: normal;
 }

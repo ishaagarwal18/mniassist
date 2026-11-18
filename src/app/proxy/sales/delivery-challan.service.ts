@@ -46,6 +46,17 @@ export class DeliveryChallanService {
       { apiName: this.apiName, ...config },
     );
 
+  update = (id: string, input: CreateDeliveryChallanDto, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, DeliveryChallanDto>(
+      {
+        method: 'PUT',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/delivery-challan/${id}`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
   create = (input: CreateDeliveryChallanDto, config?: Partial<Rest.Config>) =>
     this.restService.request<any, DeliveryChallanDto>(
       {

@@ -46,8 +46,8 @@ describe('resolveNavTrail breadcrumb logic', () => {
   });
 
   it('resolves Calls for /calls and for the IVR set-up', () => {
-    expect(resolveNavTrail('/calls', 'Calls').groupHeading).toBe('Calls');
-    expect(resolveNavTrail('/channels/voice-ivr', 'Voice / IVR').groupHeading).toBe('Calls');
+    expect(resolveNavTrail('/calls', 'Calls').groupHeading).toBe('Call channels');
+    expect(resolveNavTrail('/channels/voice-ivr', 'Voice / IVR').groupHeading).toBe('Call channels');
   });
 
   it('resolves Orders & invoices for sales orders, invoices, re-orders and collections', () => {
@@ -100,7 +100,7 @@ describe('resolveNavTrail breadcrumb logic', () => {
     const leadForms = resolveNavTrail('/channels/lead-forms', 'Lead forms');
     expect(leadForms.groupHeading).toBe('Marketing');
     expect(leadForms.activeItem?.menu).toBe('settings');
-    expect(resolveNavTrail('/calls/ai-impact', '').groupHeading).toBe('Calls');
+    expect(resolveNavTrail('/calls/ai-impact', '').groupHeading).toBe('Call channels');
     expect(resolveNavTrail('/calls/ai-impact', '').activeItem?.menu).toBe('reports');
   });
 

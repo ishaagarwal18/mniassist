@@ -83,7 +83,7 @@
           <span [class.due]="followUp(q) === 'due now'">{{ followUp(q) }}</span>
         </ng-template>
       </e-column>
-      <e-column headerText="Actions" width="160">
+      <e-column headerText="Actions" width="250" freeze="Right" textAlign="Right">
         <ng-template #template let-q>
           <div class="actions">
             <a

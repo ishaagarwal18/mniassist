@@ -5,6 +5,8 @@ import { QuotePriceSource } from '../../proxy/pipeline';
 /** One editable quotation line. Money is held as the text a person typed (rupees, percent), not as numbers. */
 export interface QuoteRow {
   key: number;
+  /** The item's name, typed or picked from the catalogue; saved at the start of the description. */
+  partName?: string;
   partNumber: string;
   description: string;
   quantity: string;
@@ -103,10 +105,12 @@ export function belowListPaise(row: QuoteRow): number {
 
 export function rowFromLine(line: QuotationLineDto, key: number): QuoteRow {
   const source = line.priceSource ?? QuotePriceSource.Manual;
+  const saved = splitSavedDescription(line.description ?? '');
   return {
     key,
+    partName: saved.partName,
     partNumber: line.partNumber ?? '',
-    description: line.description ?? '',
+    description: saved.description,
     quantity: String(line.quantity ?? 1),
     unit: line.unit ?? 'no',
     price: paiseToRupees(line.unitPriceInPaise ?? 0),
@@ -127,6 +131,7 @@ export function rowFromLine(line: QuotationLineDto, key: number): QuoteRow {
 export function rowFromMatch(m: CatalogueMatchDto, key: number): QuoteRow {
   return {
     key,
+    partName: m.name ?? '',
     partNumber: m.partNumber ?? '',
     description: m.name ?? '',
     quantity: '1',
@@ -162,4 +167,15 @@ export function blankRow(key: number): QuoteRow {
     listPaise: null,
     moq: 0,
   };
+}
+
+/**
+ * A saved line keeps the part name at the start of its description ("Name – extra").
+ * Splits it back so editing shows the part name again; saving rebuilds the same text.
+ */
+export function splitSavedDescription(text: string): { partName: string; description: string } {
+  const t = text.trim();
+  const i = t.indexOf(' – ');
+  if (i > 0) return { partName: t.slice(0, i), description: t.slice(i + 3) };
+  return { partName: t, description: t };
 }

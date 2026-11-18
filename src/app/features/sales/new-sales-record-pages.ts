@@ -7,7 +7,8 @@ import { CockpitOriginService } from '../../layout/cockpit-origin.service';
 import { ArTopbar } from '../../layout/topbar';
 import { DeliveryChallanDto } from '../../proxy/sales/delivery-challan.models';
 import { SalesInvoiceDto } from '../../proxy/sales/sales-invoice.models';
-import { SalesOrderStatus } from '../../proxy/sales/sales-enums';
+import { DeliveryChallanStatus, SalesOrderStatus } from '../../proxy/sales/sales-enums';
+import { DeliveryChallanService } from '../../proxy/sales/delivery-challan.service';
 import { SalesOrderDto } from '../../proxy/sales/sales-order.models';
 import { SalesOrderService } from '../../proxy/sales/sales-order.service';
 import { AR_DIALOG_INLINE } from '../../ui';
@@ -125,6 +126,50 @@ export class ArNewDeliveryChallanPage extends NewSalesRecordPage {
 
   protected done(challan: DeliveryChallanDto | null): void {
     this.finish(challan, `Challan ${challan?.challanNumber} saved as a draft.`);
+  }
+}
+
+/** /sales/challans/:id/edit — a draft challan in the same form it was made in. */
+@Component({
+  selector: 'ar-edit-delivery-challan-page',
+  imports: [ArTopbar, ArNewDeliveryChallan],
+  providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <ar-topbar title="Edit delivery challan" [subtitle]="challan()?.challanNumber ?? ''" />
+    <div class="new-record ar-scroll">
+      @if (problem(); as p) {
+        <p role="alert">{{ p }}</p>
+      } @else if (challan(); as c) {
+        <ar-new-delivery-challan [editing]="c" (closed)="done($event)" />
+      } @else {
+        <p>Loading…</p>
+      }
+    </div>
+  `,
+  styleUrl: './new-sales-record-pages.scss',
+})
+export class ArEditDeliveryChallanPage extends NewSalesRecordPage {
+  protected readonly list = '/sales/challans';
+  private readonly challans = inject(DeliveryChallanService);
+  private readonly challanId = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
+  protected readonly challan = signal<DeliveryChallanDto | null>(null);
+  protected readonly problem = signal<string | null>(null);
+
+  constructor() {
+    super();
+    this.challans.get(this.challanId, { skipHandleError: true }).subscribe({
+      next: (c) =>
+        c.status === DeliveryChallanStatus.Draft
+          ? this.challan.set(c)
+          : this.problem.set('Only a draft challan can be edited. Once dispatched it is fixed.'),
+      error: () => this.problem.set('The challan could not be loaded.'),
+    });
+  }
+
+  protected done(challan: DeliveryChallanDto | null): void {
+    if (challan?.id) this.toasts.success(`Challan ${challan.challanNumber} saved.`);
+    void this.router.navigateByUrl(`${this.list}/${this.challanId}`);
   }
 }
 

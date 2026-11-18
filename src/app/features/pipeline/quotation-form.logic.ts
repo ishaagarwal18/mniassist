@@ -83,7 +83,7 @@ export function quotationPayload(
     lines: rows.map((r, i) => ({
       order: i + 1,
       partNumber: r.partNumber.trim() || null,
-      description: r.description.trim(),
+      description: quoteLineDescription(r),
       quantity: Number(r.quantity) || 0,
       unit: r.unit.trim() || 'no',
       unitPriceInPaise: rupeesToPaise(r.price),
@@ -153,4 +153,13 @@ export function unreachable(choice: IssueChoice, recipients: QuoteRecipient[]): 
     .filter((r) => (!choice.whatsApp || !r.waId) && (!choice.email || !r.email))
     .filter(() => choice.whatsApp || choice.email)
     .map((r) => r.name);
+}
+
+/** The saved description: the part name, then any extra description that does not already start with it. */
+export function quoteLineDescription(r: QuoteRow): string {
+  const name = (r.partName ?? '').trim();
+  const desc = r.description.trim();
+  if (!name) return desc;
+  if (!desc || desc.toLowerCase().startsWith(name.toLowerCase())) return desc || name;
+  return `${name} – ${desc}`;
 }

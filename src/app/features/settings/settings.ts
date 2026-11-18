@@ -382,7 +382,7 @@ export class ArSettings {
     // Channels & Messaging
     {
       id: 'channels',
-      title: 'WhatsApp Channels',
+      title: 'Channels (WhatsApp numbers)',
       description:
         'Connect and manage WhatsApp Cloud API numbers, messaging limits, and health status.',
       category: 'Channels & Messaging',

@@ -1,3 +1,5 @@
+import { ArCatalogueItem } from '../sales/catalogue-item';
+import type { ProductDto } from '../../proxy/library/product.service';
 import { ArQuotationActions } from './quotation-actions';
 import { PermissionService } from '@abp/ng.core';
 import {
@@ -99,6 +101,7 @@ const STATE_LABEL: Record<QuotationState, { label: string; tone: ChipTone }> = {
     ArGrid,
     GridModule,
     ArQuoteRevisions,
+    ArCatalogueItem,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quotation-form.html',
@@ -682,6 +685,45 @@ export class ArQuotationForm implements OnInit {
       }),
     );
     this.dirty.set(true);
+  }
+
+  /** Typing a part name: a description still empty (or still the old name) follows it. */
+  protected setPartName(key: number, value: string): void {
+    this.rows.update((rows) =>
+      rows.map((r) => {
+        if (r.key !== key) return r;
+        const followed = !r.description.trim() || r.description === (r.partName ?? '');
+        return { ...r, partName: value, description: followed ? value : r.description };
+      }),
+    );
+    this.dirty.set(true);
+  }
+
+  /** A catalogue item picked on a line: fills the part and prices it from the price list that fits. */
+  protected async pickForRow(r: QuoteRow, p: ProductDto): Promise<void> {
+    const name = p.name?.trim() ?? '';
+    this.rows.update((rows) =>
+      rows.map((x) =>
+        x.key !== r.key
+          ? x
+          : {
+              ...x,
+              partName: name,
+              partNumber: p.partNumber?.trim() ?? '',
+              description: p.description?.trim() || name,
+              unit: p.unit?.trim() || x.unit,
+              tax:
+                x.tax === '' && p.taxRateBasisPoints != null
+                  ? String(p.taxRateBasisPoints / 100)
+                  : x.tax,
+              spaLineId: null,
+              spa: null,
+            },
+      ),
+    );
+    this.dirty.set(true);
+    const updated = this.rows().find((x) => x.key === r.key);
+    if (updated?.partNumber.trim()) await this.useListPrice(updated);
   }
 
   protected remove(key: number): void {

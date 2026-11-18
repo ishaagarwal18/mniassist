@@ -7,7 +7,11 @@ import {
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
-import { provideRouter, withNavigationErrorHandler, withPreloading } from '@angular/router';
+import { provideRouter, UrlSerializer, withNavigationErrorHandler, withPreloading } from '@angular/router';
+import {
+  CaseInsensitiveUrlSerializer,
+  collectStaticSegments,
+} from './core/util/case-insensitive-url-serializer';
 import { IdlePreloading } from './core/util/idle-preloading';
 import { DISABLE_PROJECT_NAME, PermissionService, provideAbpCore, withOptions } from '@abp/ng.core';
 import { provideAbpOAuth } from '@abp/ng.oauth';
@@ -59,6 +63,8 @@ export const appConfig: ApplicationConfig = {
         }
       }),
     ),
+    // "/Channels" opens "/channels" instead of "Page not found".
+    { provide: UrlSerializer, useFactory: () => new CaseInsensitiveUrlSerializer(collectStaticSegments(routes)) },
     { provide: ErrorHandler, useClass: DevRebundleErrorHandler },
     provideHttpClient(withInterceptorsFromDi()),
     { provide: PermissionService, useClass: AutoReachPermissionService },

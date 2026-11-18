@@ -1,11 +1,15 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  ElementRef,
+  HostListener,
   Injectable,
   inject,
   input,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { inr } from '../../core/util/format';
@@ -45,10 +49,11 @@ export class CatalogueSearch {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <input
+      #box
       class="ar-field__input"
       type="search"
       autocomplete="off"
-      placeholder="Search the catalogue"
+      [placeholder]="placeholder()"
       aria-label="Item name"
       [value]="value()"
       (focus)="open()"
@@ -56,7 +61,12 @@ export class CatalogueSearch {
       (input)="onInput($any($event.target).value)"
     />
     @if (showing()) {
-      <div class="ci__menu">
+      <div
+        class="ci__menu"
+        [style.top.px]="pos().top"
+        [style.left.px]="pos().left"
+        [style.min-width.px]="pos().width"
+      >
         @if (searching() && !matches().length) {
           <p class="ci__note">Searching…</p>
         }
@@ -68,8 +78,15 @@ export class CatalogueSearch {
           </button>
         } @empty {
           @if (!searching()) {
-            <p class="ci__note">No item matches. Type the item number and description.</p>
+            <p class="ci__note">
+              {{ allowCreate() ? 'No item matches.' : 'No item matches. Type the item number and description.' }}
+            </p>
           }
+        }
+        @if (allowCreate() && !searching()) {
+          <button type="button" class="ci__item ci__new" (mousedown)="create()">
+            <span class="ci__name">+ Add {{ value().trim() ? '"' + value().trim() + '"' : 'a new item' }} to the catalogue</span>
+          </button>
         }
       </div>
     }
@@ -83,15 +100,12 @@ export class CatalogueSearch {
     input {
       width: 100%;
     }
+    /* Fixed to the page under the box, so a table cell or a scrolling card cannot cut it off. */
     .ci__menu {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      z-index: 5;
-      min-width: 100%;
+      position: fixed;
+      z-index: 1400;
       width: max-content;
       max-width: min(520px, 90vw);
-      margin-top: 4px;
       padding: 4px;
       max-height: 280px;
       overflow-y: auto;
@@ -130,6 +144,13 @@ export class CatalogueSearch {
       font-variant-numeric: tabular-nums;
       color: var(--ar-ink-600);
     }
+    .ci__new {
+      grid-template-columns: 1fr;
+      margin-top: 2px;
+      border-top: 1px solid var(--ar-line-200);
+      border-radius: 0;
+      color: var(--ar-blue-500);
+    }
     .ci__note {
       margin: 0;
       padding: 8px;
@@ -142,6 +163,11 @@ export class ArCatalogueItem {
   private readonly catalogue = inject(CatalogueSearch);
 
   readonly value = input('');
+  readonly placeholder = input('Search the catalogue');
+  /** Offer "Add … to the catalogue" under the matches. */
+  readonly allowCreate = input(false);
+  /** The person chose to add a new item; carries what they typed. */
+  readonly createNew = output<string>();
   /** The name as typed. */
   readonly typed = output<string>();
   /** The catalogue product chosen. */
@@ -151,12 +177,34 @@ export class ArCatalogueItem {
   protected readonly showing = signal(false);
   protected readonly matches = signal<ProductDto[]>([]);
   protected readonly searching = signal(false);
+  private readonly box = viewChild<ElementRef<HTMLInputElement>>('box');
+  /** Where the menu sits: just under the box. */
+  protected readonly pos = signal({ top: 0, left: 0, width: 0 });
+
+  private place(): void {
+    const r = this.box()?.nativeElement.getBoundingClientRect();
+    if (r) this.pos.set({ top: r.bottom + 4, left: r.left, width: r.width });
+  }
+
+  /** The page or a table scrolled while the menu is open: keep it under the box. */
+  @HostListener('window:resize')
+  protected follow(): void {
+    if (this.showing()) this.place();
+  }
+
+  constructor() {
+    // Scrolls inside cards and grids do not bubble to window: listen in the capture phase.
+    const onScroll = () => this.follow();
+    window.addEventListener('scroll', onScroll, true);
+    inject(DestroyRef).onDestroy(() => window.removeEventListener('scroll', onScroll, true));
+  }
 
   private timer?: ReturnType<typeof setTimeout>;
   private seq = 0;
 
   protected open(): void {
-    if (this.catalogue.blocked()) return;
+    if (this.catalogue.blocked() && !this.allowCreate()) return;
+    this.place();
     this.showing.set(true);
     this.matches.set([]);
     void this.search(this.value());
@@ -170,6 +218,7 @@ export class ArCatalogueItem {
   protected onInput(value: string): void {
     this.typed.emit(value);
     if (this.catalogue.blocked()) return;
+    this.place();
     this.showing.set(true);
     clearTimeout(this.timer);
     this.timer = setTimeout(() => void this.search(value), 250);
@@ -178,6 +227,11 @@ export class ArCatalogueItem {
   protected pick(p: ProductDto): void {
     this.showing.set(false);
     this.picked.emit(p);
+  }
+
+  protected create(): void {
+    this.showing.set(false);
+    this.createNew.emit(this.value().trim());
   }
 
   private async search(term: string): Promise<void> {

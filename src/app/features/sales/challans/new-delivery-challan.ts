@@ -7,6 +7,8 @@ import {
   output,
   signal,
   computed,
+  effect,
+  untracked,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PickerOption } from '../../../core/services/pipeline.service';
@@ -33,6 +35,7 @@ import {
   blankChallanLine,
   challanLineFromProduct,
   editChallanLine,
+  challanLineFromSaved,
   filledChallanLines,
   toChallanLines,
   unitsFor,
@@ -61,12 +64,21 @@ export const CHALLAN_TYPES = withOptionNames('sales.challan-type', [
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog
-      title="New delivery challan"
+      [title]="editing() ? 'Edit challan ' + editing()!.challanNumber : 'New delivery challan'"
       width="min(960px, calc(100vw - 32px))"
       (dismiss)="closed.emit(null)"
     >
       <div class="nc">
-        <ar-sales-customer [initialCustomer]="initialCustomer()" (changed)="onCustomer($event)" />
+        @if (editing(); as e) {
+          <p class="nc__fixed">
+            Customer: <strong translate="no">{{ e.customerName }}</strong>
+            @if (e.customerAccountName) {
+              · <span translate="no">{{ e.customerAccountName }}</span>
+            }
+          </p>
+        } @else {
+          <ar-sales-customer [initialCustomer]="initialCustomer()" (changed)="onCustomer($event)" />
+        }
 
         <div class="nc__grid">
           <label class="ar-field">
@@ -281,12 +293,20 @@ export const CHALLAN_TYPES = withOptionNames('sales.challan-type', [
       <div dialogActions>
         <button ar-button type="button" variant="ghost" (click)="closed.emit(null)">Cancel</button>
         <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
-          {{ busy() ? 'Saving…' : 'Save as draft' }}
+          {{ busy() ? 'Saving…' : editing() ? 'Save changes' : 'Save as draft' }}
         </button>
       </div>
     </ar-dialog>
   `,
   styles: `
+    .nc__fixed {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-bg-100);
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
     .nc {
       display: flex;
       flex-direction: column;
@@ -373,6 +393,8 @@ export class ArNewDeliveryChallan {
   readonly closed = output<DeliveryChallanDto | null>();
   /** The customer to start with, e.g. from an account's Customer 360 (?customer=…&customerName=…). */
   readonly initialCustomer = input<PickerOption | null>(null);
+  /** A draft challan to edit; its customer stays fixed. */
+  readonly editing = input<DeliveryChallanDto | null>(null);
 
   protected readonly types = CHALLAN_TYPES;
   private readonly pickLists = inject(PickListStore);
@@ -479,9 +501,35 @@ export class ArNewDeliveryChallan {
     this.lines.update((ls) => ls.map((l, i) => (i === index ? challanLineFromProduct(p, l) : l)));
   }
 
+  constructor() {
+    // An edit starts from the saved challan.
+    effect(() => {
+      const c = this.editing();
+      if (!c) return;
+      untracked(() => {
+        this.type.set(c.type);
+        this.orderId.set(c.salesOrderId ?? '');
+        this.challanDate.set((c.challanDateUtc ?? new Date().toISOString()).slice(0, 10));
+        this.shippingAddress.set(c.shippingAddress ?? '');
+        this.transporter.set(c.transporterName ?? '');
+        this.vehicle.set(c.vehicleNumber ?? '');
+        this.lr.set(c.lrNumber ?? '');
+        this.eway.set(c.eWayBillNumber ?? '');
+        this.remarks.set(c.remarks ?? '');
+        this.locationId.set(c.dispatchFromLocationId ?? '');
+        this.lines.set(
+          c.lines.length ? c.lines.map(challanLineFromSaved) : [blankChallanLine()],
+        );
+      });
+    });
+  }
+
   protected async save(): Promise<void> {
+    const editing = this.editing();
     const choice = this.choice();
-    const customer = choice?.customer;
+    const customer = editing
+      ? { id: editing.customerId }
+      : choice?.customer;
     if (!customer) {
       this.error.set(
         choice?.mode !== 'contact'
@@ -509,7 +557,10 @@ export class ArNewDeliveryChallan {
       type: this.type(),
       salesOrderId: this.orderId() || undefined,
       customerId: customer.id,
-      customerAccountId: choice.accountId ?? undefined,
+      customerAccountId: editing
+        ? editing.customerAccountId
+        : (choice?.accountId ?? undefined),
+      challanNumber: editing?.challanNumber,
       challanDateUtc: new Date(this.challanDate()).toISOString(),
       shippingAddress: this.shippingAddress().trim() || undefined,
       transporterName: this.transporter().trim() || undefined,
@@ -524,7 +575,9 @@ export class ArNewDeliveryChallan {
     this.busy.set(true);
     this.error.set(null);
     try {
-      const created = await firstValueFrom(this.api.create(input));
+      const created = await firstValueFrom(
+        editing?.id ? this.api.update(editing.id, input) : this.api.create(input),
+      );
       this.closed.emit(created);
     } catch (e: unknown) {
       this.error.set(errorMessage(e, 'The challan could not be saved.'));

@@ -101,3 +101,8 @@
 .oe__facts dd {
   margin: 0;
 }
+
+/* SPA lines: the part name search needs room. */
+.oe__part {
+  min-width: 200px;
+}

@@ -604,6 +604,14 @@ export const routes: Routes = [
           import('./features/sales/new-sales-record-pages').then((m) => m.ArNewDeliveryChallanPage),
       },
       {
+        path: 'sales/challans/:id/edit',
+        title: 'Edit delivery challan · MNI Assist',
+        loadComponent: () =>
+          import('./features/sales/new-sales-record-pages').then(
+            (m) => m.ArEditDeliveryChallanPage,
+          ),
+      },
+      {
         path: 'sales/challans/:id',
         title: 'Delivery challan · MNI Assist',
         loadComponent: () =>

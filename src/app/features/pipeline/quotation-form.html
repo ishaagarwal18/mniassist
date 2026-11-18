@@ -326,6 +326,20 @@
             [arGridTools]="false"
           >
             <e-columns>
+              <e-column field="partName" headerText="Part name" width="220">
+                <ng-template #template let-r>
+                  @if (readOnly()) {
+                    <span>{{ r.partName || '—' }}</span>
+                  } @else {
+                    <ar-catalogue-item
+                      placeholder="Search the catalogue"
+                      [value]="r.partName ?? ''"
+                      (typed)="setPartName(r.key, $event)"
+                      (picked)="pickForRow(r, $event)"
+                    />
+                  }
+                </ng-template>
+              </e-column>
               <e-column field="partNumber" headerText="Part number" width="140">
                 <ng-template #template let-r>
                   <input

@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { ArTopbar } from '../../../layout/topbar';
@@ -36,7 +37,7 @@ import { ArSalesExport } from '../sales-export';
  */
 @Component({
   selector: 'ar-delivery-challan-page',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSalesExport, DatePipe, ArGrid, GridModule],
+  imports: [RouterLink, ArTopbar, ArButton, ArChip, ArIcon, ArSalesExport, DatePipe, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -271,6 +272,15 @@ import { ArSalesExport } from '../sales-export';
                 Cancel challan
               </button>
             }
+            @if (mayEdit() && canDispatch(dc) && !dispatching()) {
+              <a
+                ar-button
+                variant="ghost"
+                icon="edit"
+                [routerLink]="['/sales/challans', dc.id, 'edit']"
+                >Edit challan</a
+              >
+            }
             @if (mayDispatch() && canDispatch(dc) && !dispatching()) {
               <button
                 ar-button
@@ -314,6 +324,10 @@ import { ArSalesExport } from '../sales-export';
 })
 export class ArDeliveryChallanPage extends SalesRecordPage<DeliveryChallanDto> {
   private readonly permissionGate = inject(PermissionService);
+  protected readonly mayEdit = grantedPolicy(
+    'AutoReach.DeliveryChallans.Update',
+    this.permissionGate,
+  );
   protected readonly mayDispatch = grantedPolicy(
     'AutoReach.DeliveryChallans.Dispatch',
     this.permissionGate,

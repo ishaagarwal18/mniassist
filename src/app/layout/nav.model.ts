@@ -443,8 +443,16 @@ export const NAV: readonly NavGroup[] = [
     ],
   },
   {
-    heading: 'Calls',
+    heading: 'Call channels',
     items: [
+      {
+        label: 'Channels',
+        icon: 'channel',
+        route: '/channels',
+        // The connected numbers sit with the calls they carry; people look for them here daily.
+        permission: 'AutoReach.Channels',
+        //tenantOnly: true,
+      },
       {
         label: 'Calls',
         icon: 'phone',
@@ -799,14 +807,6 @@ export const NAV: readonly NavGroup[] = [
   {
     heading: 'Channels',
     items: [
-      {
-        label: 'Channels',
-        icon: 'channel',
-        route: '/channels',
-        menu: 'settings',
-        permission: 'AutoReach.Channels',
-        //tenantOnly: true,
-      },
       {
         label: 'Messenger & Instagram',
         icon: 'inbox',

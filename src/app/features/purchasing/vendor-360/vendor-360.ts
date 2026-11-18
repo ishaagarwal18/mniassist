@@ -66,6 +66,16 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
           [currentName]="vendor()?.name ?? null"
           (picked)="onVendorChange($event)"
         />
+        @if (can().editSupplier) {
+          <a
+            ar-button
+            variant="primary"
+            icon="plus"
+            routerLink="/purchasing/suppliers/new"
+            [queryParams]="{ then: 'vendor-360' }"
+            >New vendor</a
+          >
+        }
       </div>
     </ar-topbar>
 
@@ -601,7 +611,12 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
             <strong>No suppliers yet</strong>
             @if (can().editSupplier) {
               <span>Add your first supplier to see everything about them here.</span>
-              <a ar-button variant="primary" icon="plus" routerLink="/purchasing/suppliers/new"
+              <a
+                ar-button
+                variant="primary"
+                icon="plus"
+                routerLink="/purchasing/suppliers/new"
+                [queryParams]="{ then: 'vendor-360' }"
                 >Add a supplier</a
               >
             } @else {

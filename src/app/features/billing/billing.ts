@@ -23,7 +23,7 @@ import {
 } from '../../proxy/billing/platform-checkout.service';
 import { ArTopbar } from '../../layout/topbar';
 import { planByKey, priceLabel } from '../landing/landing-plans';
-import { ArBanner, ArButton, ArChip, ArDialog, ArMeter, ArStatTile } from '../../ui';
+import { ArBanner, ArButton, ArChip, ArDialog, ArMeter } from '../../ui';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../ui/grid';
 import { ConfirmService } from '../../core/ui/confirm.service';
@@ -90,7 +90,6 @@ const EMPTY = {
     ArChip,
     ArDialog,
     ArMeter,
-    ArStatTile,
     DecimalPipe,
     ArGrid,
     GridModule,
@@ -286,6 +285,10 @@ export class ArBilling {
   );
 
   protected readonly usage = computed(() => this.d().usage);
+  /** Plan feature codes ("PipelineCrm") as readable names ("Pipeline CRM"), A–Z. */
+  protected readonly featureLabels = computed(() =>
+    (this.usage().features ?? []).map(featureLabel).sort((a, b) => a.localeCompare(b)),
+  );
   protected readonly usageRows = computed(() => {
     const u = this.usage();
     const row = (label: string, used = 0, limit = 0) => ({
@@ -477,4 +480,27 @@ export class ArBilling {
       this.busy.set(false);
     }
   }
+}
+
+const FEATURE_NAMES: Record<string, string> = {
+  AiAssistant: 'AI assistant',
+  ClickToWhatsAppAttribution: 'Click-to-WhatsApp ad tracking',
+  Email: 'Email',
+  ErpSync: 'ERP sync',
+  FullAnalytics: 'Full analytics',
+  OemNetwork: 'OEM network',
+  OemPricing: 'OEM pricing',
+  PipelineCrm: 'Pipeline CRM',
+  PublicApi: 'Public API',
+  SalesAndPurchasing: 'Sales & purchasing',
+  Sms: 'SMS',
+  Sso: 'Single sign-on (SSO)',
+  Voice: 'Voice calls',
+};
+
+/** "AutomationBuilder" → "Automation builder"; known codes use their proper names. */
+export function featureLabel(code: string): string {
+  if (FEATURE_NAMES[code]) return FEATURE_NAMES[code];
+  const words = code.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }

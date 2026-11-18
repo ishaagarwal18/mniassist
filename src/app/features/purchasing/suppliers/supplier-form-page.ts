@@ -501,7 +501,7 @@ export class ArSupplierFormPage {
     this.busy.set(true);
     try {
       const quiet = { skipHandleError: true };
-      await firstValueFrom(
+      const saved = await firstValueFrom(
         this.id
           ? this.api.updateSupplier(this.id, input, quiet)
           : this.api.createSupplier(input, quiet),
@@ -512,6 +512,12 @@ export class ArSupplierFormPage {
           : `${input.name} ${this.id ? 'saved' : 'added'}.`,
         this.id ? 'Supplier saved' : 'Supplier added',
       );
+      // Added from Vendor 360: open the new vendor there.
+      const newId = !this.id ? (saved as { id?: string } | undefined)?.id : undefined;
+      if (newId && this.route.snapshot.queryParamMap.get('then') === 'vendor-360') {
+        void this.router.navigate(['/purchasing/vendor-360', newId]);
+        return;
+      }
       void this.router.navigateByUrl(this.origin.returnUrl(this.listUrl()));
     } catch (e: unknown) {
       const message = readApiError(e, 'The supplier could not be saved.');

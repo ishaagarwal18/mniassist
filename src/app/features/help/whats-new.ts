@@ -13,6 +13,135 @@ export interface Release {
 /** Newest first. Add a release at the top when it ships; say what a customer can now do, not how it was built. */
 export const RELEASES: Release[] = [
   {
+    date: '2026-11-16',
+    title: 'Company sign-in, conversation status and smaller conveniences',
+    items: [
+      {
+        text: 'Sign in with your company account (single sign-on) once your administrator has set it up.',
+      },
+      {
+        text: 'Give each conversation a status and priority, and filter the inbox by them.',
+        route: '/inbox',
+      },
+      {
+        text: 'Email a contact straight from the app, and see the history of your contact exports.',
+      },
+      {
+        text: 'The notification bell updates by itself, without reloading the page.',
+        route: '/notifications',
+      },
+      {
+        text: 'Add contacts you already have to an AI call batch.',
+        route: '/calls/ai-batches',
+      },
+      { text: 'Bank guarantees can be edited after they are recorded.' },
+    ],
+  },
+  {
+    date: '2026-11-14',
+    title: 'GST e-invoices, e-way bills and input credit',
+    items: [
+      {
+        text: 'Raise the e-invoice (IRN and QR code) and e-way bill for an invoice from the app, through your GST portal connection.',
+        route: '/finance/gst-compliance',
+      },
+      {
+        text: 'GSTR-3B: import your GSTR-2B, match it to supplier bills and see the input credit you can claim.',
+        route: '/finance/gst-compliance',
+      },
+      { text: 'Clearer menu icons, and meeting times shown on the meetings list.', route: '/meetings' },
+    ],
+  },
+  {
+    date: '2026-11-10',
+    title: 'Your own pick lists, and only your real data',
+    items: [
+      {
+        text: 'Pick lists: choose the options your drop-downs offer, such as industries, units and GST rates.',
+        route: '/settings/pick-lists',
+      },
+      { text: 'Sample and demo figures are gone: every screen shows your own records.' },
+      { text: 'When your session runs out you are taken to sign in, instead of a page that stops working.' },
+    ],
+  },
+  {
+    date: '2026-11-09',
+    title: 'Milestone billing, retention and favourites',
+    items: [
+      {
+        text: 'Bill a project in milestones, with advance and retention, and see what is due.',
+        route: '/billing/due',
+      },
+      {
+        text: 'Record acceptance tests and customer sign-off, and release retention against a bank guarantee, with daily reminders.',
+        route: '/billing/reports',
+      },
+      { text: '★ Favourites: pin the pages you use most to the top of the menu.' },
+      {
+        text: 'Import large contact lists (20,000 and more) in the background, with a progress bar.',
+        route: '/contacts',
+      },
+    ],
+  },
+  {
+    date: '2026-11-08',
+    title: 'Projects, OEM special prices, fault codes and the obsolescence radar',
+    items: [
+      {
+        text: 'Projects: follow a plant or line from first news to the order, with competitor brands, key dates and one bid per project in the forecast.',
+        route: '/projects',
+      },
+      {
+        text: 'OEM deal registrations and special prices, used on quotations, with claims to recover the price support.',
+        route: '/oem/spa',
+      },
+      {
+        text: 'Fault-code library and machine QR stickers: a customer scans the machine and the breakdown ticket arrives with it already identified.',
+        route: '/documents/fault-codes',
+      },
+      { text: 'Breakdown tickets escalate on their own when nobody acts on them.', route: '/helpdesk' },
+      {
+        text: 'Obsolescence radar: see which installed parts are being phased out, and tell the customers who have them by WhatsApp or email.',
+        route: '/obsolescence',
+      },
+    ],
+  },
+  {
+    date: '2026-11-07',
+    title: 'Quote from a file',
+    items: [
+      {
+        text: 'Quote from a BOQ or enquiry file: lines are matched to your parts, including other brands’ part numbers and technical ratings.',
+        route: '/quotations/import',
+      },
+      {
+        text: 'Cross-references: map other brands’ part numbers to yours; corrections made in review are remembered.',
+        route: '/quotations/cross-references',
+      },
+      { text: 'Every issued quotation is kept as a revision, and any two revisions can be compared.', route: '/quotations' },
+    ],
+  },
+  {
+    date: '2026-11-04',
+    title: 'Customer 360, Vendor 360 and full-page sales forms',
+    items: [
+      {
+        text: 'Customer 360: one page for an account and its contacts, orders, invoices and activity.',
+        route: '/contacts/360',
+      },
+      {
+        text: 'Vendor 360: one supplier’s orders, receipts, bills, quality and MSME payment dues.',
+        route: '/purchasing/vendor-360',
+      },
+      {
+        text: 'New pages for sales orders, delivery challans, invoices, purchase orders, goods receipts and supplier bills.',
+        route: '/sales/challans',
+      },
+      { text: 'Accounts hold GST numbers and several shipping addresses.' },
+      { text: 'A grouped menu with breadcrumbs, so you always know where you are.' },
+    ],
+  },
+  {
     date: '2026-10-31',
     title: 'Playbooks, a website call button and an impact report',
     items: [

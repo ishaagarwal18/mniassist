@@ -1,5 +1,8 @@
 import type { ProductDto } from '../../../proxy/library/product.service';
-import type { CreateDeliveryChallanLineDto } from '../../../proxy/sales/delivery-challan.models';
+import type {
+  CreateDeliveryChallanLineDto,
+  DeliveryChallanLineDto,
+} from '../../../proxy/sales/delivery-challan.models';
 import { SalesOrderStatus } from '../../../proxy/sales/sales-enums';
 import type { SalesOrderDto } from '../../../proxy/sales/sales-order.models';
 
@@ -97,4 +100,18 @@ export function challanLinesFromOrder(order: SalesOrderDto): ChallanLine[] {
       productId: l.productId ?? null,
       salesOrderLineId: l.id,
     }));
+}
+
+/** A saved challan line back in the form, for editing a draft. */
+export function challanLineFromSaved(l: DeliveryChallanLineDto): ChallanLine {
+  return {
+    itemName: l.description ?? '',
+    partNumber: l.partNumber ?? '',
+    description: l.description ?? '',
+    hsnCode: l.hsnCode ?? '',
+    quantity: l.quantity,
+    unitOfMeasure: l.unitOfMeasure || 'Nos',
+    productId: l.productId ?? null,
+    salesOrderLineId: l.salesOrderLineId ?? null,
+  };
 }

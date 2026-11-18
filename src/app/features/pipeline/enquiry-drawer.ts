@@ -9,6 +9,7 @@ import {
   Component,
   computed,
   effect,
+  HostListener,
   inject,
   input,
   output,
@@ -71,8 +72,11 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
     <aside class="drawer" role="dialog" aria-label="Enquiry detail">
       @if (detail(); as d) {
         <header class="dh">
+          <div class="dh__top">
+            <span class="dh__ref ar-mono">Enquiry {{ d.reference }}</span>
+            <button type="button" class="dh__x" aria-label="Close" title="Close (Esc)" (click)="close.emit()">×</button>
+          </div>
           <div>
-            <span class="dh__ref ar-mono">{{ d.reference }}</span>
             <h2 class="dh__title">{{ d.title }}</h2>
             <p class="dh__contact">
               {{ d.contact }}
@@ -99,12 +103,18 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
             }
           </div>
           <div class="dh__ctrls">
+            @if (canUpdate()) {
+              <button ar-button type="button" variant="ghost" icon="edit" (click)="openEdit(d)">
+                Edit details
+              </button>
+            }
             @if (canSpa()) {
               <a
                 ar-button
                 variant="ghost"
                 routerLink="/oem/registrations/new"
                 [queryParams]="{ enquiry: d.id }"
+                title="Register this deal with the OEM to protect it"
                 >Register deal</a
               >
               <a
@@ -112,19 +122,63 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
                 variant="ghost"
                 routerLink="/oem/spa/new"
                 [queryParams]="{ enquiry: d.id }"
-                >Special price</a
+                title="Ask the OEM for a special price for this deal"
+                >Request special price</a
               >
             }
-            @if (canUpdate()) {
-              <button ar-button type="button" variant="ghost" (click)="openEdit(d)">Edit</button>
-            }
             @if (canDelete()) {
-              <button ar-button type="button" variant="danger" (click)="deleteEnquiry(d)">
+              <button
+                ar-button
+                type="button"
+                variant="quiet"
+                class="dh__del"
+                (click)="deleteEnquiry(d)"
+              >
                 Delete
               </button>
             }
-            <button type="button" class="dh__x" aria-label="Close" (click)="close.emit()">×</button>
           </div>
+
+          <!-- Key facts -->
+          <div class="facts">
+            <div>
+              <span class="facts__k">Stage</span
+              ><ar-chip tone="neutral">{{ d.stageName ?? label(d.stage) }}</ar-chip>
+            </div>
+            <div>
+              <span class="facts__k">Expected value</span
+              ><span class="facts__v ar-mono">{{ value(d.valueInPaise) }}</span>
+            </div>
+            <div>
+              <span class="facts__k">Time in this stage</span
+              ><span class="facts__v">{{ d.daysInStage }} {{ d.daysInStage === 1 ? 'day' : 'days' }}</span>
+            </div>
+            <div>
+              <span class="facts__k">Owner</span
+              ><span class="facts__v">{{ d.owner ?? 'Unassigned' }}</span>
+            </div>
+          </div>
+
+          <nav class="tabs" role="tablist" aria-label="Enquiry sections">
+            @for (t of tabs; track t.key) {
+              <button
+                type="button"
+                role="tab"
+                class="tab"
+                [class.tab--on]="tab() === t.key"
+                [attr.aria-selected]="tab() === t.key"
+                (click)="tab.set(t.key)"
+              >
+                {{ t.label }}
+                @if (t.key === 'overview' && d.quotations.length) {
+                  <span class="tab__n">{{ d.quotations.length }}</span>
+                }
+                @if (t.key === 'activity' && d.timeline.length) {
+                  <span class="tab__n">{{ d.timeline.length }}</span>
+                }
+              </button>
+            }
+          </nav>
         </header>
 
         @if (editing()) {
@@ -234,50 +288,92 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
         }
 
         <div class="dbody ar-scroll">
-          <div class="facts">
-            <div>
-              <span class="facts__k">Stage</span
-              ><ar-chip tone="neutral">{{ d.stageName ?? label(d.stage) }}</ar-chip>
-            </div>
-            <div>
-              <span class="facts__k">Value</span
-              ><span class="ar-mono">{{ value(d.valueInPaise) }}</span>
-            </div>
-            <div>
-              <span class="facts__k">In stage</span><span>{{ d.daysInStage }}d</span>
-            </div>
-            <div>
-              <span class="facts__k">Owner</span><span>{{ d.owner ?? 'Unassigned' }}</span>
-            </div>
-          </div>
-
-          @if (d.score != null) {
-            <section class="score">
-              <h3 class="score__h">
-                Deal score
-                <ar-chip
-                  [tone]="d.band === 'hot' ? 'good' : d.band === 'warm' ? 'amber' : 'neutral'"
-                  >{{ d.band === 'hot' ? 'Hot' : d.band === 'warm' ? 'Warm' : 'Cold' }} ·
-                  {{ d.score }}/100</ar-chip
-                >
-              </h3>
-              <ul class="score__list">
-                @for (f of d.scoreFactors; track f.key) {
-                  <li>
-                    <span class="score__k">{{ f.key }}</span>
-                    <span class="score__note">{{ f.note }}</span>
-                    <span class="score__pts ar-mono"
-                      >{{ f.points > 0 ? '+' : '' }}{{ f.points
-                      }}{{ f.max ? ' / ' + f.max : '' }}</span
-                    >
-                  </li>
-                }
-              </ul>
-            </section>
-          }
-
+          <!-- What to do next: always on top -->
           @if (d.lostReason) {
-            <p class="lost">Lost — {{ d.lostReason }}</p>
+            <div class="nextbox nextbox--lost">
+              <p class="nextbox__h">This enquiry was lost</p>
+              <p class="nextbox__d">{{ d.lostReason }}</p>
+            </div>
+          } @else if (next(d); as n) {
+            <div class="nextbox">
+              <p class="nextbox__h">Next step</p>
+              <p class="nextbox__d">
+                When this stage is done, move the enquiry on to <strong>{{ n.label }}</strong>. If the
+                customer will not buy, mark it lost so the reason is recorded.
+              </p>
+              <div class="advance">
+                <button
+                  ar-button
+                  type="button"
+                  variant="primary"
+                  [disabled]="busy()"
+                  (click)="advance(d, n.stageId)"
+                >
+                  Move to {{ n.label }} →
+                </button>
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="busy()"
+                  (click)="toggleLosing()"
+                >
+                  {{ losing() ? 'Cancel' : 'Mark as lost' }}
+                </button>
+              </div>
+
+              @if (losing()) {
+                <div class="lostbox">
+                  <label class="ar-field">
+                    <span class="ar-field__label">Why was it lost?</span>
+                    <select
+                      class="ar-field__input"
+                      [value]="lostCat()"
+                      (change)="lostCat.set(+$any($event.target).value)"
+                    >
+                      @for (o of lostCategories; track o.value) {
+                        <option [value]="o.value">{{ o.label }}</option>
+                      }
+                    </select>
+                  </label>
+                  @if (lostCat() === LostCategory.LostToCompetitor && brands().length) {
+                    <label class="ar-field">
+                      <span class="ar-field__label"
+                        >Which brand won? <span class="ar-field__opt">optional</span></span
+                      >
+                      <select
+                        class="ar-field__input"
+                        (change)="lostBrand.set($any($event.target).value)"
+                      >
+                        <option value="">Not known</option>
+                        @for (b of brands(); track b.id) {
+                          <option [value]="b.id" translate="no">{{ b.name }}</option>
+                        }
+                      </select>
+                    </label>
+                  }
+                  <label class="ar-field">
+                    <span class="ar-field__label">What happened?</span>
+                    <textarea
+                      class="note"
+                      rows="2"
+                      placeholder="A short note, kept on the enquiry"
+                      [value]="lostNote()"
+                      (input)="lostNote.set($any($event.target).value)"
+                    ></textarea>
+                  </label>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="danger"
+                    [disabled]="busy() || !lostNote().trim()"
+                    (click)="confirmLost(d)"
+                  >
+                    Confirm lost
+                  </button>
+                </div>
+              }
+            </div>
           }
 
           <ar-enquiry-move-pipeline
@@ -287,197 +383,182 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
             (moved)="changed.emit()"
           />
 
-          <section class="sec">
-            <h3 class="sec__t">
-              RFQ details
-              <span class="rfq__count">{{ filled(d) }} of 9</span>
-            </h3>
-            <dl class="rfq">
-              @for (f of profileFields; track f.key) {
-                <div>
-                  <dt>{{ f.label }}</dt>
-                  <dd>{{ d.attributes?.[f.key] || '—' }}</dd>
-                </div>
-              }
-              <div>
-                <dt>Expected order date</dt>
-                <dd>{{ d.expectedCloseDate ? day(d.expectedCloseDate) : '—' }}</dd>
-              </div>
-            </dl>
-          </section>
-
-          @if (customFields().length) {
-            <section class="sec">
-              <h3 class="sec__t">More details</h3>
-              <dl class="rfq">
-                @for (f of customFields(); track f.id) {
-                  <div>
-                    <dt>{{ f.label }}</dt>
-                    <dd>{{ showCustom(f, attributeOf(d, f.key)) }}</dd>
-                  </div>
-                }
-              </dl>
-            </section>
-          }
-
-          <section class="sec">
-            <h3 class="sec__t">Requirement</h3>
-            <p class="req">{{ d.requirement ?? 'Nothing recorded yet.' }}</p>
-          </section>
-
-          @if (next(d); as n) {
-            <div class="advance">
-              <button
-                ar-button
-                type="button"
-                variant="primary"
-                [disabled]="busy()"
-                (click)="advance(d, n.stageId)"
-              >
-                Advance to {{ n.label }}
-              </button>
-              <button
-                ar-button
-                type="button"
-                variant="ghost"
-                [disabled]="busy()"
-                (click)="toggleLosing()"
-              >
-                Mark lost
-              </button>
-            </div>
-
-            @if (losing()) {
-              <div class="lostbox">
-                <label class="ar-field">
-                  <span class="ar-field__label">Reason category</span>
-                  <select
-                    class="ar-field__input"
-                    [value]="lostCat()"
-                    (change)="lostCat.set(+$any($event.target).value)"
-                  >
-                    @for (o of lostCategories; track o.value) {
-                      <option [value]="o.value">{{ o.label }}</option>
+          @switch (tab()) {
+            @case ('overview') {
+              <section class="sec">
+                <h3 class="sec__t">What the customer needs</h3>
+                @if (d.requirement) {
+                  <p class="req">{{ d.requirement }}</p>
+                } @else {
+                  <p class="sec__empty">
+                    Nothing written yet.
+                    @if (canUpdate()) {
+                      <button type="button" class="link" (click)="openEdit(d)">
+                        Add the requirement
+                      </button>
                     }
-                  </select>
-                </label>
-                @if (lostCat() === LostCategory.LostToCompetitor && brands().length) {
-                  <label class="ar-field">
-                    <span class="ar-field__label"
-                      >Which brand won? <span class="ar-field__opt">optional</span></span
-                    >
-                    <select
-                      class="ar-field__input"
-                      (change)="lostBrand.set($any($event.target).value)"
-                    >
-                      <option value="">Not known</option>
-                      @for (b of brands(); track b.id) {
-                        <option [value]="b.id" translate="no">{{ b.name }}</option>
-                      }
-                    </select>
-                  </label>
+                  </p>
                 }
+              </section>
+
+              @if (d.score != null) {
+                <section class="sec score">
+                  <h3 class="sec__t score__h">
+                    How likely to win
+                    <ar-chip
+                      [tone]="d.band === 'hot' ? 'good' : d.band === 'warm' ? 'amber' : 'neutral'"
+                      >{{ d.band === 'hot' ? 'Hot' : d.band === 'warm' ? 'Warm' : 'Cold' }} ·
+                      {{ d.score }}/100</ar-chip
+                    >
+                  </h3>
+                  <p class="sec__hint">
+                    The score adds up the points below. Higher means more likely to close.
+                  </p>
+                  <ul class="score__list">
+                    @for (f of d.scoreFactors; track f.key) {
+                      <li>
+                        <span class="score__k">{{ f.key }}</span>
+                        <span class="score__note">{{ f.note }}</span>
+                        <span class="score__pts ar-mono" [class.score__pts--neg]="f.points < 0"
+                          >{{ f.points > 0 ? '+' : '' }}{{ f.points
+                          }}{{ f.max ? ' / ' + f.max : '' }}</span
+                        >
+                      </li>
+                    }
+                  </ul>
+                </section>
+              }
+
+              <section class="sec">
+                <h3 class="sec__t">
+                  RFQ details
+                  <span class="rfq__count">{{ filled(d) }} of 9 filled</span>
+                </h3>
+                <div class="rfq__bar" aria-hidden="true">
+                  <span [style.width.%]="(filled(d) / 9) * 100"></span>
+                </div>
+                <dl class="rfq">
+                  @for (f of profileFields; track f.key) {
+                    <div>
+                      <dt>{{ f.label }}</dt>
+                      <dd [class.dd--empty]="!d.attributes?.[f.key]">
+                        {{ d.attributes?.[f.key] || 'Not given' }}
+                      </dd>
+                    </div>
+                  }
+                  <div>
+                    <dt>Expected order date</dt>
+                    <dd [class.dd--empty]="!d.expectedCloseDate">
+                      {{ d.expectedCloseDate ? day(d.expectedCloseDate) : 'Not given' }}
+                    </dd>
+                  </div>
+                </dl>
+              </section>
+
+              @if (customFields().length) {
+                <section class="sec">
+                  <h3 class="sec__t">More details</h3>
+                  <dl class="rfq">
+                    @for (f of customFields(); track f.id) {
+                      <div>
+                        <dt>{{ f.label }}</dt>
+                        <dd>{{ showCustom(f, attributeOf(d, f.key)) }}</dd>
+                      </div>
+                    }
+                  </dl>
+                </section>
+              }
+
+              <section class="sec">
+                <h3 class="sec__t">Quotations sent</h3>
+                @for (q of d.quotations; track q.id) {
+                  <div class="quote">
+                    <span class="ar-mono">{{ q.reference }} · revision {{ q.revision }}</span>
+                    <ar-chip tone="neutral">{{ q.state }}</ar-chip>
+                    <span class="ar-mono quote__amt">{{ value(q.totalInPaise) }}</span>
+                  </div>
+                } @empty {
+                  <p class="sec__empty">No quotation sent for this enquiry yet.</p>
+                }
+              </section>
+            }
+
+            @case ('activity') {
+              <section class="sec">
+                <h3 class="sec__t">Add a note</h3>
                 <textarea
                   class="note"
-                  rows="2"
-                  placeholder="What happened? (recorded on the enquiry)"
-                  [value]="lostNote()"
-                  (input)="lostNote.set($any($event.target).value)"
+                  rows="3"
+                  placeholder="e.g. Spoke to the buyer, they need delivery by March. The team can see this."
+                  [value]="noteText()"
+                  (input)="noteText.set($any($event.target).value)"
                 ></textarea>
                 <button
                   ar-button
                   type="button"
                   variant="primary"
-                  [disabled]="busy() || !lostNote().trim()"
-                  (click)="confirmLost(d)"
+                  [disabled]="busy() || !noteText().trim()"
+                  (click)="saveNote(d)"
                 >
-                  Confirm lost
+                  Save note
                 </button>
-              </div>
+              </section>
+
+              <section class="sec">
+                <ar-enquiry-activities [enquiryId]="d.id" />
+              </section>
+
+              <section class="sec">
+                <h3 class="sec__t">History</h3>
+                <ol class="tl">
+                  @for (e of d.timeline; track $index) {
+                    <li class="tl__row">
+                      <span class="tl__dot" aria-hidden="true"></span>
+                      <div>
+                        <p class="tl__head">
+                          <strong>{{ e.kind }}</strong>
+                          @if (e.by) {
+                            <span class="tl__by">· {{ e.by }}</span>
+                          }
+                          <span class="tl__at">{{ when(e.at) }}</span>
+                        </p>
+                        @if (e.summary) {
+                          <p class="tl__sum">{{ e.summary }}</p>
+                        }
+                      </div>
+                    </li>
+                  } @empty {
+                    <li class="sec__empty">Nothing has happened on this enquiry yet.</li>
+                  }
+                </ol>
+              </section>
+            }
+
+            @case ('contact') {
+              <section class="sec">
+                <ar-enquiry-calls
+                  [enquiryId]="d.id"
+                  [contactId]="d.contactId"
+                  [contactName]="d.contact"
+                />
+              </section>
+              <section class="sec">
+                <ar-enquiry-tickets
+                  [enquiryId]="d.id"
+                  [contactId]="d.contactId"
+                  [contactName]="d.contact"
+                />
+              </section>
+            }
+
+            @case ('partners') {
+              <ar-enquiry-network
+                class="sec"
+                [enquiryId]="d.id"
+                [open]="d.stage !== 'won' && d.stage !== 'lost'"
+              />
             }
           }
-
-          <section class="sec">
-            <h3 class="sec__t">Quotations</h3>
-            @for (q of d.quotations; track q.id) {
-              <div class="quote">
-                <span class="ar-mono">{{ q.reference }} · r{{ q.revision }}</span>
-                <ar-chip tone="neutral">{{ q.state }}</ar-chip>
-                <span class="ar-mono quote__amt">{{ value(q.totalInPaise) }}</span>
-              </div>
-            } @empty {
-              <p class="sec__empty">No quotation raised yet.</p>
-            }
-          </section>
-
-          <section class="sec">
-            <ar-enquiry-activities [enquiryId]="d.id" />
-          </section>
-
-          <section class="sec">
-            <ar-enquiry-calls
-              [enquiryId]="d.id"
-              [contactId]="d.contactId"
-              [contactName]="d.contact"
-            />
-          </section>
-
-          <section class="sec">
-            <ar-enquiry-tickets
-              [enquiryId]="d.id"
-              [contactId]="d.contactId"
-              [contactName]="d.contact"
-            />
-          </section>
-
-          <ar-enquiry-network
-            class="sec"
-            [enquiryId]="d.id"
-            [open]="d.stage !== 'won' && d.stage !== 'lost'"
-          />
-
-          <section class="sec">
-            <h3 class="sec__t">Add a note</h3>
-            <textarea
-              class="note"
-              rows="2"
-              placeholder="Recorded on the timeline and visible to the team."
-              [value]="noteText()"
-              (input)="noteText.set($any($event.target).value)"
-            ></textarea>
-            <button
-              ar-button
-              type="button"
-              variant="ghost"
-              [disabled]="busy() || !noteText().trim()"
-              (click)="saveNote(d)"
-            >
-              Save note
-            </button>
-          </section>
-
-          <section class="sec">
-            <h3 class="sec__t">Timeline</h3>
-            <ol class="tl">
-              @for (e of d.timeline; track $index) {
-                <li class="tl__row">
-                  <span class="tl__dot" aria-hidden="true"></span>
-                  <div>
-                    <p class="tl__head">
-                      <strong>{{ e.kind }}</strong>
-                      @if (e.by) {
-                        <span class="tl__by">· {{ e.by }}</span>
-                      }
-                      <span class="tl__at">{{ when(e.at) }}</span>
-                    </p>
-                    @if (e.summary) {
-                      <p class="tl__sum">{{ e.summary }}</p>
-                    }
-                  </div>
-                </li>
-              }
-            </ol>
-          </section>
         </div>
       } @else {
         <p class="loading">Loading…</p>
@@ -521,7 +602,8 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
     :host {
       position: fixed;
       inset: 0;
-      z-index: 40;
+      /* Above the page header (900) and the right rail (920), so the top is not hidden. */
+      z-index: 960;
       display: block;
     }
     .scrim {
@@ -534,7 +616,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       top: 0;
       right: 0;
       height: 100%;
-      width: min(460px, 92vw);
+      width: min(620px, 96vw);
       background: var(--ar-white);
       border-left: 1px solid var(--ar-line-200);
       display: flex;
@@ -761,6 +843,167 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       font: 400 12px/1.5 var(--ar-font-sans);
       color: var(--ar-ink-500);
     }
+    /* Sections keep their height and the body scrolls; without this they were squeezed and overlapped. */
+    .dbody > *,
+    .dh > * {
+      flex-shrink: 0;
+    }
+    .dh {
+      flex-shrink: 0;
+    }
+    .move {
+      display: block;
+    }
+
+    /* Header layout */
+    .dh {
+      flex-direction: column;
+      align-items: stretch;
+      padding-bottom: 0;
+    }
+    .dh__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .dh__title {
+      font-size: 18px;
+    }
+    .dh__ctrls {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .dh__del {
+      margin-left: auto;
+      color: var(--ar-red-600);
+    }
+    .dh .facts {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      padding: 12px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-bg-100);
+    }
+    .facts__v {
+      font-weight: 600;
+    }
+    @media (max-width: 560px) {
+      .dh .facts {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      margin: 4px -20px 0;
+      padding: 0 14px;
+      overflow-x: auto;
+    }
+    .tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 10px 9px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: none;
+      cursor: pointer;
+      white-space: nowrap;
+      font: 500 13px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .tab:hover {
+      color: var(--ar-ink-900);
+    }
+    .tab--on {
+      color: var(--ar-blue-600, var(--ar-blue-500));
+      border-bottom-color: var(--ar-blue-500);
+      font-weight: 600;
+    }
+    .tab__n {
+      padding: 0 6px;
+      border-radius: 999px;
+      background: var(--ar-bg-100);
+      font-size: 11px;
+      color: var(--ar-ink-500);
+    }
+
+    /* Next step */
+    .nextbox {
+      padding: 14px;
+      border: 1px solid var(--ar-blue-500);
+      border-left-width: 4px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-white);
+    }
+    .nextbox--lost {
+      border-color: var(--ar-warn-600);
+      background: var(--ar-warn-100);
+    }
+    .nextbox__h {
+      margin: 0 0 2px;
+      font: 600 13.5px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .nextbox__d {
+      margin: 0 0 10px;
+      font: 400 12.5px/1.5 var(--ar-font-sans);
+      color: var(--ar-ink-600, var(--ar-ink-500));
+    }
+    .nextbox--lost .nextbox__d {
+      margin: 0;
+    }
+
+    .sec__t {
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 13.5px;
+      color: var(--ar-ink-900);
+    }
+    .sec__hint {
+      margin: -4px 0 8px;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
+    .score {
+      margin-top: 0;
+    }
+    .score__pts--neg {
+      color: var(--ar-red-600);
+    }
+    .rfq__bar {
+      height: 4px;
+      margin: -2px 0 12px;
+      border-radius: 2px;
+      background: var(--ar-line-200);
+      overflow: hidden;
+    }
+    .rfq__bar span {
+      display: block;
+      height: 100%;
+      background: var(--ar-teal-500, #2f9e8f);
+    }
+    .rfq dt {
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 11.5px;
+    }
+    .dd--empty {
+      color: var(--ar-ink-400) !important;
+      font-style: italic;
+    }
+    .link {
+      margin-left: 4px;
+      padding: 0;
+      border: 0;
+      background: none;
+      cursor: pointer;
+      font: inherit;
+      color: var(--ar-blue-500);
+      text-decoration: underline;
+    }
+
     .loading {
       padding: 40px;
       text-align: center;
@@ -781,6 +1024,20 @@ export class ArEnquiryDrawer {
   protected readonly canUpdate = grantedPolicy('AutoReach.Pipeline.Update', this.permissions);
   protected readonly canDelete = grantedPolicy('AutoReach.Pipeline.Delete', this.permissions);
   protected readonly canSpa = grantedPolicy('AutoReach.Spa.Create', this.permissions);
+
+  /** The drawer is split into tabs so one long scroll does not hide what matters. */
+  protected readonly tabs = [
+    { key: 'overview', label: 'Overview' },
+    { key: 'activity', label: 'Notes & history' },
+    { key: 'contact', label: 'Calls & tickets' },
+    { key: 'partners', label: 'Partners' },
+  ] as const;
+  protected readonly tab = signal<'overview' | 'activity' | 'contact' | 'partners'>('overview');
+
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    if (!this.editing()) this.close.emit();
+  }
 
   protected readonly detail = signal<EnquiryDetail | null>(null);
   protected readonly busy = signal(false);
@@ -867,6 +1124,8 @@ export class ArEnquiryDrawer {
       const id = this.enquiryId();
       this.detail.set(null);
       this.noteText.set('');
+      this.tab.set('overview');
+      this.losing.set(false);
       this.store.loadEnquiry(id).then((d) => this.detail.set(d));
     });
   }

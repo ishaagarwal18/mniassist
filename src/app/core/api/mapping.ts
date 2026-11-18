@@ -172,6 +172,14 @@ const EMAIL_CHANNEL = 4;
 /** SMS has no service window either, but every reply must be an approved DLT template. */
 const SMS_CHANNEL = 3;
 
+/** The newer of the last message in or out — what the inbox sorts and labels by. */
+export function lastActivityUtc(dto: ConversationDto): string | undefined {
+  const a = dto.lastInboundAtUtc ?? undefined;
+  const b = dto.lastOutboundAtUtc ?? undefined;
+  if (!a || !b) return a ?? b;
+  return Date.parse(b) > Date.parse(a) ? b : a;
+}
+
 export function toConversation(
   dto: ConversationDto,
   messages: readonly Message[] = [],
@@ -187,7 +195,7 @@ export function toConversation(
       dto.channelKind === EMAIL_CHANNEL || dto.channelKind === SMS_CHANNEL ? true : undefined,
     sms: dto.channelKind === SMS_CHANNEL ? true : undefined,
     snippet: dto.lastMessagePreview ?? '',
-    at: formatClock(dto.lastInboundAtUtc ?? dto.lastOutboundAtUtc),
+    at: formatClock(lastActivityUtc(dto)),
     unread: dto.unreadCount ?? 0,
     // A closed window is null rather than a past date, because the composer
     // branches on "is there a window" and a stale timestamp reads as an open one.

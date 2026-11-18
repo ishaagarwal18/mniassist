@@ -1,3 +1,5 @@
+import { ArCatalogueItem } from '../sales/catalogue-item';
+import type { ProductDto } from '../../proxy/library/product.service';
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -39,6 +41,8 @@ import {
 
 /** A part as typed: money and quantities stay text until saved. */
 interface LineForm {
+  /** The item's name, typed or picked from the catalogue; saved at the start of the description. */
+  partName: string;
   partNumber: string;
   description: string;
   productId: string | null;
@@ -62,6 +66,7 @@ const RULES = [SpaResaleRule.Floor, SpaResaleRule.Fixed, SpaResaleRule.MaxDiscou
 
 function blankLine(): LineForm {
   return {
+    partName: '',
     partNumber: '',
     description: '',
     productId: null,
@@ -75,6 +80,7 @@ function blankLine(): LineForm {
 
 function toForm(l: SaveSpaLineInput): LineForm {
   return {
+    partName: '',
     partNumber: l.partNumber,
     description: l.description ?? '',
     productId: l.productId ?? null,
@@ -92,7 +98,16 @@ function toForm(l: SaveSpaLineInput): LineForm {
  */
 @Component({
   selector: 'ar-spa-page',
-  imports: [ArTopbar, ArBanner, ArButton, ArCard, ArChip, ArAccountSearch, RouterLink],
+  imports: [
+    ArTopbar,
+    ArBanner,
+    ArButton,
+    ArCard,
+    ArChip,
+    ArAccountSearch,
+    RouterLink,
+    ArCatalogueItem,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './spa-page.html',
   styleUrl: './oem-pages.scss',
@@ -189,6 +204,44 @@ export class ArSpaPage {
 
   protected setLine(i: number, change: Partial<LineForm>): void {
     this.lines.update((ls) => ls.map((l, j) => (j === i ? { ...l, ...change } : l)));
+  }
+
+  /** Typing a part name: a description still empty (or still the old name) follows it; it is no longer the picked item. */
+  protected setPartName(i: number, value: string): void {
+    this.lines.update((ls) =>
+      ls.map((l, j) => {
+        if (j !== i) return l;
+        const followed = !l.description.trim() || l.description === l.partName;
+        return {
+          ...l,
+          partName: value,
+          description: followed ? value : l.description,
+          productId: null,
+        };
+      }),
+    );
+  }
+
+  /** A catalogue item fills the part number, description and, when not typed yet, the normal buy price. */
+  protected pickPart(i: number, p: ProductDto): void {
+    const name = p.name?.trim() ?? '';
+    this.lines.update((ls) =>
+      ls.map((l, j) =>
+        j !== i
+          ? l
+          : {
+              ...l,
+              partName: name,
+              partNumber: p.partNumber?.trim() ?? '',
+              description: p.description?.trim() || name,
+              productId: p.id ?? null,
+              normal:
+                l.normal.trim() || !p.purchasePriceInPaise
+                  ? l.normal
+                  : String(p.purchasePriceInPaise / 100),
+            },
+      ),
+    );
   }
 
   protected addLine(): void {
@@ -307,7 +360,7 @@ export class ArSpaPage {
       oemReference: this.header().oemReference?.trim() || null,
       lines: this.lines().map((l) => ({
         partNumber: l.partNumber.trim(),
-        description: l.description.trim() || null,
+        description: spaLineDescription(l) || null,
         productId: l.productId,
         requestedQty: Number(l.qty),
         normalBuyInPaise: toPaise(l.normal) ?? 0,
@@ -453,4 +506,13 @@ export class ArSpaPage {
   }
 
   protected readonly Format = SpaRequestFormat;
+}
+
+/** The saved description: the part name, then any extra description that does not already start with it. */
+function spaLineDescription(l: LineForm): string {
+  const name = l.partName.trim();
+  const desc = l.description.trim();
+  if (!name) return desc;
+  if (!desc || desc.toLowerCase().startsWith(name.toLowerCase())) return desc || name;
+  return `${name} – ${desc}`;
 }

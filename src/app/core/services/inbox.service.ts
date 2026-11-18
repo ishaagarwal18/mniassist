@@ -4,12 +4,13 @@ import { firstValueFrom, map, bufferTime, filter } from 'rxjs';
 import { NavigationEnd, Router } from '@angular/router';
 import { InboxService as InboxApi } from '../../proxy/messaging';
 import { ConversationLabelService } from '../../proxy/messaging/conversation-label.service';
+import type { ConversationDto } from '../../proxy/messaging';
 import { WORK_PRIORITY, WORK_STATUS } from '../api/mapping';
 import type {
   ConversationWorkPriority,
   ConversationWorkStatus,
 } from '../models/conversation.model';
-import { groupAttachmentRows, toConversation, toMessage } from '../api/mapping';
+import { groupAttachmentRows, lastActivityUtc, toConversation, toMessage } from '../api/mapping';
 import { Conversation } from '../models/conversation.model';
 import { InboxRealtimeService } from '../realtime/inbox-realtime.service';
 import { settled } from '../util/resource';
@@ -106,7 +107,13 @@ export class InboxService {
               maxResultCount: 50,
             })
           : this.api.getConversations(params);
-      return request.pipe(map((page) => (page.items ?? []).map((dto) => toConversation(dto))));
+      // Latest conversation first.
+      const time = (dto: ConversationDto) => Date.parse(lastActivityUtc(dto) ?? '') || 0;
+      return request.pipe(
+        map((page) =>
+          [...(page.items ?? [])].sort((a, b) => time(b) - time(a)).map((dto) => toConversation(dto)),
+        ),
+      );
     },
     defaultValue: [] as Conversation[],
   });

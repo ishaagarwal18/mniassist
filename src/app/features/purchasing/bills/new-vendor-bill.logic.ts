@@ -8,6 +8,10 @@ import type {
 export interface BillFormLine {
   purchaseOrderLineId?: string;
   goodsReceiptNoteLineId?: string;
+  /** The item's name, typed or picked from the catalogue. Saved as the start of the description. */
+  partName?: string;
+  /** The catalogue product picked for this line, if any. */
+  productId?: string;
   partNumber: string;
   description: string;
   hsnCode: string;
@@ -125,7 +129,16 @@ export function linesFromReceipt(
 }
 
 function isBlank(l: BillFormLine): boolean {
-  return !l.partNumber.trim() && !l.description.trim();
+  return !l.partNumber.trim() && !l.description.trim() && !(l.partName ?? '').trim();
+}
+
+/** What the bill line's description holds: the part name, then any extra description. */
+export function lineDescription(l: BillFormLine): string {
+  const name = (l.partName ?? '').trim();
+  const desc = l.description.trim();
+  if (!name) return desc;
+  if (!desc || desc.toLowerCase() === name.toLowerCase()) return name;
+  return desc.toLowerCase().startsWith(name.toLowerCase()) ? desc : `${name} – ${desc}`;
 }
 
 export function validateBillForm(f: BillForm): Record<string, string> {
@@ -142,7 +155,7 @@ export function validateBillForm(f: BillForm): Record<string, string> {
   const lines = f.lines.map((l, i) => ({ l, i })).filter(({ l }) => !isBlank(l));
   if (!lines.length) e['lines'] = 'Add at least one billed item.';
   for (const { l, i } of lines) {
-    if (!l.partNumber.trim() && !l.description.trim()) e[`line.${i}.partNumber`] = 'Needed.';
+    if (!l.partNumber.trim() && !lineDescription(l)) e[`line.${i}.partNumber`] = 'Needed.';
     if (!(l.quantity > 0)) e[`line.${i}.quantity`] = 'More than zero.';
     if (!(l.rate > 0)) e[`line.${i}.rate`] = 'Enter the rate.';
     if (l.hsnCode && !/^\d{4,8}$/.test(l.hsnCode.trim())) e[`line.${i}.hsnCode`] = '4–8 digits.';
@@ -175,8 +188,8 @@ export function toCreateBillDto(f: BillForm): CreateVendorBillDto {
       .map((l) => ({
         purchaseOrderLineId: l.purchaseOrderLineId,
         goodsReceiptNoteLineId: l.goodsReceiptNoteLineId,
-        partNumber: l.partNumber.trim() || l.description.trim(),
-        description: l.description.trim() || l.partNumber.trim(),
+        partNumber: l.partNumber.trim() || lineDescription(l),
+        description: lineDescription(l) || l.partNumber.trim(),
         hsnCode: opt(l.hsnCode),
         billedQuantity: l.quantity,
         unitPriceInPaise: Math.round(l.rate * 100),

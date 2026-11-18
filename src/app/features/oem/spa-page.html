@@ -190,6 +190,7 @@
       <table class="oe__table">
         <thead>
           <tr>
+            <th scope="col">Part name</th>
             <th scope="col">Part number</th>
             <th scope="col">Description</th>
             <th scope="col">Qty</th>
@@ -203,6 +204,14 @@
         <tbody>
           @for (l of lines(); track $index; let i = $index) {
             <tr>
+              <td class="oe__part">
+                <ar-catalogue-item
+                  placeholder="Search the catalogue"
+                  [value]="l.partName"
+                  (typed)="setPartName(i, $event)"
+                  (picked)="pickPart(i, $event)"
+                />
+              </td>
               <td>
                 <input
                   class="ar-field__input"
