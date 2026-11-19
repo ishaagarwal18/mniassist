@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, afterNextRender, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, afterNextRender, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { CurrentUserService } from '../../core/services/current-user.service';
@@ -161,6 +161,10 @@ export class ArLanding {
     },
   ];
 
+  private readonly destroyRef = inject(DestroyRef);
+  private isClickScrolling = false;
+  private scrollTimeout?: ReturnType<typeof setTimeout>;
+
   constructor() {
     // Links like "/#plans" (the "Change" link on sign-up) land on that section.
     const fragment = inject(ActivatedRoute).snapshot.fragment;
@@ -175,30 +179,76 @@ export class ArLanding {
   }
 
   private initScrollSpy(): void {
-    if (typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-        if (visible.length > 0 && visible[0].target.id) {
-          this.activeSection.set(visible[0].target.id);
-        }
-      },
-      {
-        rootMargin: '-80px 0px -40% 0px',
-        threshold: [0, 0.2, 0.5, 0.8],
-      },
-    );
+    if (typeof window === 'undefined') return;
+
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          this.updateActiveSection();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+
+    this.destroyRef.onDestroy(() => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      clearTimeout(this.scrollTimeout);
+    });
+
+    this.updateActiveSection();
+  }
+
+  private updateActiveSection(): void {
+    if (typeof window === 'undefined' || this.isClickScrolling) return;
+
+    const scrollY = window.scrollY || window.pageYOffset;
+
+    // When scrolled near the bottom of the page, activate the last section
+    const atBottom =
+      window.innerHeight + scrollY >= document.documentElement.scrollHeight - 50;
+    if (atBottom) {
+      const last = this.sections[this.sections.length - 1];
+      if (last && this.activeSection() !== last.id) {
+        this.activeSection.set(last.id);
+      }
+      return;
+    }
+
+    // 60px sticky header height + 40px buffer
+    const headerOffset = 100;
+    let current = '';
 
     for (const s of this.sections) {
       const el = document.getElementById(s.id);
-      if (el) observer.observe(el);
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      if (rect.top <= headerOffset) {
+        current = s.id;
+      } else {
+        break;
+      }
+    }
+
+    if (current && current !== this.activeSection()) {
+      this.activeSection.set(current);
     }
   }
 
   protected scrollTo(id: string): void {
     this.activeSection.set(id);
+    this.isClickScrolling = true;
+    clearTimeout(this.scrollTimeout);
+    this.scrollTimeout = setTimeout(() => {
+      this.isClickScrolling = false;
+      this.updateActiveSection();
+    }, 800);
+
     const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     document
       .getElementById(id)

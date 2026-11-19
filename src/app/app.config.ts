@@ -90,8 +90,8 @@ export const appConfig: ApplicationConfig = {
           }
         },
 
-        skipGetAppConfiguration: false,
-        skipInitAuthService: false,
+        skipGetAppConfiguration: true,
+        skipInitAuthService: true,
       }),
     ),
 
