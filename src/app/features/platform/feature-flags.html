@@ -1,5 +1,7 @@
 @if (isPage) {
-  <ar-topbar [title]="editingId() ? 'Edit feature flag rule' : 'New feature flag rule'">
+  <ar-topbar
+    help="Turn features on for chosen workspaces or plans first, before everyone gets them."
+    [title]="editingId() ? 'Edit feature flag rule' : 'New feature flag rule'">
     <button ar-button type="button" variant="ghost" (click)="close()">
       <ar-icon name="chevron" [size]="14" style="transform: rotate(180deg)" />
       Back to feature flags

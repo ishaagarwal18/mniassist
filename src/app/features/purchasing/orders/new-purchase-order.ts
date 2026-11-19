@@ -50,6 +50,7 @@ interface PartHit {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Order parts from a supplier at the agreed price, with delivery date, terms and GST."
       [title]="editing() ? 'Edit ' + editing() : 'New purchase order'"
       [subtitle]="supplierName() || 'Order parts from a supplier'"
     />

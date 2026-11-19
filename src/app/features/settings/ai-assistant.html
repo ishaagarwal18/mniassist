@@ -1,5 +1,7 @@
 @if (isPage) {
-  <ar-topbar [title]="pageTitle()">
+  <ar-topbar
+    help="Set up the AI assistant that answers customers' common questions on WhatsApp, day or night, and when it hands over to a person."
+    [title]="pageTitle()">
     <button ar-button type="button" variant="ghost" (click)="close()">Back to AI assistant</button>
   </ar-topbar>
   <div class="ar-form-page ar-scroll">

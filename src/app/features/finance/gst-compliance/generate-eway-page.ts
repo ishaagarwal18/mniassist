@@ -48,7 +48,9 @@ import {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="E-way bill" [subtitle]="record()?.documentNumber ?? ''">
+    <ar-topbar
+      help="Generate the e-way bill for an invoice's goods movement, with the transporter and vehicle details."
+      title="E-way bill" [subtitle]="record()?.documentNumber ?? ''">
       <a ar-button variant="ghost" routerLink="/finance/gst-compliance">Back to GST compliance</a>
     </ar-topbar>
 

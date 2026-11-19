@@ -62,6 +62,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="One supplier bill: the invoice, its PO and GRN match, tax, lines and payments, with Approve, Pay and Cancel."
       [title]="bill() ? 'Vendor bill ' + bill()!.billNumber : 'Vendor bill'"
       [subtitle]="bill() ? bill()!.supplierName + ' · invoice ' + bill()!.vendorInvoiceNumber : ''"
     />

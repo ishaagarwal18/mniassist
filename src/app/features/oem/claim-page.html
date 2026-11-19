@@ -1,4 +1,6 @@
-<ar-topbar [title]="claim()?.reference ?? 'OEM claim'" [subtitle]="claim()?.supplierName ?? ''">
+<ar-topbar
+  help="One claim to an OEM: each invoice line with its customer, part, quantity and support amount, and what was settled."
+  [title]="claim()?.reference ?? 'OEM claim'" [subtitle]="claim()?.supplierName ?? ''">
   <a ar-button variant="ghost" routerLink="/oem/claims">Claims</a>
   @if (claim()) {
     <button ar-button type="button" variant="ghost" (click)="download()">Export for the OEM</button>

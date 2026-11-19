@@ -78,7 +78,9 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isPage) {
-      <ar-topbar [title]="pageTitle()">
+      <ar-topbar
+        help="Your dealer network: the dealers you invite, their territories, and the enquiries routed to them and how each ended."
+        [title]="pageTitle()">
         <button ar-button type="button" variant="ghost" (click)="close()">
           Back to Dealer network
         </button>

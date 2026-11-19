@@ -13,6 +13,7 @@ import { ArButton, ArCard } from '../../../ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Close a planned maintenance visit: what the engineer checked and found, and the customer's sign-off."
       title="Record Completed PM Visit"
       subtitle="Sign off scheduled preventive maintenance visit and log field engineer findings"
     >

@@ -26,6 +26,7 @@ import { ArButton, ArCard } from '../../../ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Define what a product is made of: its components, quantities, scrap allowance and routing stage."
       [title]="
         editingId ? 'Edit ' + newBom.bomNumber : 'Create Bill of Materials (Multi-Level BOM)'
       "
@@ -39,11 +40,16 @@ import { ArButton, ArCard } from '../../../ui';
         <ar-card heading="Finished Assembly Header">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">BOM Number <span class="required">*</span></label>
+              <label class="form-label"
+                >BOM Number
+                @if (!editingId) {
+                  <span class="ar-field__opt">blank: next in sequence</span>
+                }
+              </label>
               <input
                 type="text"
                 class="ar-field__input"
-                required
+                placeholder="Assigned on save, e.g. BOM-2026-0007"
                 [(ngModel)]="newBom.bomNumber"
                 [disabled]="!!editingId"
                 name="bomNumber"
@@ -307,9 +313,7 @@ import { ArButton, ArCard } from '../../../ui';
             ar-button
             variant="primary"
             type="submit"
-            [disabled]="
-              busy() || !newBom.bomNumber?.trim() || !newBom.finishedGoodPartNumber.trim()
-            "
+            [disabled]="busy() || !newBom.finishedGoodPartNumber.trim()"
           >
             {{ busy() ? 'Saving BOM…' : editingId ? 'Save changes' : 'Save & Register BOM' }}
           </button>
@@ -511,7 +515,7 @@ export class ArNewBomPage {
   }
 
   protected newBom: CreateBillOfMaterialDto = {
-    bomNumber: `BOM-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    bomNumber: '',
     finishedGoodPartNumber: '',
     finishedGoodDescription: '',
     finishedGoodUom: 'NOS',
@@ -569,11 +573,7 @@ export class ArNewBomPage {
   }
 
   submit(): void {
-    if (
-      !this.newBom.bomNumber?.trim() ||
-      !this.newBom.finishedGoodPartNumber.trim() ||
-      this.busy()
-    ) {
+    if (!this.newBom.finishedGoodPartNumber.trim() || this.busy()) {
       return;
     }
     const selfLink = this.newBom.items.find(
@@ -600,14 +600,17 @@ export class ArNewBomPage {
           remarks: this.newBom.remarks,
           items: this.newBom.items,
         })
-      : this.bomService.create(this.newBom);
+      : this.bomService.create({
+          ...this.newBom,
+          bomNumber: this.newBom.bomNumber?.trim() || undefined,
+        });
     save.subscribe({
       next: (saved) => {
         this.busy.set(false);
         this.toasts.success(
           this.editingId
             ? `BOM ${this.newBom.bomNumber} saved.`
-            : `BOM ${this.newBom.bomNumber} created.`,
+            : `BOM ${saved.bomNumber} created.`,
         );
         void this.router.navigateByUrl(
           this.editingId

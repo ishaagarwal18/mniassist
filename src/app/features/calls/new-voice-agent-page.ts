@@ -13,6 +13,7 @@ import { ArButton, ArCard } from '../../ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Name a new AI voice agent and pick its language, then open it in Voice Agent Studio to set it up."
       title="Create AI Voice Agent"
       subtitle="Design an autonomous AI voice agent for inbound or outbound calls"
     >

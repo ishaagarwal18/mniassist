@@ -12,6 +12,7 @@ import { ArButton, ArCard } from '../../ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="A recorded or spoken message the phone menu plays, such as a greeting or an out-of-hours notice."
       [title]="isEdit() ? 'Edit IVR Prompt' : 'New IVR Prompt'"
       subtitle="Configure text-to-speech audio, digit gathering and entry point rules"
     >

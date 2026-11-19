@@ -1,5 +1,7 @@
 @if (isPage) {
-  <ar-topbar [title]="pageTitle()">
+  <ar-topbar
+    help="Connect your ERP, CRM, helpdesk and store, and send MNI Assist events to your other systems automatically."
+    [title]="pageTitle()">
     <button ar-button type="button" variant="ghost" (click)="close()">Back to Integrations</button>
   </ar-topbar>
   <div class="ar-form-page ar-scroll">

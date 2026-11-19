@@ -39,6 +39,7 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
   ],
   template: `
     <ar-topbar
+      help="Every bill of materials: the components and quantities that go into each product you make."
       title="Bill of Materials (BOM)"
       subtitle="Multi-level product structures, component routing, scrap allowances & costing"
     >

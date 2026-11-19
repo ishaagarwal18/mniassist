@@ -11,6 +11,7 @@ import { ArVoiceConversations } from './voice-conversations';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Transcripts, recordings and outcomes of calls your AI voice agents answered or made, kept for 180 days."
       title="AI voice conversations"
       subtitle="Auditable WhatsApp call transcripts and audio records"
     >

@@ -210,6 +210,7 @@ export const CRM_TOPICS: Readonly<Record<string, HelpTopic>> = {
       { name: 'Search box', text: 'Finds contacts by name, company or phone.' },
       { name: 'Account filter', text: 'Shows only contacts at one company account. Plants are indented under their parent.' },
       { name: 'Include subsidiaries', text: 'Shown when the chosen account has plants or companies beneath it; adds their contacts too.' },
+      { name: 'Filter', text: 'Shows a filter box under each column: type in one to narrow the list as you type. Click Hide filters to remove the row and clear every column filter.' },
       { name: 'Contact', text: 'The person’s name. Click it to open their Customer 360.' },
       { name: 'Company / plant', text: 'The company or plant they work for.' },
       { name: 'Role', text: 'Their decision role, e.g. Purchase or Maintenance.' },

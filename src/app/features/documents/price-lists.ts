@@ -32,7 +32,9 @@ interface ItemRow {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isPage) {
-      <ar-topbar title="Price lists">
+      <ar-topbar
+        help="Price lists for regions and distributor tiers, used when quoting to customers on them."
+        title="Price lists">
         <button ar-button type="button" variant="ghost" (click)="close()">
           Back to price lists
         </button>

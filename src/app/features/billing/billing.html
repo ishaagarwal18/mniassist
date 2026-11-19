@@ -1,5 +1,7 @@
 @if (isPage) {
-  <ar-topbar [title]="pageTitle()">
+  <ar-topbar
+    help="Your plan, prepaid wallet balance and top-ups, and what each message and call costs."
+    [title]="pageTitle()">
     <button ar-button type="button" variant="ghost" (click)="close()">Back to Billing</button>
   </ar-topbar>
   <div class="ar-form-page ar-scroll">

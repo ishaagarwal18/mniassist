@@ -39,6 +39,7 @@ import { ArGrid } from '../../../ui/grid';
   ],
   template: `
     <ar-topbar
+      help="Every goods receipt: what arrived at the gate against the purchase order, its QC result and where it was stored."
       title="Goods Receipt Notes (GRN)"
       subtitle="Inward warehouse gate entry, QC inspection & put-away management"
     >

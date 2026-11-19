@@ -36,7 +36,9 @@ import { ArGrid } from '../../../ui/grid';
     RouterLink,
   ],
   template: `
-    <ar-topbar title="Chart of Accounts (General Ledger)">
+    <ar-topbar
+      help="The ledger accounts every voucher, invoice and statement posts to, grouped as assets, liabilities, income and expenses."
+      title="Chart of Accounts (General Ledger)">
       <div actions class="topbar-actions">
         @if (canCreate()) {
           <button ar-button="ghost" (click)="seedStandardAccounts()">

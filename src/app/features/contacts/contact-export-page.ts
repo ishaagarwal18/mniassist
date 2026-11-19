@@ -43,7 +43,9 @@ export function exportToken(downloadUrl: string | null | undefined): string | nu
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: '../shared/work-page.scss',
   template: `
-    <ar-topbar title="Contact export" subtitle="Your exported contacts file" />
+    <ar-topbar
+      help="The contacts file you asked for: its progress, and the download once it is ready."
+      title="Contact export" subtitle="Your exported contacts file" />
     <div class="wp">
       <p class="wp__muted"><a routerLink="/contacts">← Contacts</a></p>
       <section class="wp__card">

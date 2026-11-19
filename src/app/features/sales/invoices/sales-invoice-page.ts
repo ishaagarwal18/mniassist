@@ -52,6 +52,7 @@ import { ArSalesExport } from '../sales-export';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="One tax invoice: GSTIN, lines with CGST and SGST or IGST, totals, e-invoice details and payments."
       [title]="record() ? 'Tax invoice ' + record()!.invoiceNumber : 'Tax invoice'"
       [subtitle]="record()?.customerName ?? ''"
     />

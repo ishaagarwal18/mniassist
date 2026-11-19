@@ -13,6 +13,7 @@ import { ArTicketSettingsDialog } from './ticket-settings-dialog';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Response times by priority, the public ticket portal, and the WhatsApp templates for sign-off and breakdown updates."
       title="Helpdesk Settings"
       subtitle="Response SLAs by priority, automated notifications and customer ticket portal"
     >

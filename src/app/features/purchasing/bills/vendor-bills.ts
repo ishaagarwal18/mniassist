@@ -46,6 +46,7 @@ import { ArGrid } from '../../../ui/grid';
   ],
   template: `
     <ar-topbar
+      help="Supplier bills matched with their purchase order and goods receipt, through approval and payment."
       title="Vendor Bills & 3-Way Matching"
       subtitle="Purchase invoices, 3-way reconciliation (PO-GRN-Bill), GST ITC & TDS"
     >

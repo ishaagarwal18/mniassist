@@ -204,7 +204,21 @@
           Include subsidiaries
         </label>
       }
-      <button ar-button variant="ghost" icon="filter">Filter</button>
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        icon="filter"
+        [attr.aria-pressed]="filterRow()"
+        [title]="
+          filterRow()
+            ? 'Hide the filter row and clear column filters'
+            : 'Show a filter box under each column'
+        "
+        (click)="toggleFilterRow()"
+      >
+        {{ filterRow() ? 'Hide filters' : 'Filter' }}
+      </button>
     </div>
 
     <div class="table-pane__body ar-scroll" [attr.aria-busy]="loading()">

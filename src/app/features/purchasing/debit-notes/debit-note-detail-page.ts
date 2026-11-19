@@ -47,6 +47,7 @@ export function debitStatusChip(s: VendorDebitNoteStatus): { label: string; tone
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="One debit note: the reason, the bill and GRN it is against, the items and GST, with Issue and Settle."
       [title]="note() ? 'Debit note ' + note()!.debitNoteNumber : 'Debit note'"
       [subtitle]="note()?.supplierName ?? ''"
     />

@@ -64,6 +64,10 @@
     background: #dcfce7;
     color: #15803d;
   }
+  &--warn {
+    background: var(--ar-amber-100);
+    color: var(--ar-amber-800);
+  }
 }
 
 .tc__content {
@@ -651,6 +655,9 @@
     &.good {
       color: #16a34a;
     }
+    &.bad {
+      color: var(--ar-red-600);
+    }
   }
 }
 
@@ -680,6 +687,12 @@
   background: #dcfce7;
   font: 700 10px var(--ar-font-mono);
   color: #15803d;
+  white-space: nowrap;
+
+  &--fail {
+    background: var(--ar-red-100);
+    color: var(--ar-red-600);
+  }
 }
 
 .ar-form-page {

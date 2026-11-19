@@ -1,5 +1,7 @@
 @if (isPage) {
-  <ar-topbar [title]="pageTitle()">
+  <ar-topbar
+    help="Every connected channel and number, with its health, quality rating and messaging limit."
+    [title]="pageTitle()">
     <button ar-button type="button" variant="ghost" (click)="close()">Back to Channels</button>
   </ar-topbar>
   <div class="ar-form-page ar-scroll">

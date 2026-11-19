@@ -33,7 +33,9 @@ import { PORTAL_MODES } from './gst-portal.logic';
   imports: [FormsModule, RouterLink, ArTopbar, ArCard, ArButton, ArChip, ArBanner],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="GST portal connection" subtitle="E-invoices and e-way bills">
+    <ar-topbar
+      help="Connect to the GST portal through your provider, and choose test or live for e-invoices and e-way bills."
+      title="GST portal connection" subtitle="E-invoices and e-way bills">
       <a ar-button variant="ghost" routerLink="/finance/gst-compliance">Back to GST compliance</a>
     </ar-topbar>
 

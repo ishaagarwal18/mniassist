@@ -68,6 +68,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="One service ticket: the customer and machine, the conversation, diagnosis, downtime, site visits and the fix."
       [title]="
         (loaded()?.reference ? loaded()!.reference + ' — ' : '') +
         (loaded()?.subject || 'Ticket Details')

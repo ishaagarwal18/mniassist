@@ -20,7 +20,9 @@ import { ArReorderDispatch } from './reorder-shipping';
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Dispatch an order" [subtitle]="reference" />
+    <ar-topbar
+      help="Record how a won re-order was sent: the courier or transporter and the docket to track it."
+      title="Dispatch an order" [subtitle]="reference" />
     <div class="rp ar-scroll">
       @if (ready()) {
         <ar-reorder-dispatch

@@ -42,7 +42,9 @@ const PREVIEW_DELAY_MS = 600;
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isPage) {
-      <ar-topbar [title]="pageTitle()">
+      <ar-topbar
+        help="The emails MNI Assist sends for you, such as invitations, password resets and quotations, in your own words."
+        [title]="pageTitle()">
         <button ar-button type="button" variant="ghost" (click)="close()">
           Back to Email templates
         </button>

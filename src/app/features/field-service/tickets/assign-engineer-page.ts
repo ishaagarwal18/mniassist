@@ -21,6 +21,7 @@ import { ArButton, ArCard } from '../../../ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Send a field engineer to a ticket and set when they will reach the site."
       title="Dispatch & Assign Field Engineer"
       subtitle="Assign an on-site engineer and schedule the visit date for the selected ticket"
     >

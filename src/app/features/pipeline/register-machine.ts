@@ -44,7 +44,9 @@ const EMPTY: MachineForm = {
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Register a machine" [subtitle]="owner()?.label ?? ''" />
+    <ar-topbar
+      help="Add a customer's machine to the installed base so its AMC, service history and spares follow it."
+      title="Register a machine" [subtitle]="owner()?.label ?? ''" />
     <div class="new-record ar-scroll">
       <ar-dialog title="Register a machine" (dismiss)="back()">
         <div class="ar-field">

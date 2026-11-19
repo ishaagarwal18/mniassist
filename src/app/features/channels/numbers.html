@@ -1,5 +1,7 @@
 @if (isPage) {
-  <ar-topbar [title]="pageTitle()">
+  <ar-topbar
+    help="Your WhatsApp numbers, the display name customers see, its approval and the number's quality."
+    [title]="pageTitle()">
     <button ar-button type="button" variant="ghost" (click)="close()">Back to Numbers</button>
   </ar-topbar>
   <div class="ar-form-page ar-scroll">

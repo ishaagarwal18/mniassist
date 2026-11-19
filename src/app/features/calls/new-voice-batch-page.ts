@@ -23,6 +23,7 @@ function toMinute(time: string): number {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Set up a batch of AI calls: the agent and line, who is called, the calling hours and how often to retry."
       [title]="editId ? 'Edit AI Call Batch' : 'Schedule AI Call Batch'"
       subtitle="Configure outbound automated campaign calls and compliance calling windows"
     >

@@ -36,6 +36,7 @@ const localToday = () => addToDate(new Date().toLocaleDateString('en-CA'), 0);
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Set up an annual maintenance contract: the machines covered, value, period, planned visits and response time."
       title="New AMC contract"
       subtitle="An annual maintenance contract with planned visits and a guaranteed response time"
     >

@@ -99,6 +99,18 @@ export class ArGrid implements OnInit, DoCheck {
     }
   }
 
+  /**
+   * Shows or hides a filter row under the column headers (type in a column to filter it). Hiding it clears
+   * every column filter and goes back to the per-column filter menus.
+   */
+  setFilterRow(on: boolean): void {
+    const grid = this.grid;
+    if (grid.filterSettings?.columns?.length) grid.clearFiltering();
+    grid.filterSettings = on
+      ? { type: 'FilterBar', mode: 'Immediate', immediateModeDelay: 400, showFilterBarStatus: false }
+      : { type: 'Excel' };
+  }
+
   ngDoCheck(): void {
     // In headless test environments (JSDOM), Syncfusion Grid skips row rendering due to 0-dimension layout.
     // Mirror the dataSource as text in the host element so DOM assertions in unit tests find the record values.

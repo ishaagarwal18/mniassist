@@ -1,6 +1,13 @@
 import { ContactExportService } from '../../proxy/contacts/contact-export.service';
 import { PermissionService } from '@abp/ng.core';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { grantedPolicy } from '../../core/auth/permission';
 import { AccountStore } from '../../core/services/account.store';
@@ -164,6 +171,15 @@ export class ArContacts {
   protected readonly segments = this.store.segments;
   protected readonly suppression = this.store.suppression;
   protected readonly loading = this.store.loading;
+  /** The contacts grid, for the Filter button's filter row. */
+  private readonly grid = viewChild(ArGrid);
+  protected readonly filterRow = signal(false);
+
+  protected toggleFilterRow(): void {
+    const on = !this.filterRow();
+    this.filterRow.set(on);
+    this.grid()?.setFilterRow(on);
+  }
   protected readonly loadError = this.store.loadError;
   protected readonly suppressionLoading = this.store.suppressionLoading;
   protected readonly suppressionError = this.store.suppressionError;

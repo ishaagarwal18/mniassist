@@ -30,6 +30,7 @@ import { grnStatusChip, qcChip } from './grn-labels';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="One goods receipt: the gate entry, items received, QC result, bins and rejections, and what to do next."
       [title]="grn()?.grnNumber ?? 'Goods receipt'"
       [subtitle]="grn()?.supplierName ?? 'Gate entry, QC result and received items'"
     />

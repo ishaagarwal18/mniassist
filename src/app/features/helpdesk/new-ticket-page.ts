@@ -16,6 +16,7 @@ import { errorMessage } from '../activities/activity-logic';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Raise a service ticket by hand for a customer, with the machine, the problem and its priority."
       title="New Support Ticket"
       subtitle="Log customer incident, plant technical issue or automation service request"
     >

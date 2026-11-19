@@ -33,6 +33,7 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="One bill of materials: its full component explosion, cost roll-up and the work orders that use it."
       [title]="
         bom() ? 'BOM: ' + bom()!.bomNumber + ' (' + bom()!.revisionCode + ')' : 'Bill of Materials'
       "

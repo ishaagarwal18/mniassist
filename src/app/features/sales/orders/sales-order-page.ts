@@ -50,6 +50,7 @@ import { ArGuaranteesPanel } from '../../project-billing/guarantees-panel';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="One sales order: the customer's PO, terms, site address, items and totals, with challans and invoices made from it."
       [title]="record() ? 'Sales order ' + record()!.orderNumber : 'Sales order'"
       [subtitle]="record()?.customerName ?? ''"
     />

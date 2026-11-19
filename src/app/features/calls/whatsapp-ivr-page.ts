@@ -11,6 +11,7 @@ import { ArWhatsAppIvrDialog } from './whatsapp-ivr-dialog';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="The keypad menu WhatsApp callers hear, and the person, team, agent or message each key sends them to."
       title="WhatsApp call menu (IVR)"
       subtitle="Interactive voice response flows for inbound callers on WhatsApp"
     >

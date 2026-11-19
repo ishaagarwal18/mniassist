@@ -72,6 +72,7 @@ import { PickListStore } from '../../../core/pick-lists/pick-list.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Record a supplier's tax invoice against its goods receipt, with GST and TDS worked out for you."
       title="Record vendor bill"
       [subtitle]="form().supplierName || 'Enter a supplier invoice for 3-way matching and payment'"
     />

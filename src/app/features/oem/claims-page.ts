@@ -22,7 +22,9 @@ import { rupees } from './oem.logic';
   imports: [ArTopbar, ArBanner, ArButton, ArCard, ArChip, ArStatTile, RouterLink, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="OEM claims" subtitle="Special-price support claimed back from OEMs">
+    <ar-topbar
+      help="Every claim to your OEMs, with what was claimed, settled and is still outstanding."
+      title="OEM claims" subtitle="Special-price support claimed back from OEMs">
       <a ar-button variant="ghost" routerLink="/oem/spa">Special prices</a>
     </ar-topbar>
     <div class="oe ar-scroll">

@@ -40,7 +40,9 @@ import { ArGrid } from '../../../ui/grid';
     RouterLink,
   ],
   template: `
-    <ar-topbar title="Journal Vouchers (Double-Entry General Ledger)">
+    <ar-topbar
+      help="Journal vouchers for adjustments, transfers and other entries that are not invoices or bills."
+      title="Journal Vouchers (Double-Entry General Ledger)">
       <div actions class="topbar-actions">
         <a *ngIf="canCreate()" ar-button="primary" routerLink="/finance/journal-entries/new"
           >+ New Journal Voucher</a

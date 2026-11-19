@@ -57,7 +57,9 @@ function localInput(utc?: string | null): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isPage) {
-      <ar-topbar [title]="pageTitle()">
+      <ar-topbar
+        help="What customers see on the public status page: open incidents, planned maintenance and recent history."
+        [title]="pageTitle()">
         <button ar-button type="button" variant="ghost" (click)="close()">
           Back to Status page
         </button>

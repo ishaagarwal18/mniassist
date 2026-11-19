@@ -122,7 +122,9 @@ export function bankDetailsJson(v: {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isPage) {
-      <ar-topbar [title]="pageTitle()">
+      <ar-topbar
+        help="Agencies and distributors that sell MNI Assist under their own brand and domain, with their workspaces and margins."
+        [title]="pageTitle()">
         <button ar-button type="button" variant="ghost" (click)="close()">
           Back to Reseller programme
         </button>

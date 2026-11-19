@@ -28,7 +28,9 @@ import { REORDER_PAGE_STYLES, problem } from './reorder-pages';
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Re-order portal settings" subtitle="How customers re-order spares" />
+    <ar-topbar
+      help="How the customer re-order portal works: what a request becomes, which items are offered and how payment is taken."
+      title="Re-order portal settings" subtitle="How customers re-order spares" />
     <div class="rp ar-scroll">
       @if (!canSettings()) {
         <p class="ro__err" role="alert">Your role can't change the re-order portal's settings.</p>

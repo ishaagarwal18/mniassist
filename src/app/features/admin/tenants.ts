@@ -46,7 +46,9 @@ import { ArWorkspaceManageDialog } from './workspace-manage-dialog';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isPage) {
-      <ar-topbar [title]="pageTitle()">
+      <ar-topbar
+        help="Every customer workspace on this installation: its plan, status and usage, with tools to manage features, billing and access."
+        [title]="pageTitle()">
         <button ar-button type="button" variant="ghost" (click)="close()">
           Back to Workspaces
         </button>

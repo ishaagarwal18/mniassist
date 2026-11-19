@@ -23,7 +23,9 @@ import { ArSendReorderLink } from './send-reorder-link';
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Send a re-order link" [subtitle]="sendTo()?.label ?? 'Choose the customer'" />
+    <ar-topbar
+      help="Send one customer the link to their personal re-order page on WhatsApp or email."
+      title="Send a re-order link" [subtitle]="sendTo()?.label ?? 'Choose the customer'" />
     <div class="rp ar-scroll">
       @if (!canSend()) {
         <p class="ro__err" role="alert">Your role can't send re-order links.</p>

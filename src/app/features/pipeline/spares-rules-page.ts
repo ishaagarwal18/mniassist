@@ -20,6 +20,7 @@ import { readApiError } from '../../core/util/api-error';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Which parts each machine model wears out and how often, so spares reminders go out on time."
       title="Spare Part Replacement Rules"
       subtitle="Scheduled consumable wear-part intervals by machinery make and model"
     >

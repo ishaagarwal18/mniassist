@@ -49,7 +49,9 @@ abstract class NewSalesRecordPage {
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="New sales order" [subtitle]="customer?.label ?? ''" />
+    <ar-topbar
+      help="Raise a sales order for an account and its contact person, with their PO, terms, site address and items."
+      title="New sales order" [subtitle]="customer?.label ?? ''" />
     <div class="new-record ar-scroll">
       <ar-new-sales-order [initialCustomer]="customer" (closed)="done($event)" />
     </div>
@@ -71,7 +73,9 @@ export class ArNewSalesOrderPage extends NewSalesRecordPage {
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Edit sales order" [subtitle]="order()?.orderNumber ?? ''" />
+    <ar-topbar
+      help="Change a sales order's PO, terms, site address and items."
+      title="Edit sales order" [subtitle]="order()?.orderNumber ?? ''" />
     <div class="new-record ar-scroll">
       @if (problem(); as p) {
         <p role="alert">{{ p }}</p>
@@ -114,7 +118,9 @@ export class ArEditSalesOrderPage extends NewSalesRecordPage {
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="New delivery challan" [subtitle]="customer?.label ?? ''" />
+    <ar-topbar
+      help="Make a delivery challan for goods leaving your premises, with its purpose, transport and site address."
+      title="New delivery challan" [subtitle]="customer?.label ?? ''" />
     <div class="new-record ar-scroll">
       <ar-new-delivery-challan [initialCustomer]="customer" (closed)="done($event)" />
     </div>
@@ -136,7 +142,9 @@ export class ArNewDeliveryChallanPage extends NewSalesRecordPage {
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Edit delivery challan" [subtitle]="challan()?.challanNumber ?? ''" />
+    <ar-topbar
+      help="Change a delivery challan's purpose, transport, site address and goods."
+      title="Edit delivery challan" [subtitle]="challan()?.challanNumber ?? ''" />
     <div class="new-record ar-scroll">
       @if (problem(); as p) {
         <p role="alert">{{ p }}</p>
@@ -179,7 +187,9 @@ export class ArEditDeliveryChallanPage extends NewSalesRecordPage {
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="New invoice" [subtitle]="customer?.label ?? ''" />
+    <ar-topbar
+      help="Raise a GST tax invoice with the customer's GSTIN, terms and items."
+      title="New invoice" [subtitle]="customer?.label ?? ''" />
     <div class="new-record ar-scroll">
       <ar-new-sales-invoice [initialCustomer]="customer" (closed)="done($event)" />
     </div>

@@ -20,7 +20,9 @@ import { TRIGGER_TEXT } from './billing.logic';
   imports: [ArTopbar, ArBanner, ArButton, ArCard, RouterLink, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Milestones due" subtitle="Billing milestones ready to invoice" />
+    <ar-topbar
+      help="Every billing milestone ready to invoice, across all project orders, in one list."
+      title="Milestones due" subtitle="Billing milestones ready to invoice" />
     <div class="md ar-scroll">
       @if (error(); as e) {
         <ar-banner tone="bad">{{ e }}</ar-banner>

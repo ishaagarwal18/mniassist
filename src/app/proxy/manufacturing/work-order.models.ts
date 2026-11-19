@@ -57,7 +57,8 @@ export interface CreateWorkOrderDto {
   salesOrderId?: string;
   partNumber: string;
   description: string;
-  batchNumber: string;
+  /** Blank: the next BAT-YYYY-NNNN number is assigned. */
+  batchNumber?: string;
   plannedQuantity: number;
   plannedStartDateUtc: string;
   plannedEndDateUtc: string;

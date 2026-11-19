@@ -29,6 +29,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="A supplier's details: GSTIN, contact, addresses, bank account, payment terms and MSME status."
       [title]="id ? 'Edit supplier' : 'New supplier'"
       [subtitle]="form().name || 'Who you buy from, how to reach and pay them'"
     />

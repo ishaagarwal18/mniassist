@@ -43,6 +43,7 @@ import { ArGrid } from '../../../ui/grid';
   ],
   template: `
     <ar-topbar
+      help="Every debit note raised on suppliers, from draft through issue to settlement."
       title="Vendor Debit Notes"
       subtitle="Purchase return, QC rejection credit & supplier price adjustment notes"
     >

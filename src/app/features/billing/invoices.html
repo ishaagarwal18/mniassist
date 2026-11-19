@@ -1,5 +1,7 @@
 @if (isPage) {
-  <ar-topbar [title]="pageTitle()">
+  <ar-topbar
+    help="Every GST invoice for your MNI Assist plan and wallet top-ups, ready to download."
+    [title]="pageTitle()">
     <button ar-button type="button" variant="ghost" (click)="close()">Back to Invoices</button>
   </ar-topbar>
   <div class="ar-form-page ar-scroll">

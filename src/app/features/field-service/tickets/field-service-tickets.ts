@@ -41,7 +41,9 @@ import { initialSearch } from '../../../core/util/customer-scope';
     RouterLink,
   ],
   template: `
-    <ar-topbar title="Field Service & Breakdown Tickets (Field ERP)">
+    <ar-topbar
+      help="Every breakdown and service visit, from logging through engineer assignment to closure."
+      title="Field Service & Breakdown Tickets (Field ERP)">
       <div actions class="topbar-actions">
         <a *ngIf="canCreate()" ar-button="primary" routerLink="/field-service/tickets/new"
           >+ Raise Service Ticket</a

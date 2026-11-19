@@ -40,6 +40,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
   ],
   template: `
     <ar-topbar
+      help="Every annual maintenance contract with its planned visits, response time and renewal date."
       title="Installed Base AMC Contracts"
       subtitle="Annual maintenance agreements, SLA compliance tracking & scheduled PM visits"
     >

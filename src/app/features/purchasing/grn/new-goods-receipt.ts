@@ -52,6 +52,7 @@ import { PickListStore } from '../../../core/pick-lists/pick-list.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Record goods at the gate against the supplier's challan and purchase order."
       title="Inward goods receipt (GRN)"
       [subtitle]="form().supplierName || 'Record goods arriving at the gate, then send them to QC'"
     />

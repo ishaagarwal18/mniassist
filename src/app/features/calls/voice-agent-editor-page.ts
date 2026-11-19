@@ -10,7 +10,9 @@ import { ArVoiceAgentDialog } from '../channels/voice-agent-dialog';
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Voice Agent Studio" subtitle="Configure AI persona, tools, prompt and behaviors">
+    <ar-topbar
+      help="Build an AI voice agent: what it says and knows, its voice, the actions it can take and what is noted after each call. Test it, then publish."
+      title="Voice Agent Studio" subtitle="Configure AI persona, tools, prompt and behaviors">
       <button ar-button type="button" variant="ghost" (click)="back()">Back to Voice Agents</button>
     </ar-topbar>
     <div class="page-container ar-scroll">

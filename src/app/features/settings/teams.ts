@@ -70,7 +70,9 @@ const EMPTY: Draft = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isPage) {
-      <ar-topbar [title]="editing() ? 'Edit team' : 'New team'">
+      <ar-topbar
+        help="Teams of agents who share a desk, such as a language or product line, and its conversations."
+        [title]="editing() ? 'Edit team' : 'New team'">
         <button ar-button type="button" variant="ghost" (click)="close()">Back to teams</button>
       </ar-topbar>
       <div class="ar-form-page ar-scroll">

@@ -23,6 +23,12 @@ import { grantedPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip, ArDialog, ArIcon } from '../../ui';
 import { readApiError } from '../../core/util/api-error';
+import {
+  STANDING_TEXT,
+  auditStanding,
+  checkPassed,
+  entityStanding,
+} from './telecom-compliance.logic';
 
 type ActiveTab = 'inventory' | 'telecom-entity';
 
@@ -203,6 +209,24 @@ export class ArTelecom {
   protected readonly ResellerNumberType = ResellerNumberType;
   protected readonly TelecomEntityClassification = TelecomEntityClassification;
   protected readonly TelecomKycStatus = TelecomKycStatus;
+  protected readonly STANDING_TEXT = STANDING_TEXT;
+  protected readonly auditStanding = auditStanding;
+  protected readonly checkPassed = checkPassed;
+  /** The entity's standing for the tab badge, from its saved settings and last audit. */
+  protected readonly standing = computed(() => entityStanding(this.store.settings()));
+
+  protected simBindingText(s: SimBindingStatus): string {
+    switch (s) {
+      case SimBindingStatus.Compliant:
+        return 'Compliant';
+      case SimBindingStatus.AuthorizedCarrierAllocation:
+        return 'Carrier allocated';
+      case SimBindingStatus.PendingVerification:
+        return 'Pending verification';
+      default:
+        return 'Non-compliant';
+    }
+  }
   protected readonly SimBindingStatus = SimBindingStatus;
 
   protected readonly subtitle = computed(() => {

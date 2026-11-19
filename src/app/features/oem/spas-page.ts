@@ -18,6 +18,7 @@ import { SPA_STATUS_TEXT, SPA_STATUS_TONE, rupees } from './oem.logic';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Every special price from your OEMs, with the support approved and the quantity left to use."
       title="Special prices"
       subtitle="OEM special price agreements and what is left on them"
     >

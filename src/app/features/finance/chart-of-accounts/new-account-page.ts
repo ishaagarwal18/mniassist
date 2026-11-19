@@ -23,6 +23,7 @@ import { ArButton, ArCard } from '../../../ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Add a ledger account, such as a bank account or a cost head, under the right group."
       title="Add General Ledger Account"
       subtitle="Register an account ledger in the 5-tier financial hierarchy"
     >

@@ -76,6 +76,7 @@ export function progressPercent(
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Production jobs from release and material issue through each routing step to finished stock."
       title="Work orders"
       subtitle="Production batches: routing, materials, QC and finished goods"
     >

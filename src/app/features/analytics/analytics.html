@@ -1,5 +1,7 @@
 @if (isPage) {
-  <ar-topbar title="Conversion drill-down" [subtitle]="period.label()">
+  <ar-topbar
+    help="Message volume, delivery and replies, spend, and how your templates, campaigns and agents perform over the period you choose."
+    title="Conversion drill-down" [subtitle]="period.label()">
     <button ar-button type="button" variant="ghost" (click)="closeDrill()">Back to Analytics</button>
   </ar-topbar>
   <div class="ar-form-page ar-scroll">

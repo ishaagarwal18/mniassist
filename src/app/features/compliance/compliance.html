@@ -1,5 +1,7 @@
 @if (isPage) {
-  <ar-topbar [title]="pageTitle()">
+  <ar-topbar
+    help="Customer data requests (see, correct, delete or stop messages), consent records and breach logs under the DPDP Act."
+    [title]="pageTitle()">
     <button ar-button type="button" variant="ghost" (click)="close()">Back to Compliance</button>
   </ar-topbar>
   <div class="ar-form-page ar-scroll">

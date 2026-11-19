@@ -18,6 +18,7 @@ import { ArButton, ArCard } from '../../../ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Renew a maintenance contract for a new period, with its new value and visit plan."
       title="Renew Equipment AMC Contract"
       [subtitle]="
         contract()

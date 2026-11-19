@@ -8,7 +8,9 @@ import { ArMeetingDialog } from './meeting-dialog';
   imports: [ArTopbar, ArMeetingDialog, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Schedule meeting" />
+    <ar-topbar
+      help="Book a meeting with a contact: the time, place or video link, who attends, the records it is about and the reminders they get."
+      title="Schedule meeting" />
     <main>
       <a routerLink="/meetings">← Back to meetings</a>
       <ar-meeting-dialog [startPreset]="start" (saved)="back()" (closed)="back()" />

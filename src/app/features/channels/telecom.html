@@ -1,5 +1,8 @@
 @if (isPage) {
-  <ar-topbar [title]="pageTitle()">
+  <ar-topbar
+    help="The phone numbers you hold and resell, their KYC and SIM-binding status, and your telecom registrations with DoT and TRAI."
+    [title]="pageTitle()"
+  >
     <button ar-button type="button" variant="ghost" (click)="close()">Back to Telecom</button>
   </ar-topbar>
   <div class="ar-form-page ar-scroll">
@@ -51,7 +54,12 @@
       >
         <ar-icon name="shield" class="tc__tab-icon" />
         <span>Operating as Telecom Entity (DoT / DLT)</span>
-        <span class="tc__badge tc__badge--accent">Compliant</span>
+        <span
+          class="tc__badge"
+          [class.tc__badge--accent]="standing() === 'compliant'"
+          [class.tc__badge--warn]="standing() === 'gaps'"
+          >{{ STANDING_TEXT[standing()] }}</span
+        >
       </button>
     </nav>
 
@@ -224,7 +232,7 @@
                             : 'amber'
                         "
                       >
-                        SIM-Binding: Compliant
+                        SIM-Binding: {{ simBindingText(n.simBindingStatus) }}
                       </ar-chip>
                     </div>
                   </div>
@@ -1005,15 +1013,21 @@
             </div>
             <div class="audit-kpi">
               <span>Overall Standing</span>
-              <strong class="good">COMPLIANT</strong>
+              @let st = auditStanding(res);
+              <strong [class.good]="st === 'compliant'" [class.bad]="st !== 'compliant'">{{
+                st === 'compliant' ? 'COMPLIANT' : 'NEEDS ATTENTION'
+              }}</strong>
             </div>
           </div>
 
           <h4 class="form-subtitle">Regulatory Verification Checklist</h4>
           <ul class="audit-checklist">
             @for (c of res.checks; track c) {
+              @let ok = checkPassed(c);
               <li class="audit-checklist__item">
-                <span class="audit-checklist__badge">✓ PASS</span>
+                <span class="audit-checklist__badge" [class.audit-checklist__badge--fail]="!ok">{{
+                  ok ? '✓ PASS' : '✕ GAP'
+                }}</span>
                 <span>{{ c }}</span>
               </li>
             }

@@ -57,6 +57,7 @@ import { PickListStore } from '../../../core/pick-lists/pick-list.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Claim back rejected, short or over-charged goods from a supplier against their bill or goods receipt."
       title="Issue debit note"
       [subtitle]="
         form().supplierName || 'Debit a supplier for rejections, short supply or rate differences'

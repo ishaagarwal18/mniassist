@@ -23,6 +23,7 @@ const plusDaysLocal = (days: number) =>
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Plan a production batch: the product, quantity, start and finish dates and supervisor."
       title="New Work Order"
       subtitle="Production batches: routing stages, material kitting, QC inspections and shop floor dispatch"
     >
@@ -88,12 +89,14 @@ const plusDaysLocal = (days: number) =>
             </div>
 
             <div class="form-group">
-              <label class="form-label">Batch / Lot Number <span class="required">*</span></label>
+              <label class="form-label"
+                >Batch / Lot Number
+                <span class="ar-field__opt">blank: next in sequence</span></label
+              >
               <input
                 type="text"
                 class="ar-field__input font-mono"
-                required
-                placeholder="e.g. BAT-2026-042"
+                placeholder="Assigned on save, e.g. BAT-2026-0042"
                 [(ngModel)]="newWo.batchNumber"
                 name="batchNumber"
               />
@@ -384,7 +387,7 @@ export class ArNewWorkOrderPage implements OnInit {
     workOrderNumber: '',
     partNumber: '',
     description: '',
-    batchNumber: `BAT-2026-${Math.floor(Math.random() * 900 + 100)}`,
+    batchNumber: '',
     plannedQuantity: 10,
     plannedStartDateUtc: todayLocal(),
     plannedEndDateUtc: plusDaysLocal(10),
@@ -456,7 +459,6 @@ export class ArNewWorkOrderPage implements OnInit {
     const w = this.newWo;
     const missing = [
       !w.partNumber?.trim() && 'the part number',
-      !w.batchNumber?.trim() && 'the batch number',
       !w.description?.trim() && 'the description',
       !(Number(w.plannedQuantity) > 0) && 'the quantity',
     ].filter(Boolean);
@@ -480,7 +482,7 @@ export class ArNewWorkOrderPage implements OnInit {
       salesOrderId: this.salesOrderReference?.trim() || undefined,
       partNumber: w.partNumber.trim(),
       description: w.description.trim(),
-      batchNumber: w.batchNumber.trim(),
+      batchNumber: w.batchNumber?.trim() || undefined,
       plannedQuantity: Number(w.plannedQuantity),
       plannedStartDateUtc: new Date(`${w.plannedStartDateUtc}T00:00:00`).toISOString(),
       plannedEndDateUtc: new Date(`${w.plannedEndDateUtc}T00:00:00`).toISOString(),

@@ -25,7 +25,9 @@ import { ArBanner, ArButton, ArCard } from '../../ui';
   imports: [ArTopbar, ArBanner, ArButton, ArCard, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="OEM settings" subtitle="The suppliers you get special prices from">
+    <ar-topbar
+      help="Choose which suppliers are OEMs, and set how deal registrations and claims are handled."
+      title="OEM settings" subtitle="The suppliers you get special prices from">
       <a ar-button variant="ghost" routerLink="/oem/spa">Special prices</a>
     </ar-topbar>
     <div class="oe ar-scroll">

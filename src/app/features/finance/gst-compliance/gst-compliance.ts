@@ -69,7 +69,9 @@ export function recentReturnPeriods(
     ArCreditOpeningPanel,
   ],
   template: `
-    <ar-topbar title="GST Compliance & Statutory Auditor (GSTR-1, GSTR-3B, E-Way Bill)">
+    <ar-topbar
+      help="GSTR-1 and GSTR-3B prepared from your invoices and bills, with input credit matching, e-invoices and e-way bills."
+      title="GST Compliance & Statutory Auditor (GSTR-1, GSTR-3B, E-Way Bill)">
       <div actions class="topbar-actions">
         <a ar-button="ghost" routerLink="/finance/gst-compliance/connection"
           >GST portal: {{ portalLabel() }}</a

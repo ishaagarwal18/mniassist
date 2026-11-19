@@ -22,6 +22,7 @@ import { REG_STATUS_TEXT, REG_STATUS_TONE, rupees } from './oem.logic';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Every deal registered with an OEM, with its OEM reference, status and end date."
       title="Deal registrations"
       subtitle="Deals registered with an OEM, so no other distributor quotes them"
     >

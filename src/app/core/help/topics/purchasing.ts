@@ -574,7 +574,7 @@ export const PURCHASING_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Click Save & Register BOM; it is saved as a draft to activate from the list.',
     ],
     fields: [
-      { name: 'BOM Number', text: 'Filled in for you; change it if you number BOMs yourself. Required.' },
+      { name: 'BOM Number', text: 'Leave blank and the next number in sequence is given on save (e.g. BOM-2026-0007), or type your own. Can’t be changed later.' },
       { name: 'Revision Code', text: 'e.g. Rev A. Required.' },
       { name: 'Finished Good Part Number · Description', text: 'The product this BOM builds. Both required.' },
       { name: 'Unit of Measure (UOM) · Base Quantity', text: 'The unit of the finished good and how many the component quantities make.' },
@@ -654,7 +654,7 @@ export const PURCHASING_TOPICS: Readonly<Record<string, HelpTopic>> = {
     fields: [
       { name: 'Link to Existing BOM', text: 'Optional. Selecting a BOM fills in the finished good part number and description. Change / Unlink removes it.' },
       { name: 'Part Number', text: 'The finished good being made. Required.' },
-      { name: 'Batch / Lot Number', text: 'Identifies this production batch. Required.' },
+      { name: 'Batch / Lot Number', text: 'Identifies this production batch. Leave blank and the next number in sequence is given on save (e.g. BAT-2026-0042), or type your own lot number.' },
       { name: 'Assembly Description', text: 'What is being made. Required.' },
       { name: 'Quantity to Produce', text: 'Planned units to make. Required.' },
       { name: 'Work Order Number', text: 'Leave blank to number it automatically.' },

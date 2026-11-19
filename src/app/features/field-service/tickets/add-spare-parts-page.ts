@@ -31,6 +31,7 @@ interface SpareLineItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Record the spare parts used on a field ticket; they come out of stock and onto the job's cost."
       title="Add Spare Parts"
       subtitle="Select parts from the inventory catalogue and record them against this ticket"
     >

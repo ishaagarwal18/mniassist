@@ -39,6 +39,7 @@ import { qcChip } from './grn-labels';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Record what passed QC and what was rejected, line by line; accepted items go into stock."
       [title]="'QC inspection' + (grn() ? ' · ' + grn()!.grnNumber : '')"
       [subtitle]="grn()?.supplierName ?? 'Record what passed and what was rejected'"
     />

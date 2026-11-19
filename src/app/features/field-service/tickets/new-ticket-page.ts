@@ -31,6 +31,7 @@ import { EMPTY_PARTY, defaultShipIndex, shipToText } from '../../sales/sales-par
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Log a breakdown, maintenance visit, installation or calibration job for a customer's machine."
       title="New field service ticket"
       subtitle="Send an engineer for a breakdown, maintenance visit, installation or calibration"
     >

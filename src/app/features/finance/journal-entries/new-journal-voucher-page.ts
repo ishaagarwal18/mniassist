@@ -55,6 +55,7 @@ const BLANK_LINE: VoucherLineVM = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Write a journal voucher: the date, the debit and credit lines, and a narration. It must balance before it can be posted."
       [title]="isEditing() ? 'Edit Journal Voucher' : 'New Journal Voucher'"
       subtitle="Double-entry General Ledger posting with real-time balance validation"
     >

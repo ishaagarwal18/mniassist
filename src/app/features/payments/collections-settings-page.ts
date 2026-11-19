@@ -23,7 +23,9 @@ import { ArSelect } from '../../ui/select';
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Collection reminders" subtitle="WhatsApp reminders for unpaid invoices" />
+    <ar-topbar
+      help="When payment reminders go out, how often, and the approved WhatsApp template they use."
+      title="Collection reminders" subtitle="WhatsApp reminders for unpaid invoices" />
     <div class="cs ar-scroll">
       @if (!canManage()) {
         <p class="cl__err" role="alert">Your role can't change collection reminders.</p>

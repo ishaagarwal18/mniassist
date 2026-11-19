@@ -25,6 +25,7 @@ import { ArContactPicker } from '../../pipeline/contact-picker';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="Start an AI-guided diagnosis with the customer's plant engineer on WhatsApp or the phone line."
       title="Initiate AI Remote Diagnostic Session"
       subtitle="Engage customer plant engineer via WhatsApp or Voice IVR for real-time guided fault diagnosis"
     >

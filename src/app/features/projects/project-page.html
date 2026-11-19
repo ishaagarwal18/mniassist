@@ -1,5 +1,6 @@
 @let p = project();
 <ar-topbar
+  help="One project from first news to order: its stage, key dates, the companies and people involved, the specification and the enquiries."
   [title]="p?.name ?? 'Project'"
   [subtitle]="p ? p.reference + ' · ' + STAGE_TEXT[p.stage] : ''"
 >

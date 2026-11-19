@@ -1,5 +1,7 @@
 @if (isPage) {
-  <ar-topbar [title]="pageTitle()">
+  <ar-topbar
+    help="Scheduled reports that email your key numbers daily, weekly or monthly to the people you choose."
+    [title]="pageTitle()">
     <button ar-button type="button" variant="ghost" (click)="close()">Back to Scheduled reports</button>
   </ar-topbar>
   <div class="ar-form-page ar-scroll">

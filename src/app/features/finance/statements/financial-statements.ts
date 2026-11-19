@@ -66,7 +66,9 @@ const EMPTY_BALANCE_SHEET: BalanceSheetResultDto = {
     GridModule,
   ],
   template: `
-    <ar-topbar title="Financial Statements (Statutory Ledger)">
+    <ar-topbar
+      help="Trial balance, profit and loss, and balance sheet from your posted entries, ready to export or print."
+      title="Financial Statements (Statutory Ledger)">
       <div actions class="topbar-actions">
         <button ar-button="ghost" (click)="exportToExcel()">📊 Export to Excel</button>
         <button ar-button="ghost" (click)="exportToPdf()">📄 Export to PDF</button>

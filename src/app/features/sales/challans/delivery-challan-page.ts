@@ -41,6 +41,7 @@ import { ArSalesExport } from '../sales-export';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
+      help="One delivery challan: its Rule 55 purpose, transport, site address and the goods sent."
       [title]="record() ? 'Delivery challan ' + record()!.challanNumber : 'Delivery challan'"
       [subtitle]="record()?.customerName ?? ''"
     />

@@ -1,5 +1,7 @@
 @if (isPage) {
-  <ar-topbar [title]="pageTitle()">
+  <ar-topbar
+    help="Health, usage and revenue across every workspace on the platform, in one place."
+    [title]="pageTitle()">
     <button ar-button type="button" variant="ghost" (click)="close()">Back to Platform</button>
   </ar-topbar>
   <div class="ar-form-page ar-scroll">
