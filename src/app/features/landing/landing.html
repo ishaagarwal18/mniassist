@@ -1,6 +1,6 @@
 <header class="nav" [class.nav--open]="mobileMenuOpen()">
   <div class="wrap nav__row">
-    <ar-brand onDark />
+    <ar-brand onDark (click)="scrollToTop($event)" />
     <nav class="nav__links" aria-label="Sections">
       @for (s of sections; track s.id) {
         <button
@@ -210,7 +210,7 @@
 <footer class="foot">
   <div class="wrap foot__grid">
     <div class="foot__brand">
-      <ar-brand tagline />
+      <ar-brand tagline (click)="scrollToTop($event)" />
     </div>
     <nav class="foot__col" aria-label="Product">
       <strong>Product</strong>

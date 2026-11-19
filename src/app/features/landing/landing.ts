@@ -44,7 +44,7 @@ interface Pillar {
 export class ArLanding {
   protected readonly signedIn = inject(CurrentUserService).isAuthenticated;
 
-  protected readonly activeSection = signal<string>('industries');
+  protected readonly activeSection = signal<string>('');
   protected readonly mobileMenuOpen = signal<boolean>(false);
   protected readonly tagline = BRAND_TAGLINE;
   protected readonly year = new Date().getFullYear();
@@ -236,7 +236,7 @@ export class ArLanding {
       }
     }
 
-    if (current && current !== this.activeSection()) {
+    if (current !== this.activeSection()) {
       this.activeSection.set(current);
     }
   }
@@ -247,6 +247,28 @@ export class ArLanding {
 
   protected closeMobileMenu(): void {
     this.mobileMenuOpen.set(false);
+  }
+
+  /** Scroll back to the very top (hero section) of the landing page. */
+  protected scrollToTop(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+    }
+    this.closeMobileMenu();
+    this.activeSection.set('');
+    this.isClickScrolling = true;
+    clearTimeout(this.scrollTimeout);
+    this.scrollTimeout = setTimeout(() => {
+      this.isClickScrolling = false;
+      this.updateActiveSection();
+    }, 800);
+
+    const still =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: still ? 'auto' : 'smooth' });
+    }
   }
 
   protected scrollTo(id: string): void {
