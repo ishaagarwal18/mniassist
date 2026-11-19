@@ -212,6 +212,14 @@ import { ArIcon } from '../../ui';
         gap: 32px;
       }
     }
+    @media (max-width: 480px) {
+      .demo {
+        padding: 12px;
+      }
+      .demo__msg {
+        max-width: 95%;
+      }
+    }
   `,
 })
 export class ArLandingAi {

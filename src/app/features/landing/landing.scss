@@ -423,52 +423,214 @@ h3 {
   color: var(--ar-ink-400);
 }
 
-@media (max-width: 1020px) {
+.nav__toggle {
+  display: none;
+}
+.nav__mobile {
+  display: none;
+}
+
+@media (max-width: 1024px) {
   .pillars,
   .trust {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
   }
   .foot__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
   }
   .foot__brand {
     grid-column: 1 / -1;
   }
 }
-@media (max-width: 960px) {
+
+@media (max-width: 860px) {
+  .nav__links {
+    display: none;
+  }
+  .nav__cta .nav__signup {
+    display: none;
+  }
+  .nav__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    margin-left: auto;
+    border: 1px solid var(--ar-nav-line);
+    border-radius: var(--ar-radius-control);
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .nav__toggle:hover {
+    background: var(--ar-nav-hi);
+  }
+  .nav__mobile {
+    display: block;
+    background: var(--ar-nav);
+    border-top: 1px solid var(--ar-nav-line);
+    padding: 12px 20px 24px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+    animation: navSlideDown 0.2s ease-out;
+  }
+  .nav__mobile-links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .nav__mobile-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: var(--ar-radius-control);
+    background: none;
+    font: 500 15px var(--ar-font-sans);
+    color: var(--ar-nav-text);
+    text-align: left;
+    cursor: pointer;
+    transition: color 0.15s, background-color 0.15s;
+  }
+  .nav__mobile-item:hover {
+    color: #fff;
+    background: var(--ar-nav-hi);
+  }
+  .nav__mobile-item.is-active {
+    color: #fff;
+    background: var(--ar-blue-500);
+    font-weight: 600;
+  }
+  .nav__mobile-cta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--ar-nav-line);
+  }
+  .nav__mobile-cta .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
   .hero__grid {
     grid-template-columns: minmax(0, 1fr);
-    gap: 32px;
+    gap: 36px;
+  }
+  .hero {
+    padding: 48px 0 36px;
   }
   .story {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     row-gap: 24px;
+    margin-top: 40px;
   }
   .steps {
     grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
   }
   .steps::before {
     display: none;
   }
+  .steps__n {
+    width: 38px;
+    height: 38px;
+    font-size: 15px;
+  }
+  .band {
+    padding: 60px 0;
+  }
 }
+
 @media (max-width: 640px) {
-  .nav__links,
-  .nav__signup {
-    display: none;
+  .wrap {
+    padding: 0 16px;
   }
   .nav__row {
-    justify-content: space-between;
+    gap: 12px;
+  }
+  .nav__cta .btn--ghost {
+    padding: 0 10px;
+    font-size: 12.5px;
+  }
+  h1 {
+    font-size: clamp(25px, 6.5vw, 34px);
+  }
+  .hero__lede {
+    font-size: 15px;
+    margin-top: 14px;
+  }
+  .hero__cta {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .hero__cta .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .proof {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    margin-top: 24px;
   }
   .pillars,
   .trust,
-  .story,
-  .proof {
+  .story {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .pillar,
+  .trust__item {
+    padding: 18px 16px;
   }
   .band {
-    padding: 56px 0;
+    padding: 48px 0;
+  }
+  h2 {
+    font-size: clamp(21px, 5.5vw, 26px);
+  }
+  .final {
+    padding: 48px 0;
+  }
+  .final__row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .final .hero__cta {
+    width: 100%;
   }
   .foot__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 16px;
+  }
+  .foot__base {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .foot__grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .story__step {
+    padding-right: 0;
+  }
+}
+
+@keyframes navSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

@@ -1,4 +1,4 @@
-<header class="nav">
+<header class="nav" [class.nav--open]="mobileMenuOpen()">
   <div class="wrap nav__row">
     <ar-brand onDark />
     <nav class="nav__links" aria-label="Sections">
@@ -21,7 +21,41 @@
         <a class="btn btn--primary nav__signup" routerLink="/signup">Create a workspace</a>
       }
     </div>
+    <button
+      type="button"
+      class="nav__toggle"
+      [attr.aria-expanded]="mobileMenuOpen()"
+      aria-label="Toggle navigation menu"
+      (click)="toggleMobileMenu()"
+    >
+      <ar-icon [name]="mobileMenuOpen() ? 'close' : 'menu'" [size]="20" />
+    </button>
   </div>
+
+  @if (mobileMenuOpen()) {
+    <div class="nav__mobile" (click)="closeMobileMenu()">
+      <nav class="nav__mobile-links" aria-label="Mobile sections" (click)="$event.stopPropagation()">
+        @for (s of sections; track s.id) {
+          <button
+            type="button"
+            class="nav__mobile-item"
+            [class.is-active]="activeSection() === s.id"
+            (click)="scrollTo(s.id)"
+          >
+            {{ s.label }}
+          </button>
+        }
+        <div class="nav__mobile-cta">
+          @if (signedIn()) {
+            <a class="btn btn--primary btn--lg" routerLink="/home" (click)="closeMobileMenu()">Open MNI Assist</a>
+          } @else {
+            <a class="btn btn--primary btn--lg" routerLink="/signup" (click)="closeMobileMenu()">Create a workspace</a>
+            <a class="btn btn--ghost btn--lg" routerLink="/login" (click)="closeMobileMenu()">Log in</a>
+          }
+        </div>
+      </nav>
+    </div>
+  }
 </header>
 
 <main>

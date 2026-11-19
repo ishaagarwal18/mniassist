@@ -45,6 +45,7 @@ export class ArLanding {
   protected readonly signedIn = inject(CurrentUserService).isAuthenticated;
 
   protected readonly activeSection = signal<string>('industries');
+  protected readonly mobileMenuOpen = signal<boolean>(false);
   protected readonly tagline = BRAND_TAGLINE;
   protected readonly year = new Date().getFullYear();
   protected readonly industryLinks = INDUSTRY_LINKS;
@@ -240,7 +241,16 @@ export class ArLanding {
     }
   }
 
+  protected toggleMobileMenu(): void {
+    this.mobileMenuOpen.update((open) => !open);
+  }
+
+  protected closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
+  }
+
   protected scrollTo(id: string): void {
+    this.closeMobileMenu();
     this.activeSection.set(id);
     this.isClickScrolling = true;
     clearTimeout(this.scrollTimeout);

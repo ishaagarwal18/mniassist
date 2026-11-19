@@ -146,6 +146,20 @@ import { ArIcon } from '../../ui';
       font: 400 11px var(--ar-font-mono);
       color: var(--ar-ink-400);
     }
+    @media (max-width: 420px) {
+      .chat__bar {
+        padding: 10px 12px;
+        gap: 8px;
+      }
+      .chat__ctx {
+        font-size: 10px;
+        padding: 2px 6px;
+      }
+      .msg {
+        max-width: 95%;
+        font-size: 12.5px;
+      }
+    }
   `,
 })
 export class ArLandingChat {}

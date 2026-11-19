@@ -233,6 +233,20 @@ import { Cycle, LANDING_PLANS, limitLines, planKey, priceLabel } from './landing
         grid-template-columns: minmax(0, 1fr);
       }
     }
+    @media (max-width: 480px) {
+      .toggle {
+        display: flex;
+        width: 100%;
+        max-width: 320px;
+      }
+      .toggle button {
+        flex: 1;
+        padding: 6px 8px;
+        font-size: 11.5px;
+        text-align: center;
+        justify-content: center;
+      }
+    }
   `,
 })
 export class ArLandingPlans {
