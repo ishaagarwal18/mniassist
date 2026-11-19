@@ -10,9 +10,9 @@ import {
   ProjectUserDto,
   SaveProjectInput,
 } from '../../proxy/projects/project.service';
-import { ArBanner, ArButton, ArCard } from '../../ui';
+import { ArBanner, ArButton } from '../../ui';
 import { ArAccountSearch, PickedAccount } from './account-search';
-import { formProblem, parseRupees } from './project.logic';
+import { formProblem, parseRupees, rupeesShort } from './project.logic';
 import { PickListStore } from '../../core/pick-lists/pick-list.store';
 
 type DateKey =
@@ -31,7 +31,7 @@ function day(value: string | null | undefined): string {
 /** A new project, or a project's details: name, end-user, site, value, key dates, next step, owner and team. */
 @Component({
   selector: 'ar-project-form-page',
-  imports: [ArTopbar, ArButton, ArBanner, ArCard, ArAccountSearch, RouterLink],
+  imports: [ArTopbar, ArButton, ArBanner, ArAccountSearch, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-form-page.html',
   styleUrl: './project-form-page.scss',
@@ -63,6 +63,44 @@ export class ArProjectFormPage {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly problem = computed(() => formProblem(this.form()));
+  /** Set once Save is pressed, so required-field hints only show after an attempt. */
+  protected readonly tried = signal(false);
+  protected readonly nameMissing = computed(() => this.tried() && !this.form().name.trim());
+  protected readonly endUserMissing = computed(() => this.tried() && !this.form().endUserAccountId);
+  protected readonly valueBad = computed(
+    () => !!this.value().trim() && this.form().ourScopeValueInPaise === null,
+  );
+  protected readonly valuePreview = computed(() => {
+    const v = this.form().ourScopeValueInPaise;
+    return v === null || v === undefined ? null : rupeesShort(v);
+  });
+  protected readonly ownerName = computed(() => {
+    const id = this.form().ownerUserId;
+    return id ? (this.users().find((u) => u.userId === id)?.name ?? 'Someone else') : 'You';
+  });
+  protected readonly teamNames = computed(() =>
+    this.users()
+      .filter((u) => this.form().teamUserIds.includes(u.userId) && u.userId !== this.form().ownerUserId)
+      .map((u) => u.name),
+  );
+  /** The key dates that are set, in date order, for the summary timeline. */
+  protected readonly timeline = computed(() =>
+    this.dates
+      .map((d) => ({ label: d.label, on: this.date(d.key) }))
+      .filter((d) => !!d.on)
+      .sort((a, b) => a.on.localeCompare(b.on)),
+  );
+  /** Sections filled, for the progress line in the summary. */
+  protected readonly filled = computed(() => {
+    const f = this.form();
+    return [
+      !!f.name.trim() && !!f.endUserAccountId,
+      !!(f.siteName || f.siteCity || f.siteState || f.sector),
+      f.ourScopeValueInPaise !== null && f.ourScopeValueInPaise !== undefined,
+      this.timeline().length > 0,
+      !!f.nextStep?.trim(),
+    ];
+  });
 
   constructor() {
     void this.load();
@@ -133,6 +171,7 @@ export class ArProjectFormPage {
   }
 
   protected async save(): Promise<void> {
+    this.tried.set(true);
     const f = this.form();
     if (formProblem(f) || this.busy()) return;
     if (this.value().trim() && f.ourScopeValueInPaise === null) {

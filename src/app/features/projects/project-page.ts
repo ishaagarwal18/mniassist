@@ -24,7 +24,7 @@ import {
 } from '../../proxy/projects/project.service';
 import { EnquiryService } from '../../proxy/pipeline/enquiry.service';
 import { EnquiryStage } from '../../proxy/pipeline';
-import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
+import { ArBanner, ArButton, ArCard, ArChip, ArDialog } from '../../ui';
 import { ArAccountSearch, PickedAccount } from './account-search';
 import {
   ATTITUDE_TEXT,
@@ -32,6 +32,7 @@ import {
   INFLUENCE_TEXT,
   OUTCOME_TEXT,
   ROLES,
+  STAGE_DECIDER,
   STAGE_TEXT,
   STAGES,
   SPEC_STATUSES,
@@ -46,6 +47,23 @@ import {
   rupeesShort,
   toggleRole,
 } from './project.logic';
+
+/** Where a date stands against today: days away (negative = past) and a short label. */
+export function dateState(
+  on: string | null | undefined,
+  now = new Date(),
+): { days: number | null; text: string; tone: 'past' | 'soon' | 'later' | 'none' } {
+  if (!on) return { days: null, text: 'Not set', tone: 'none' };
+  const d = new Date(on);
+  if (Number.isNaN(d.getTime())) return { days: null, text: 'Not set', tone: 'none' };
+  const a = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const b = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  const days = Math.round((b - a) / 86_400_000);
+  if (days < 0) return { days, text: days === -1 ? 'Yesterday' : `${-days} days ago`, tone: 'past' };
+  if (days === 0) return { days, text: 'Today', tone: 'soon' };
+  if (days <= 14) return { days, text: days === 1 ? 'Tomorrow' : `In ${days} days`, tone: 'soon' };
+  return { days, text: `In ${days} days`, tone: 'later' };
+}
 
 type Tab = 'overview' | 'parties' | 'spec' | 'enquiries' | 'timeline';
 
@@ -71,7 +89,7 @@ interface PartyDraft {
  */
 @Component({
   selector: 'ar-project-page',
-  imports: [ArTopbar, ArButton, ArBanner, ArCard, ArChip, ArAccountSearch, RouterLink, DatePipe],
+  imports: [ArTopbar, ArButton, ArBanner, ArCard, ArChip, ArDialog, ArAccountSearch, RouterLink, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-page.html',
   styleUrl: './project-page.scss',
@@ -199,6 +217,33 @@ export class ArProjectPage {
 
   constructor() {
     void this.load();
+  }
+
+  protected readonly STAGE_DECIDER = STAGE_DECIDER;
+
+  /** The key dates with where each stands against today, for the overview timeline. */
+  protected readonly keyDates = computed(() => {
+    const p = this.project();
+    if (!p) return [];
+    const rows: { label: string; on: string | null | undefined }[] = [
+      { label: 'Identified', on: p.identifiedOn },
+      { label: 'Spec issue', on: p.specIssueOn },
+      { label: 'Tender closes', on: p.tenderCloseOn },
+      { label: 'Award expected', on: p.awardExpectedOn },
+      { label: 'Commissioning', on: p.commissioningOn },
+    ];
+    return rows.map((r) => ({ ...r, when: dateState(r.on) }));
+  });
+
+  /** The next key date still ahead, for the header. */
+  protected readonly nextDate = computed(
+    () => this.keyDates().find((d) => d.when.days !== null && d.when.days >= 0) ?? null,
+  );
+
+  protected readonly nextStepState = computed(() => dateState(this.project()?.nextStepDueOn));
+
+  protected initial(name: string | null | undefined): string {
+    return (name ?? '?').trim().charAt(0).toUpperCase() || '?';
   }
 
   protected site(p: ProjectDetailDto): string {

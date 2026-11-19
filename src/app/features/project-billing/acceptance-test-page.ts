@@ -16,9 +16,10 @@ import {
   TestItemResult,
   TestSigningLinkDto,
 } from '../../proxy/project-billing/acceptance-test.service';
-import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
+import { ArBanner, ArButton, ArChip } from '../../ui';
 import {
   ResultRow,
+  TEST_KIND_TEXT,
   TEST_STATUS_TEXT,
   TEST_STATUS_TONE,
   resultRowOf,
@@ -31,10 +32,10 @@ import {
  */
 @Component({
   selector: 'ar-acceptance-test-page',
-  imports: [ArTopbar, ArBanner, ArButton, ArCard, ArChip, RouterLink, DatePipe],
+  imports: [ArTopbar, ArBanner, ArButton, ArChip, RouterLink, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './acceptance-test-page.html',
-  styleUrl: './milestones-due-page.scss',
+  styleUrl: './acceptance-test-page.scss',
 })
 export class ArAcceptanceTestPage {
   private readonly api = inject(AcceptanceTestService);
@@ -69,6 +70,41 @@ export class ArAcceptanceTestPage {
     return s === AcceptanceTestStatus.Signed || s === AcceptanceTestStatus.Reissued;
   });
   protected readonly problem = computed(() => signatureProblem(this.rows()));
+  protected readonly KIND_TEXT = TEST_KIND_TEXT;
+  protected readonly editable = computed(() => this.canPlan() && !this.locked());
+
+  /** Live counts from the rows being edited, for the progress bar. */
+  protected readonly tally = computed(() => {
+    const t = { pass: 0, fail: 0, na: 0, pending: 0, openPunch: 0, critical: 0, total: 0 };
+    for (const r of this.rows()) {
+      t.total++;
+      if (r.result === TestItemResult.Pass) t.pass++;
+      else if (r.result === TestItemResult.Fail) {
+        t.fail++;
+        if (!r.closedOn) {
+          t.openPunch++;
+          if (r.critical) t.critical++;
+        }
+      } else if (r.result === TestItemResult.NotApplicable) t.na++;
+      else t.pending++;
+    }
+    return t;
+  });
+
+  protected pct(n: number): number {
+    const total = this.tally().total;
+    return total ? (n / total) * 100 : 0;
+  }
+
+  protected resultClass(r: TestItemResult): string {
+    return r === TestItemResult.Pass
+      ? 'is-pass'
+      : r === TestItemResult.Fail
+        ? 'is-fail'
+        : r === TestItemResult.NotApplicable
+          ? 'is-na'
+          : 'is-pending';
+  }
 
   constructor() {
     void this.load();

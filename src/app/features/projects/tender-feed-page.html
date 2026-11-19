@@ -1,237 +1,342 @@
 <ar-topbar
   title="Tender feed"
   subtitle="Track incoming tender alerts and turn matches into projects"
+  help="The feed reads tender alert emails from your connected mailbox or a forwarding address, scores them against your keywords, and suggests projects for the ones that match."
 >
+  @if (settings()) {
+    <button ar-button type="button" variant="ghost" (click)="pasteOpen.set(true)">
+      Paste an alert
+    </button>
+  }
   <a ar-button variant="ghost" routerLink="/projects">Back to projects</a>
 </ar-topbar>
 
 <div class="tf ar-scroll">
   @if (error(); as e) {
-    <ar-banner tone="bad">{{ e }}</ar-banner>
-    <div>
-      <button
-        ar-button
-        type="button"
-        variant="ghost"
-        [disabled]="busy()"
-        (click)="load(!settings())"
-      >
-        Retry
+    <ar-banner tone="bad">
+      {{ e }}
+      <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="load(!settings())">
+        Try again
       </button>
-    </div>
-  } @else if (loading() && !settings()) {
-    <p class="tf__muted" role="status">Loading tender feed…</p>
+    </ar-banner>
   }
+
   @if (settings(); as s) {
     @if (!s.aiConfigured) {
-      <ar-banner tone="warn"
-        >The AI model isn't set up for this workspace, so alerts can't be read yet. Ask your MNI
-        Assist contact to switch it on.</ar-banner
-      >
+      <ar-banner tone="warn">
+        The AI model isn't set up for this workspace, so alerts can't be read yet. Ask your MNI Assist
+        contact to switch it on.
+      </ar-banner>
     }
 
-    <section class="tf__overview" aria-label="Feed overview">
-      <div>
-        <strong>Alert intake</strong>
-        <ar-chip [dot]="true" [tone]="s.enabled ? 'good' : 'neutral'">
-          {{ s.enabled ? 'Enabled' : 'Paused' }}
-        </ar-chip>
-        <p class="tf__muted">Alerts older than 30 days are skipped.</p>
+    <!-- Status strip -->
+    <section class="tf__strip" aria-label="Feed status">
+      <div class="tf__strip-main">
+        <span class="tf__pulse" [class.is-on]="s.enabled" aria-hidden="true"></span>
+        <div>
+          <strong>{{ s.enabled ? 'Feed is on' : 'Feed is paused' }}</strong>
+          <span class="tf__muted">
+            {{ s.enabled ? 'New alerts are read and scored as they arrive.' : 'Turn it on in Settings to start reading alerts.' }}
+          </span>
+        </div>
       </div>
-      <div>
-        <strong>{{ s.alertsToday }} / {{ s.dailyLimit }}</strong>
-        <p class="tf__muted">Alerts in the last 24 hours</p>
-      </div>
+      <dl class="tf__stats">
+        <div>
+          <dt>Last 24 hours</dt>
+          <dd>
+            {{ s.alertsToday }}<span class="tf__of"> / {{ s.dailyLimit }}</span>
+          </dd>
+          <span class="tf__quota" aria-hidden="true">
+            <span [style.width.%]="s.dailyLimit ? (s.alertsToday / s.dailyLimit) * 100 : 0"></span>
+          </span>
+        </div>
+        <div>
+          <dt>Suggested</dt>
+          <dd class="is-ai">{{ counts().suggested }}</dd>
+        </div>
+        <div>
+          <dt>Projects made</dt>
+          <dd class="is-good">{{ counts().created }}</dd>
+        </div>
+        <div>
+          <dt>Keywords</dt>
+          <dd>{{ s.keywords.length }}</dd>
+        </div>
+      </dl>
     </section>
 
-    <div class="tf__grid">
-      <div class="tf__stack">
-        <ar-card heading="Matching settings">
-          <label class="tf__check">
-            <input
-              type="checkbox"
-              [checked]="enabled()"
-              (change)="enabled.set($any($event.target).checked)"
-            />
-            Read tender alerts and suggest projects
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label"
-              >Matching keywords <span class="ar-field__opt">comma-separated</span></span
-            >
-            <input
-              class="ar-field__input"
-              [value]="keywordsText()"
-              (input)="keywordsText.set($any($event.target).value)"
-            />
-          </label>
-          @if (s.keywords.length) {
-            <p class="tf__muted">
-              What each word counts for now (Not relevant lowers it, Create project raises it):
-            </p>
-            <div class="tf__chips">
-              @for (k of s.keywords; track k.word) {
-                <ar-chip [tone]="k.weight >= 1 ? 'teal' : 'neutral'"
-                  ><span translate="no">{{ k.word }}</span> {{ k.weight }}</ar-chip
-                >
-              }
-            </div>
-          }
-          <label class="ar-field">
-            <span class="ar-field__label"
-              >Allowed senders
-              <span class="ar-field__opt"
-                >addresses or domains in your connected mailbox, e.g. gem.gov.in</span
-              ></span
-            >
-            <input
-              class="ar-field__input"
-              [value]="sendersText()"
-              (input)="sendersText.set($any($event.target).value)"
-            />
-          </label>
-          <div class="tf__foot">
-            <button ar-button type="button" [disabled]="busy()" (click)="save()">
-              Save settings
-            </button>
-          </div>
-        </ar-card>
-
-        <ar-card heading="Email forwarding">
-          <p class="tf__muted">
-            For alerts that don't reach your connected mailbox: point a forwarding address on your
-            mail service (or a script) at this address. It takes the email as it is.
-          </p>
-          @if (inboundUrl(); as url) {
-            <ar-banner tone="warn">Copy it now: it is shown only this once.</ar-banner>
-            <div class="tf__address">
-              <code translate="no">{{ url }}</code>
-              <button ar-button type="button" variant="ghost" (click)="copyAddress()">Copy</button>
-            </div>
-          } @else if (s.hasInboundAddress) {
-            <p class="tf__muted">
-              An address ending …<span translate="no">{{ s.inboundAddressHint }}</span> was made
-              {{ s.inboundAddressSetAtUtc | date: 'd MMM yyyy' }}.
-            </p>
-          }
-          @if (s.hasInboundAddress) {
-            <p class="tf__muted">
-              Replacing the address disables the previous one. Update your forwarding rule after
-              replacing it.
-            </p>
-          }
-          <div class="tf__foot">
-            <button
-              ar-button
-              type="button"
-              variant="ghost"
-              [disabled]="busy()"
-              (click)="newAddress()"
-            >
-              {{ s.hasInboundAddress ? 'Replace address' : 'Create forwarding address' }}
-            </button>
-          </div>
-        </ar-card>
-      </div>
-
-      <ar-card heading="Submit an alert">
-        <p class="tf__muted">Paste a tender email to add it to the processing queue.</p>
+    <!-- Paste dialog -->
+    @if (pasteOpen()) {
+      <ar-dialog title="Paste an alert" width="min(640px, calc(100vw - 32px))" (dismiss)="busy() || pasteOpen.set(false)">
         @if (!s.enabled) {
-          <ar-banner tone="warn">Enable the feed and save settings to submit alerts.</ar-banner>
+          <ar-banner tone="warn">Turn the feed on and save settings to submit alerts.</ar-banner>
         }
-        <label class="ar-field">
-          <span class="ar-field__label">Subject <span class="ar-field__opt">optional</span></span>
-          <input
-            class="ar-field__input"
-            maxlength="500"
-            [value]="pasteSubject()"
-            (input)="pasteSubject.set($any($event.target).value)"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label"
-            >Email text <span class="ar-field__opt">20 characters minimum</span></span
-          >
-          <textarea
-            class="ar-field__input"
-            rows="6"
-            maxlength="12000"
-            placeholder="Paste the alert email's text"
-            [value]="pasteText()"
-            (input)="pasteText.set($any($event.target).value)"
-          ></textarea>
-        </label>
-        <p class="tf__muted tf__count">{{ pasteText().length }} / 12,000 characters</p>
-        <div class="tf__foot">
+        <div class="tf__paste">
+          <label class="ar-field">
+            <span class="ar-field__label">Subject <span class="ar-field__opt">optional</span></span>
+            <input
+              class="ar-field__input"
+              maxlength="500"
+              [value]="pasteSubject()"
+              (input)="pasteSubject.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Email text</span>
+            <textarea
+              class="ar-field__input tf__paste-text"
+              rows="10"
+              maxlength="12000"
+              data-autofocus
+              placeholder="Paste the full text of the tender alert email"
+              [value]="pasteText()"
+              (input)="pasteText.set($any($event.target).value)"
+            ></textarea>
+          </label>
+          <span class="tf__muted tf__paste-count">
+            @if (pasteText().trim().length < 20) {
+              At least 20 characters ·
+            }
+            {{ pasteText().length | number }} / 12,000
+          </span>
+        </div>
+        <div dialogActions>
+          <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="pasteOpen.set(false)">Cancel</button>
           <button
             ar-button
             type="button"
             [disabled]="busy() || !s.enabled || pasteText().trim().length < 20"
             (click)="paste()"
           >
-            Queue alert
+            {{ busy() ? 'Queuing…' : 'Queue alert' }}
           </button>
         </div>
-      </ar-card>
-    </div>
+      </ar-dialog>
+    }
 
-    <ar-card heading="Recent alerts">
-      @if (alerts().length) {
-        <ul class="tf__alerts" aria-label="Recent tender alerts">
-          @for (a of alerts(); track a.id) {
-            <li class="tf__alert">
-              <div>
-                <h3 translate="no">{{ a.title || a.subject || 'Untitled alert' }}</h3>
-                @if (a.buyer) {
-                  <p class="tf__muted" translate="no">{{ a.buyer }}</p>
-                }
-              </div>
-              <div class="tf__outcome">
-                <ar-chip [tone]="statusTone(a.status)" [dot]="true">
-                  {{ statusText(a.status) }}
-                </ar-chip>
-                @if (a.projectId) {
-                  <a ar-button variant="ghost" [routerLink]="['/projects', a.projectId]">
-                    Open project
-                  </a>
-                }
-              </div>
-              <dl class="tf__metadata">
-                <div>
-                  <dt>Received</dt>
-                  <dd>
-                    <time [attr.datetime]="a.receivedAtUtc">{{
-                      a.receivedAtUtc | date: 'd MMM y, h:mm a'
-                    }}</time>
-                  </dd>
-                </div>
-                @if (a.closingOn) {
-                  <div>
-                    <dt>Closes</dt>
-                    <dd>
-                      <time [attr.datetime]="a.closingOn">{{ a.closingOn | date: 'd MMM y' }}</time>
-                    </dd>
-                  </div>
-                }
-                @if (a.status !== Status.Queued && a.status !== Status.Failed) {
-                  <div>
-                    <dt>Match score</dt>
-                    <dd>{{ a.score }}</dd>
-                  </div>
-                }
-              </dl>
-              @if (a.problem) {
-                <p class="tf__problem">{{ a.problem }}</p>
-              }
-            </li>
+    <div class="tf__layout">
+      <!-- Alerts -->
+      <section class="tf__main" aria-label="Recent alerts">
+        <div class="tf__tabs" role="tablist" aria-label="Filter alerts">
+          @for (f of filters; track f.key) {
+            <button
+              type="button"
+              role="tab"
+              class="tf__tab"
+              [class.is-on]="filter() === f.key"
+              [attr.aria-selected]="filter() === f.key"
+              (click)="filter.set(f.key)"
+            >
+              {{ f.label }} <span class="tf__count">{{ counts()[f.key] }}</span>
+            </button>
           }
-        </ul>
-      } @else {
-        <div class="tf__empty">
-          <strong>No alerts yet</strong>
-          <p class="tf__muted">Set up email forwarding or submit a tender email to get started.</p>
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            class="tf__refresh"
+            [disabled]="loading()"
+            (click)="load(false)"
+          >
+            {{ loading() ? 'Refreshing…' : 'Refresh' }}
+          </button>
         </div>
-      }
-    </ar-card>
+
+        @if (shown().length) {
+          <ul class="tf__alerts">
+            @for (a of shown(); track a.id) {
+              <li class="tf__alert" [class.is-suggested]="a.status === Status.Suggested">
+                <div class="tf__alert-top">
+                  <ar-chip [tone]="statusTone(a.status)" [dot]="true">{{ statusText(a.status) }}</ar-chip>
+                  @if (closeText(a.closingOn); as c) {
+                    <span class="tf__close" [class.is-urgent]="closeUrgent(a.closingOn)">{{ c }}</span>
+                  }
+                  <time class="tf__muted tf__when" [attr.datetime]="a.receivedAtUtc">
+                    {{ a.receivedAtUtc | date: 'd MMM, h:mm a' }}
+                  </time>
+                </div>
+
+                <h3 class="tf__title" translate="no">{{ a.title || a.subject || 'Untitled alert' }}</h3>
+
+                <div class="tf__facts">
+                  @if (a.buyer) {
+                    <span translate="no">{{ a.buyer }}</span>
+                  }
+                  @if (a.location) {
+                    <span translate="no">{{ a.location }}</span>
+                  }
+                  @if (a.tenderNumber) {
+                    <span class="tf__mono" translate="no">#{{ a.tenderNumber }}</span>
+                  }
+                  @if (a.estimatedValueInPaise) {
+                    <span class="tf__strong">{{ rupees(a.estimatedValueInPaise) }}</span>
+                  }
+                  @if (a.closingOn) {
+                    <span>Closes {{ a.closingOn | date: 'd MMM y' }}</span>
+                  }
+                </div>
+
+                @if (a.matchedWords.length || (a.status !== Status.Queued && a.status !== Status.Failed)) {
+                  <div class="tf__match">
+                    @if (a.status !== Status.Queued && a.status !== Status.Failed) {
+                      <span class="tf__score" title="Match score">Score {{ a.score }}</span>
+                    }
+                    @for (w of a.matchedWords; track w) {
+                      <span class="tf__word" translate="no">{{ w }}</span>
+                    }
+                  </div>
+                }
+
+                @if (a.problem) {
+                  <p class="tf__problem">{{ a.problem }}</p>
+                }
+
+                @if (a.projectId || a.documentsUrl) {
+                  <div class="tf__actions">
+                    @if (a.documentsUrl) {
+                      <a ar-button variant="ghost" [href]="a.documentsUrl" target="_blank" rel="noopener">
+                        Tender documents
+                      </a>
+                    }
+                    @if (a.projectId) {
+                      <a ar-button [routerLink]="['/projects', a.projectId]">Open project</a>
+                    }
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        } @else if (alerts().length) {
+          <div class="tf__empty">
+            <strong>No alerts in this view</strong>
+            <button ar-button type="button" variant="ghost" (click)="filter.set('all')">Show all</button>
+          </div>
+        } @else {
+          <div class="tf__empty">
+            <strong>No alerts yet</strong>
+            <p class="tf__muted">
+              Add keywords and allowed senders, set up a forwarding address, or paste a tender email to get
+              started.
+            </p>
+            <button ar-button type="button" (click)="pasteOpen.set(true)">Paste an alert</button>
+          </div>
+        }
+      </section>
+
+      <!-- Settings side panel -->
+      <aside class="tf__side">
+        <ar-card heading="Settings">
+          <label class="tf__switch">
+            <input
+              type="checkbox"
+              role="switch"
+              [checked]="enabled()"
+              (change)="enabled.set($any($event.target).checked)"
+            />
+            <span class="tf__switch-ui" aria-hidden="true"></span>
+            <span>Read tender alerts and suggest projects</span>
+          </label>
+
+          <div class="tf__group">
+            <span class="ar-field__label" id="tf-kw">Matching keywords</span>
+            <div class="tf__tags" (click)="kw.focus()">
+              @for (k of keywords(); track k) {
+                <span class="tf__tag" [class.is-strong]="(weights().get(k.toLowerCase()) ?? 0) >= 1">
+                  <span translate="no">{{ k }}</span>
+                  @if (weights().get(k.toLowerCase()); as w) {
+                    <span class="tf__weight" title="Learned weight">{{ w }}</span>
+                  }
+                  <button type="button" [attr.aria-label]="'Remove ' + k" (click)="removeEntry('keywords', k)">×</button>
+                </span>
+              }
+              <input
+                #kw
+                class="tf__tag-input"
+                aria-labelledby="tf-kw"
+                placeholder="Add a keyword…"
+                [value]="keywordDraft()"
+                (input)="keywordDraft.set($any($event.target).value)"
+                (keydown.enter)="addEntries('keywords', $event)"
+                (keydown.backspace)="backspace('keywords', $event)"
+                (blur)="addEntries('keywords')"
+              />
+            </div>
+            <p class="tf__hint">
+              Press Enter to add. Weights learn from your choices: “Not relevant” lowers them, “Create project”
+              raises them.
+            </p>
+          </div>
+
+          <div class="tf__group">
+            <span class="ar-field__label" id="tf-from">Allowed senders</span>
+            <div class="tf__tags" (click)="from.focus()">
+              @for (x of senders(); track x) {
+                <span class="tf__tag">
+                  <span translate="no">{{ x }}</span>
+                  <button type="button" [attr.aria-label]="'Remove ' + x" (click)="removeEntry('senders', x)">×</button>
+                </span>
+              }
+              <input
+                #from
+                class="tf__tag-input"
+                aria-labelledby="tf-from"
+                placeholder="e.g. gem.gov.in"
+                [value]="senderDraft()"
+                (input)="senderDraft.set($any($event.target).value)"
+                (keydown.enter)="addEntries('senders', $event)"
+                (keydown.backspace)="backspace('senders', $event)"
+                (blur)="addEntries('senders')"
+              />
+            </div>
+            <p class="tf__hint">Addresses or domains whose mail in your connected mailbox is read.</p>
+          </div>
+
+          <div class="tf__foot">
+            @if (dirty()) {
+              <span class="tf__unsaved">Unsaved changes</span>
+              <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="resetSettings()">
+                Discard
+              </button>
+            }
+            <button ar-button type="button" [disabled]="busy() || !dirty()" (click)="save()">Save</button>
+          </div>
+        </ar-card>
+
+        <ar-card heading="Email forwarding">
+          <p class="tf__hint">
+            For alerts that don't reach your connected mailbox, forward them to this address. Alerts older than
+            30 days are skipped.
+          </p>
+          @if (inboundUrl(); as url) {
+            <ar-banner tone="warn">Copy it now — it is shown only this once.</ar-banner>
+            <div class="tf__address">
+              <code translate="no">{{ url }}</code>
+              <button ar-button type="button" (click)="copyAddress()">Copy</button>
+            </div>
+          } @else if (s.hasInboundAddress) {
+            <div class="tf__address">
+              <code translate="no">…{{ s.inboundAddressHint }}</code>
+              <span class="tf__muted">since {{ s.inboundAddressSetAtUtc | date: 'd MMM yyyy' }}</span>
+            </div>
+            <p class="tf__hint">Replacing it disables the old address; update your forwarding rule afterwards.</p>
+          }
+          <div class="tf__foot">
+            <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="newAddress()">
+              {{ s.hasInboundAddress ? 'Replace address' : 'Create forwarding address' }}
+            </button>
+          </div>
+        </ar-card>
+      </aside>
+    </div>
+  } @else if (loading()) {
+    <div class="tf__skel tf__skel--strip" aria-busy="true" aria-label="Loading tender feed"></div>
+    <div class="tf__layout">
+      <div class="tf__main">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="tf__skel tf__skel--card"></div>
+        }
+      </div>
+      <div class="tf__skel tf__skel--side"></div>
+    </div>
   }
 </div>

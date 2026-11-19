@@ -3,8 +3,8 @@
   subtitle="The plant or line, who the end-user is, and when things happen"
 >
   <a ar-button variant="ghost" [routerLink]="id ? ['/projects', id] : ['/projects']">Cancel</a>
-  <button ar-button type="button" [disabled]="busy() || !!problem()" (click)="save()">
-    {{ id ? 'Save' : 'Create project' }}
+  <button ar-button type="button" [disabled]="busy()" (click)="save()">
+    {{ busy() ? 'Saving…' : id ? 'Save' : 'Create project' }}
   </button>
 </ar-topbar>
 
@@ -13,173 +13,296 @@
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }
 
-  <ar-card heading="Project">
-    <div class="pf__grid">
-      <label class="ar-field pf__wide">
-        <span class="ar-field__label">Name</span>
-        <input
-          class="ar-field__input"
-          maxlength="200"
-          placeholder="e.g. Tata Steel Kalinganagar CRM-2 expansion"
-          [value]="form().name"
-          (input)="patch({ name: $any($event.target).value })"
-        />
-      </label>
-      <div class="ar-field pf__wide">
-        <span class="ar-field__label">End-user</span>
-        @if (endUserName()) {
-          <p class="pf__picked">
-            <b translate="no">{{ endUserName() }}</b>
-            <button
-              type="button"
-              class="pf__link"
-              (click)="endUserName.set(''); patch({ endUserAccountId: '' })"
-            >
-              Change
-            </button>
-          </p>
-        } @else {
-          <ar-account-search
-            placeholder="Find the end-user's account"
-            (picked)="pickEndUser($event)"
-          />
-        }
-      </div>
-      <label class="ar-field">
-        <span class="ar-field__label">Site</span>
-        <input
-          class="ar-field__input"
-          maxlength="200"
-          [value]="form().siteName ?? ''"
-          (input)="patch({ siteName: $any($event.target).value })"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">City</span>
-        <input
-          class="ar-field__input"
-          maxlength="100"
-          [value]="form().siteCity ?? ''"
-          (input)="patch({ siteCity: $any($event.target).value })"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">State</span>
-        <input
-          class="ar-field__input"
-          maxlength="100"
-          [value]="form().siteState ?? ''"
-          (input)="patch({ siteState: $any($event.target).value })"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">Sector</span>
-        <select class="ar-field__input" (change)="patch({ sector: $any($event.target).value })">
-          <option value="" [selected]="!form().sector">Choose…</option>
-          @for (s of SECTORS(); track s) {
-            <option [value]="s" [selected]="form().sector === s">{{ s }}</option>
-          }
-        </select>
-      </label>
-      <label class="ar-field pf__wide">
-        <span class="ar-field__label"
-          >Our scope, ₹ <span class="ar-field__opt">e.g. 45,00,000 or 4.5 Cr</span></span
-        >
-        <input
-          class="ar-field__input"
-          inputmode="decimal"
-          [value]="value()"
-          (input)="setValue($any($event.target).value)"
-        />
-      </label>
-    </div>
-  </ar-card>
-
-  <ar-card heading="Key dates">
-    <div class="pf__grid">
-      @for (d of dates; track d.key) {
-        <label class="ar-field">
-          <span class="ar-field__label">{{ d.label }}</span>
-          <input
-            class="ar-field__input"
-            type="date"
-            [value]="date(d.key)"
-            (change)="setDate(d.key, $any($event.target).value)"
-          />
-        </label>
-      }
-    </div>
-  </ar-card>
-
-  <ar-card heading="Next step and status">
-    <div class="pf__grid">
-      <label class="ar-field pf__wide">
-        <span class="ar-field__label">Next step</span>
-        <input
-          class="ar-field__input"
-          maxlength="500"
-          placeholder="e.g. Technical presentation to the consultant"
-          [value]="form().nextStep ?? ''"
-          (input)="patch({ nextStep: $any($event.target).value })"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">Due</span>
-        <input
-          class="ar-field__input"
-          type="date"
-          [value]="date('nextStepDueOn')"
-          (change)="setDate('nextStepDueOn', $any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field pf__full">
-        <span class="ar-field__label">Status note</span>
-        <textarea
-          class="ar-field__input"
-          rows="2"
-          maxlength="2000"
-          [value]="form().statusNote ?? ''"
-          (input)="patch({ statusNote: $any($event.target).value })"
-        ></textarea>
-      </label>
-    </div>
-  </ar-card>
-
-  <ar-card heading="Owner and team">
-    <p class="pf__muted">
-      The owner and the team see the project. Managers with "see all projects" see every one.
-    </p>
-    <label class="ar-field pf__owner">
-      <span class="ar-field__label">Owner <span class="ar-field__opt">blank: you</span></span>
-      <select
-        class="ar-field__input"
-        (change)="patch({ ownerUserId: $any($event.target).value || null })"
-      >
-        <option value="" [selected]="!form().ownerUserId">Me</option>
-        @for (u of users(); track u.userId) {
-          <option [value]="u.userId" [selected]="form().ownerUserId === u.userId" translate="no">
-            {{ u.name }}
-          </option>
-        }
-      </select>
-    </label>
-    <div class="pf__team">
-      @for (u of users(); track u.userId) {
-        @if (u.userId !== form().ownerUserId) {
-          <label class="pf__check">
+  <div class="pf__layout">
+    <form class="pf__main" (submit)="$event.preventDefault(); save()" novalidate>
+      <!-- 1. Project -->
+      <section class="pf__section">
+        <header class="pf__head">
+          <span class="pf__step">1</span>
+          <div>
+            <h2>Project</h2>
+            <p>What it is and who it's for.</p>
+          </div>
+        </header>
+        <div class="pf__grid">
+          <label class="ar-field pf__full">
+            <span class="ar-field__label">Name <span class="pf__req">required</span></span>
             <input
-              type="checkbox"
-              [checked]="onTeam(u.userId)"
-              (change)="toggleTeam(u.userId, $any($event.target).checked)"
+              class="ar-field__input"
+              [class.is-invalid]="nameMissing()"
+              maxlength="200"
+              placeholder="e.g. Tata Steel Kalinganagar CRM-2 expansion"
+              [value]="form().name"
+              (input)="patch({ name: $any($event.target).value })"
             />
-            <span translate="no">{{ u.name }}</span>
+            @if (nameMissing()) {
+              <span class="pf__err">Give the project a name.</span>
+            }
           </label>
-        }
-      }
-    </div>
-  </ar-card>
+          <div class="ar-field pf__full">
+            <span class="ar-field__label">End-user <span class="pf__req">required</span></span>
+            @if (endUserName()) {
+              <div class="pf__picked">
+                <span class="pf__avatar" aria-hidden="true">{{ endUserName().charAt(0) }}</span>
+                <b translate="no">{{ endUserName() }}</b>
+                <button
+                  type="button"
+                  class="pf__link"
+                  (click)="endUserName.set(''); patch({ endUserAccountId: '' })"
+                >
+                  Change
+                </button>
+              </div>
+            } @else {
+              <div class="pf__search" [class.is-invalid]="endUserMissing()">
+                <ar-account-search
+                  placeholder="Find the end-user's account"
+                  (picked)="pickEndUser($event)"
+                />
+              </div>
+              @if (endUserMissing()) {
+                <span class="pf__err">Choose the end-user.</span>
+              } @else {
+                <span class="pf__hint">The company that owns the plant — not the consultant or contractor.</span>
+              }
+            }
+          </div>
+          <label class="ar-field">
+            <span class="ar-field__label">Sector</span>
+            <select class="ar-field__input" (change)="patch({ sector: $any($event.target).value })">
+              <option value="" [selected]="!form().sector">Choose…</option>
+              @for (s of SECTORS(); track s) {
+                <option [value]="s" [selected]="form().sector === s">{{ s }}</option>
+              }
+            </select>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Our scope, ₹</span>
+            <input
+              class="ar-field__input"
+              [class.is-invalid]="valueBad()"
+              inputmode="decimal"
+              placeholder="45,00,000 or 4.5 Cr"
+              [value]="value()"
+              (input)="setValue($any($event.target).value)"
+            />
+            @if (valueBad()) {
+              <span class="pf__err">Type a number, e.g. 45,00,000 or 4.5 Cr.</span>
+            } @else if (valuePreview(); as v) {
+              <span class="pf__hint">= {{ v }}</span>
+            }
+          </label>
+        </div>
+      </section>
 
-  @if (problem(); as p) {
-    <p class="pf__problem">{{ p }}</p>
-  }
+      <!-- 2. Site -->
+      <section class="pf__section">
+        <header class="pf__head">
+          <span class="pf__step">2</span>
+          <div>
+            <h2>Site</h2>
+            <p>Where the plant or line is.</p>
+          </div>
+        </header>
+        <div class="pf__grid pf__grid--3">
+          <label class="ar-field">
+            <span class="ar-field__label">Site</span>
+            <input
+              class="ar-field__input"
+              maxlength="200"
+              placeholder="e.g. CRM-2 plant"
+              [value]="form().siteName ?? ''"
+              (input)="patch({ siteName: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">City</span>
+            <input
+              class="ar-field__input"
+              maxlength="100"
+              [value]="form().siteCity ?? ''"
+              (input)="patch({ siteCity: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">State</span>
+            <input
+              class="ar-field__input"
+              maxlength="100"
+              [value]="form().siteState ?? ''"
+              (input)="patch({ siteState: $any($event.target).value })"
+            />
+          </label>
+        </div>
+      </section>
+
+      <!-- 3. Key dates -->
+      <section class="pf__section">
+        <header class="pf__head">
+          <span class="pf__step">3</span>
+          <div>
+            <h2>Key dates</h2>
+            <p>Fill in what you know; the board reminds you as each one nears.</p>
+          </div>
+        </header>
+        <ol class="pf__dates">
+          @for (d of dates; track d.key) {
+            <li class="pf__date" [class.is-set]="!!date(d.key)">
+              <span class="pf__dot" aria-hidden="true"></span>
+              <label class="ar-field">
+                <span class="ar-field__label">{{ d.label }}</span>
+                <input
+                  class="ar-field__input"
+                  type="date"
+                  [value]="date(d.key)"
+                  (change)="setDate(d.key, $any($event.target).value)"
+                />
+              </label>
+            </li>
+          }
+        </ol>
+      </section>
+
+      <!-- 4. Next step -->
+      <section class="pf__section">
+        <header class="pf__head">
+          <span class="pf__step">4</span>
+          <div>
+            <h2>Next step and status</h2>
+            <p>What happens next, and where things stand.</p>
+          </div>
+        </header>
+        <div class="pf__grid pf__grid--next">
+          <label class="ar-field">
+            <span class="ar-field__label">Next step</span>
+            <input
+              class="ar-field__input"
+              maxlength="500"
+              placeholder="e.g. Technical presentation to the consultant"
+              [value]="form().nextStep ?? ''"
+              (input)="patch({ nextStep: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Due</span>
+            <input
+              class="ar-field__input"
+              type="date"
+              [value]="date('nextStepDueOn')"
+              (change)="setDate('nextStepDueOn', $any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field pf__full">
+            <span class="ar-field__label">Status note</span>
+            <textarea
+              class="ar-field__input"
+              rows="3"
+              maxlength="2000"
+              placeholder="Anything the team should know"
+              [value]="form().statusNote ?? ''"
+              (input)="patch({ statusNote: $any($event.target).value })"
+            ></textarea>
+          </label>
+        </div>
+      </section>
+
+      <!-- 5. Owner and team -->
+      <section class="pf__section">
+        <header class="pf__head">
+          <span class="pf__step">5</span>
+          <div>
+            <h2>Owner and team</h2>
+            <p>The owner and the team see the project. Managers with "see all projects" see every one.</p>
+          </div>
+        </header>
+        <label class="ar-field pf__owner">
+          <span class="ar-field__label">Owner</span>
+          <select
+            class="ar-field__input"
+            (change)="patch({ ownerUserId: $any($event.target).value || null })"
+          >
+            <option value="" [selected]="!form().ownerUserId">Me</option>
+            @for (u of users(); track u.userId) {
+              <option [value]="u.userId" [selected]="form().ownerUserId === u.userId" translate="no">
+                {{ u.name }}
+              </option>
+            }
+          </select>
+        </label>
+        @if (users().length) {
+          <span class="ar-field__label pf__team-label">Team</span>
+          <div class="pf__team">
+            @for (u of users(); track u.userId) {
+              @if (u.userId !== form().ownerUserId) {
+                <label class="pf__person" [class.is-on]="onTeam(u.userId)">
+                  <input
+                    type="checkbox"
+                    [checked]="onTeam(u.userId)"
+                    (change)="toggleTeam(u.userId, $any($event.target).checked)"
+                  />
+                  <span class="pf__avatar pf__avatar--sm" aria-hidden="true">{{ u.name.charAt(0) }}</span>
+                  <span translate="no">{{ u.name }}</span>
+                </label>
+              }
+            }
+          </div>
+        }
+      </section>
+
+      <button type="submit" hidden></button>
+    </form>
+
+    <!-- Live summary -->
+    <aside class="pf__side" aria-label="Summary">
+      <div class="pf__summary">
+        <span class="pf__eyebrow">{{ id ? 'Editing' : 'New project' }}</span>
+        <h3 translate="no" [class.is-empty]="!form().name.trim()">
+          {{ form().name.trim() || 'Untitled project' }}
+        </h3>
+        <p class="pf__sub" translate="no">
+          {{ endUserName() || 'No end-user yet' }}
+          @if (form().siteCity) {
+            · {{ form().siteCity }}
+          }
+        </p>
+
+        <div class="pf__value">
+          <span>Our scope</span>
+          <strong>{{ valuePreview() ?? '—' }}</strong>
+        </div>
+
+        <div class="pf__progress" aria-label="Sections filled">
+          @for (f of filled(); track $index) {
+            <span [class.is-on]="f"></span>
+          }
+        </div>
+
+        <h4>Timeline</h4>
+        @if (timeline().length) {
+          <ol class="pf__tl">
+            @for (t of timeline(); track t.label) {
+              <li><span>{{ t.label }}</span><time>{{ t.on }}</time></li>
+            }
+          </ol>
+        } @else {
+          <p class="pf__hint">No dates yet.</p>
+        }
+
+        <h4>People</h4>
+        <p class="pf__people">
+          <b translate="no">{{ ownerName() }}</b> owns it
+          @if (teamNames().length) {
+            · {{ teamNames().length }} on the team
+          }
+        </p>
+
+        @if (tried() && problem(); as p) {
+          <p class="pf__problem" role="alert">{{ p }}</p>
+        }
+        <button ar-button type="button" class="pf__save" [disabled]="busy()" (click)="save()">
+          {{ busy() ? 'Saving…' : id ? 'Save changes' : 'Create project' }}
+        </button>
+      </div>
+    </aside>
+  </div>
 </div>

@@ -135,6 +135,18 @@ import { PageContextService } from './page-context.service';
             </ol>
           }
 
+          @if (t.fields?.length) {
+            <p class="rsb__help-label">{{ i18n.t('On this screen') }}</p>
+            <dl class="rsb__help-fields">
+              @for (f of t.fields; track $index) {
+                <div>
+                  <dt>{{ f.name }}</dt>
+                  <dd>{{ f.text }}</dd>
+                </div>
+              }
+            </dl>
+          }
+
           @if (t.tips?.length) {
             <div class="rsb__help-tip">
               @for (tip of t.tips; track $index) {

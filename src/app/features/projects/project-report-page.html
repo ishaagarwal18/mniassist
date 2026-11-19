@@ -3,108 +3,180 @@
   subtitle="Funnel, specified-in win rate and losses"
   help="Open projects by stage as they are today. Wins, losses and the brands lost to count projects closed, and enquiries lost, in the period."
 >
-  <select
-    class="ar-field__input pr__months"
-    aria-label="Period"
-    (change)="setMonths($any($event.target).value)"
-  >
+  <div class="pr__period" role="radiogroup" aria-label="Period">
     @for (m of monthsChoices; track m) {
-      <option [value]="m" [selected]="m === months()">Last {{ m }} months</option>
+      <button
+        type="button"
+        role="radio"
+        class="pr__period-btn"
+        [class.is-on]="m === months()"
+        [attr.aria-checked]="m === months()"
+        [disabled]="loading()"
+        (click)="setMonths(m)"
+      >
+        {{ m }}M
+      </button>
     }
-  </select>
+  </div>
   <a ar-button variant="ghost" routerLink="/projects">Projects</a>
 </ar-topbar>
 
-<div class="pr ar-scroll">
+<div class="pr ar-scroll" [class.is-busy]="loading() && report()">
   @if (error(); as e) {
-    <ar-banner tone="bad">{{ e }}</ar-banner>
+    <ar-banner tone="bad">
+      {{ e }}
+      <button ar-button variant="ghost" type="button" (click)="load()">Try again</button>
+    </ar-banner>
   }
 
   @if (report(); as r) {
-    <div class="pr__tiles">
+    @let t = totals()!;
+    <p class="pr__range">Closed results for the last {{ months() }} months · pipeline as of today</p>
+
+    <section class="pr__kpis" aria-label="Summary">
       <ar-stat-tile
-        label="Win rate when specified-in"
-        [value]="percent(r.specifiedIn.winRate)"
-        [note]="winRateNote(r.specifiedIn)"
+        label="Open pipeline"
+        [value]="rupees(t.value)"
+        [note]="t.projects + (t.projects === 1 ? ' project' : ' projects') + ' across all stages'"
+      />
+      <ar-stat-tile
+        label="Won in period"
+        [value]="rupees(t.wonValue)"
+        [note]="t.won + ' won · ' + t.lost + ' lost'"
         tone="good"
       />
       <ar-stat-tile
-        label="Win rate when not specified-in"
-        [value]="percent(r.notSpecifiedIn.winRate)"
-        [note]="winRateNote(r.notSpecifiedIn)"
+        label="Overall win rate"
+        [value]="percent(t.winRate)"
+        [note]="t.won + t.lost === 0 ? 'Nothing closed yet' : 'of ' + (t.won + t.lost) + ' closed projects'"
+        tone="teal"
       />
+      <ar-stat-tile
+        label="Value lost to competitors"
+        [value]="rupees(t.lostValue)"
+        [note]="r.lossesByBrand.length + (r.lossesByBrand.length === 1 ? ' brand' : ' brands')"
+        [tone]="t.lostValue > 0 ? 'bad' : 'neutral'"
+      />
+    </section>
+
+    <div class="pr__grid">
+      <ar-card heading="Open projects by stage" class="pr__funnel-card">
+        @if (t.projects === 0) {
+          <p class="pr__empty">No open projects. <a routerLink="/projects">Add a project</a> to start tracking the funnel.</p>
+        } @else {
+          <ol class="pr__funnel">
+            @for (s of r.funnel; track s.stage) {
+              <li class="pr__stage">
+                <div class="pr__stage-head">
+                  <span class="pr__stage-name">{{ stageText(s.stage) }}</span>
+                  <span class="pr__stage-who">{{ stageDecider(s.stage) }}</span>
+                </div>
+                <div class="pr__track" aria-hidden="true">
+                  <span class="pr__fill" [style.width.%]="(s.projects / widest()) * 100"></span>
+                </div>
+                <span class="pr__stage-count">{{ s.projects }}</span>
+                <span class="pr__stage-value">{{ rupees(s.valueInPaise) }}</span>
+              </li>
+            }
+          </ol>
+        }
+      </ar-card>
+
+      <ar-card heading="Does being specified-in pay off?">
+        <div class="pr__compare">
+          <div class="pr__rate">
+            <div class="pr__rate-head">
+              <span>Specified-in</span>
+              <strong class="pr__rate-val is-good">{{ percent(r.specifiedIn.winRate) }}</strong>
+            </div>
+            <div class="pr__track pr__track--lg" aria-hidden="true">
+              <span class="pr__fill is-good" [style.width.%]="rateWidth(r.specifiedIn.winRate)"></span>
+            </div>
+            <span class="pr__note">{{ winRateNote(r.specifiedIn) }}</span>
+          </div>
+          <div class="pr__rate">
+            <div class="pr__rate-head">
+              <span>Not specified-in</span>
+              <strong class="pr__rate-val">{{ percent(r.notSpecifiedIn.winRate) }}</strong>
+            </div>
+            <div class="pr__track pr__track--lg" aria-hidden="true">
+              <span class="pr__fill is-muted" [style.width.%]="rateWidth(r.notSpecifiedIn.winRate)"></span>
+            </div>
+            <span class="pr__note">{{ winRateNote(r.notSpecifiedIn) }}</span>
+          </div>
+        </div>
+        <p class="pr__insight" [class.is-good]="(t.lift ?? 0) > 0" [class.is-bad]="(t.lift ?? 0) < 0">
+          @if (t.lift === null) {
+            Close projects both ways to compare win rates.
+          } @else if (t.lift > 0) {
+            Getting specified-in wins <strong>{{ t.lift }} points</strong> more often — worth the consultant visits.
+          } @else if (t.lift < 0) {
+            Specified-in projects win <strong>{{ -t.lift }} points</strong> less often — check pricing on specified jobs.
+          } @else {
+            Win rates are the same either way.
+          }
+        </p>
+      </ar-card>
     </div>
 
-    <ar-card heading="Open projects by stage">
-      <table class="pr__table">
-        <thead>
-          <tr>
-            <th scope="col">Stage</th>
-            <th scope="col" class="pr__num">Projects</th>
-            <th scope="col" class="pr__num">Our scope</th>
-            <th scope="col" aria-label="Share"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (s of r.funnel; track s.stage) {
-            <tr>
-              <td>{{ stageText(s.stage) }}</td>
-              <td class="pr__num">{{ s.projects }}</td>
-              <td class="pr__num">{{ rupees(s.valueInPaise) }}</td>
-              <td class="pr__barcell">
-                <span class="pr__bar" [style.width.%]="(s.projects / widest()) * 100"></span>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </ar-card>
+    <div class="pr__grid">
+      <ar-card heading="Lost to brand">
+        @if (brands().length === 0) {
+          <p class="pr__empty">Nothing lost to a named brand in the period.</p>
+        } @else {
+          <table class="pr__table">
+            <thead>
+              <tr>
+                <th scope="col">Brand</th>
+                <th scope="col" class="pr__num">Projects</th>
+                <th scope="col" class="pr__num">Enquiries</th>
+                <th scope="col" class="pr__num">Value lost</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of brands(); track b.brandId; let i = $index) {
+                <tr>
+                  <td>
+                    <span class="pr__rank">{{ i + 1 }}</span>
+                    <span translate="no">{{ b.brand }}</span>
+                    <span class="pr__minibar" aria-hidden="true"><span [style.width.%]="b.share"></span></span>
+                  </td>
+                  <td class="pr__num">{{ b.projects }}</td>
+                  <td class="pr__num">{{ b.enquiries }}</td>
+                  <td class="pr__num pr__strong">{{ rupees(b.valueInPaise) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </ar-card>
 
-    <ar-card heading="Lost to brand">
-      <table class="pr__table">
-        <thead>
-          <tr>
-            <th scope="col">Brand</th>
-            <th scope="col" class="pr__num">Projects</th>
-            <th scope="col" class="pr__num">Enquiries</th>
-            <th scope="col" class="pr__num">Value lost</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (b of r.lossesByBrand; track b.brandId) {
-            <tr>
-              <td translate="no">{{ b.brand }}</td>
-              <td class="pr__num">{{ b.projects }}</td>
-              <td class="pr__num">{{ b.enquiries }}</td>
-              <td class="pr__num">{{ rupees(b.valueInPaise) }}</td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="4" class="pr__muted">Nothing lost to a named brand in the period.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </ar-card>
-
-    <ar-card heading="Lost projects by specification category">
-      <p class="pr__muted">The categories in which the specification named a competitor.</p>
-      <table class="pr__table">
-        <tbody>
-          @for (c of r.lossesByCategory; track c.category) {
-            <tr>
-              <td translate="no">{{ c.category }}</td>
-              <td class="pr__num">{{ c.projects }}</td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="2" class="pr__muted">No lost project named a competitor.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </ar-card>
+      <ar-card heading="Lost by specification category">
+        <p class="pr__note pr__lead">Categories where the specification named a competitor.</p>
+        @if (categories().length === 0) {
+          <p class="pr__empty">No lost project named a competitor.</p>
+        } @else {
+          <ul class="pr__cats">
+            @for (c of categories(); track c.category) {
+              <li>
+                <span class="pr__cat-name" translate="no">{{ c.category }}</span>
+                <span class="pr__track" aria-hidden="true"><span class="pr__fill is-bad" [style.width.%]="c.share"></span></span>
+                <span class="pr__num pr__strong">{{ c.projects }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </ar-card>
+    </div>
   } @else if (loading()) {
-    <p class="pr__muted">Loading…</p>
+    <div class="pr__kpis" aria-busy="true" aria-label="Loading">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="pr__skel pr__skel--tile"></div>
+      }
+    </div>
+    <div class="pr__grid">
+      <div class="pr__skel pr__skel--card"></div>
+      <div class="pr__skel pr__skel--card"></div>
+    </div>
   }
 </div>

@@ -1,253 +1,317 @@
 <ar-topbar
-  [title]="test()?.title ?? 'Test'"
+  [title]="test()?.title ?? 'Acceptance test'"
   [subtitle]="
     test()
-      ? 'Order ' +
+      ? KIND_TEXT[test()!.kind] +
+        ' · Order ' +
         test()!.orderNumber +
         (test()!.version > 1 ? ' · version ' + test()!.version : '')
       : ''
   "
+  help="Record the result of every check on this FAT, SAT or commissioning test, track failed checks as punch items, and send the customer a link to sign. Signing makes the certificate and readies the milestone for invoicing."
 >
   @if (test(); as t) {
-    <a ar-button variant="ghost" [routerLink]="['/sales/orders', t.salesOrderId]">Order</a>
-    @if (t.hasCertificate) {
-      <button ar-button type="button" variant="ghost" (click)="download('certificate')">
-        Certificate (PDF)
-      </button>
-    }
+    <a ar-button variant="ghost" [routerLink]="['/sales/orders', t.salesOrderId]">Open order</a>
     @if (t.hasAddendum) {
       <button ar-button type="button" variant="ghost" (click)="download('addendum')">
         Punch closed (PDF)
       </button>
     }
+    @if (t.hasCertificate) {
+      <button ar-button type="button" (click)="download('certificate')">Certificate (PDF)</button>
+    }
   }
 </ar-topbar>
 
-<div class="md ar-scroll">
+<div class="at ar-scroll">
   @if (error(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }
 
   @if (test(); as t) {
-    <ar-card heading="Status">
-      <p>
-        <ar-chip [tone]="tone(t.status)">{{ statusText(t.status) }}</ar-chip>
-        @if (t.signedAtUtc) {
-          <span class="md__muted">
-            · signed by {{ t.signedByName
-            }}{{ t.signedByDesignation ? ', ' + t.signedByDesignation : '' }} on
-            {{ t.signedAtUtc | date: 'd MMM yyyy, h:mm a' }}</span
-          >
-        }
-        @if (t.status === Status.SentForSignature && t.tokenExpiresAtUtc) {
-          <span class="md__muted">
-            · {{ t.signerName }} has the link until {{ t.tokenExpiresAtUtc | date: 'd MMM' }}</span
-          >
-        }
-      </p>
-      @if (t.status === Status.Reissued) {
-        <ar-banner tone="warn"
-          >A newer version replaced this one. It is kept as it was signed.</ar-banner
-        >
-      }
-      @if (canPlan() && t.status === Status.Signed) {
-        <div class="md__foot">
-          <button ar-button type="button" variant="ghost" (click)="reissue()">
-            Re-issue to correct it
-          </button>
-        </div>
-      }
-    </ar-card>
+    @let k = tally();
 
-    <ar-card [heading]="'Checklist · ' + t.passed + ' of ' + t.items + ' passed'">
-      <table class="md__table">
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Check</th>
-            <th scope="col">Result</th>
-            <th scope="col">Remark</th>
-            <th scope="col">Punch</th>
-            <th scope="col" aria-label="Actions"></th>
-          </tr>
-        </thead>
-        <tbody>
+    <!-- Summary -->
+    <section class="at__hero">
+      <div class="at__hero-top">
+        <div class="at__hero-id">
+          <span class="at__kind">{{ KIND_TEXT[t.kind] }}</span>
+          <ar-chip [tone]="tone(t.status)" [dot]="true">{{ statusText(t.status) }}</ar-chip>
+          @if (t.version > 1) {
+            <span class="at__muted">Version {{ t.version }}</span>
+          }
+        </div>
+        <div class="at__hero-status">
+          @if (t.signedAtUtc) {
+            <span>
+              Signed by <b translate="no">{{ t.signedByName }}</b
+              >{{ t.signedByDesignation ? ', ' + t.signedByDesignation : '' }} ·
+              {{ t.signedAtUtc | date: 'd MMM yyyy, h:mm a' }}
+            </span>
+          } @else if (t.status === Status.SentForSignature && t.tokenExpiresAtUtc) {
+            <span>
+              Waiting for <b translate="no">{{ t.signerName }}</b> · link valid until
+              {{ t.tokenExpiresAtUtc | date: 'd MMM' }}
+            </span>
+          }
+          @if (canPlan() && t.status === Status.Signed) {
+            <button ar-button type="button" variant="ghost" (click)="reissue()">Re-issue to correct</button>
+          }
+        </div>
+      </div>
+
+      <div class="at__progress" aria-hidden="true">
+        <span class="is-pass" [style.width.%]="pct(k.pass)"></span>
+        <span class="is-fail" [style.width.%]="pct(k.fail)"></span>
+        <span class="is-na" [style.width.%]="pct(k.na)"></span>
+      </div>
+
+      <dl class="at__stats">
+        <div><dt>Checks</dt><dd>{{ k.total }}</dd></div>
+        <div><dt><i class="at__sw is-pass"></i>Passed</dt><dd class="is-pass">{{ k.pass }}</dd></div>
+        <div><dt><i class="at__sw is-fail"></i>Failed</dt><dd class="is-fail">{{ k.fail }}</dd></div>
+        <div><dt><i class="at__sw is-na"></i>N/A</dt><dd>{{ k.na }}</dd></div>
+        <div><dt><i class="at__sw"></i>Pending</dt><dd>{{ k.pending }}</dd></div>
+        <div>
+          <dt>Open punch</dt>
+          <dd [class.is-fail]="k.critical > 0" [class.is-warn]="k.openPunch > 0 && k.critical === 0">
+            {{ k.openPunch }}
+            @if (k.critical) {
+              <small>{{ k.critical }} critical</small>
+            }
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    @if (t.status === Status.Reissued) {
+      <ar-banner tone="warn">A newer version replaced this one. It is kept as it was signed.</ar-banner>
+    }
+
+    <div class="at__layout" [class.is-single]="!editable()">
+      <!-- Checklist -->
+      <section class="at__card" aria-labelledby="at-checklist">
+        <header class="at__card-head">
+          <h2 id="at-checklist">Checklist</h2>
+          <span class="at__muted">{{ k.pass }} of {{ k.total }} passed</span>
+        </header>
+
+        @if (rows().length === 0) {
+          <p class="at__empty">No checks yet. Add the first one below.</p>
+        }
+
+        <ol class="at__items">
           @for (r of rows(); track r.itemId; let i = $index) {
-            <tr [class.md__late]="r.result === Result.Fail && !r.closedOn">
-              <td>{{ i + 1 }}</td>
-              <td>{{ r.text }}</td>
-              <td>
-                @if (locked() || !canPlan()) {
-                  {{ r.result === Result.Pending ? '—' : resultText(r.result) }}
-                } @else {
-                  <select
-                    class="ar-field__input"
-                    [attr.aria-label]="'Result for ' + r.text"
-                    (change)="setRow(i, { result: +$any($event.target).value })"
-                  >
-                    <option [value]="Result.Pending" [selected]="r.result === Result.Pending">
-                      —
-                    </option>
-                    @for (x of results; track x) {
-                      <option [value]="x" [selected]="x === r.result">{{ resultText(x) }}</option>
-                    }
-                  </select>
-                }
-              </td>
-              <td>
-                @if (locked() || !canPlan()) {
-                  {{ r.remark }}
-                } @else {
+            <li class="at__item" [class]="resultClass(r.result)" [class.is-open]="r.result === Result.Fail && !r.closedOn">
+              <span class="at__num">{{ i + 1 }}</span>
+
+              <div class="at__body">
+                <p class="at__text">{{ r.text }}</p>
+
+                @if (editable()) {
                   <input
-                    class="ar-field__input"
+                    class="ar-field__input at__remark"
                     maxlength="500"
+                    placeholder="Remark (optional)"
                     [attr.aria-label]="'Remark for ' + r.text"
                     [value]="r.remark"
                     (input)="setRow(i, { remark: $any($event.target).value })"
                   />
+                } @else if (r.remark) {
+                  <p class="at__remark-text">{{ r.remark }}</p>
                 }
-              </td>
-              <td>
-                @if (r.result === Result.Fail) {
-                  @if (r.closedOn) {
-                    <span class="md__muted">Closed {{ r.closedOn | date: 'd MMM' }}</span>
-                  } @else if (locked() || !canPlan()) {
-                    {{ r.critical ? 'Critical' : 'Non-critical' }}
-                    @if (r.dueOn) {
-                      · due {{ r.dueOn }}
-                    }
-                  } @else {
-                    <label class="md__muted">
-                      <input
-                        type="checkbox"
-                        [checked]="r.critical"
-                        (change)="setRow(i, { critical: $any($event.target).checked })"
-                      />
-                      Critical
-                    </label>
-                    <input
-                      class="ar-field__input"
-                      type="date"
-                      aria-label="Punch due on"
-                      [value]="r.dueOn"
-                      (change)="setRow(i, { dueOn: $any($event.target).value })"
-                    />
-                  }
-                }
-              </td>
-              <td class="md__actions">
-                @if (
-                  canPlan() &&
-                  r.result === Result.Fail &&
-                  !r.closedOn &&
-                  !dirty() &&
-                  t.status !== Status.Reissued
-                ) {
-                  <button type="button" class="md__link" (click)="closePunch(r.itemId)">
-                    Close punch
-                  </button>
-                }
-                @if (canPlan() && !locked() && r.result === Result.Pending) {
-                  <button type="button" class="md__link" (click)="removeItem(r.itemId)">
-                    Remove
-                  </button>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-      @if (canPlan() && !locked()) {
-        <div class="md__form">
-          <input
-            class="ar-field__input"
-            maxlength="300"
-            placeholder="Add a check for this project"
-            aria-label="New check"
-            [value]="newItem()"
-            (input)="newItem.set($any($event.target).value)"
-          />
-          <button
-            ar-button
-            type="button"
-            variant="ghost"
-            [disabled]="!newItem().trim()"
-            (click)="addItem()"
-          >
-            Add check
-          </button>
-          <button ar-button type="button" [disabled]="busy() || !dirty()" (click)="saveResults()">
-            Save results
-          </button>
-        </div>
-      }
-    </ar-card>
 
-    @if (canPlan() && !locked()) {
-      <ar-card heading="Customer sign-off">
-        <p class="md__muted">
-          The customer's representative gets a link to sign on their phone; it works for 14 days and
-          can be sent again. Open punch items must be non-critical.
-        </p>
-        <div class="md__form">
-          <label class="ar-field">
-            <span class="ar-field__label">Who signs</span>
+                @if (r.result === Result.Fail) {
+                  <div class="at__punch">
+                    <span class="at__punch-tag">Punch</span>
+                    @if (r.closedOn) {
+                      <span class="at__closed">✓ Closed {{ r.closedOn | date: 'd MMM y' }}</span>
+                    } @else if (editable()) {
+                      <label class="at__check">
+                        <input
+                          type="checkbox"
+                          [checked]="r.critical"
+                          (change)="setRow(i, { critical: $any($event.target).checked })"
+                        />
+                        Critical
+                      </label>
+                      <label class="at__due">
+                        Due
+                        <input
+                          class="ar-field__input"
+                          type="date"
+                          aria-label="Punch due on"
+                          [value]="r.dueOn"
+                          (change)="setRow(i, { dueOn: $any($event.target).value })"
+                        />
+                      </label>
+                    } @else {
+                      <span [class.at__crit]="r.critical">{{ r.critical ? 'Critical' : 'Non-critical' }}</span>
+                      @if (r.dueOn) {
+                        <span class="at__muted">due {{ r.dueOn | date: 'd MMM y' }}</span>
+                      }
+                    }
+                    @if (canPlan() && !r.closedOn && !dirty() && t.status !== Status.Reissued) {
+                      <button type="button" class="at__link" (click)="closePunch(r.itemId)">Close punch</button>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="at__result">
+                @if (editable()) {
+                  <div class="at__seg" role="radiogroup" [attr.aria-label]="'Result for ' + r.text">
+                    @for (x of results; track x) {
+                      <button
+                        type="button"
+                        role="radio"
+                        [class]="resultClass(x)"
+                        [class.is-on]="r.result === x"
+                        [attr.aria-checked]="r.result === x"
+                        (click)="setRow(i, { result: r.result === x ? Result.Pending : x })"
+                      >
+                        {{ resultText(x) }}
+                      </button>
+                    }
+                  </div>
+                  @if (r.result === Result.Pending) {
+                    <button
+                      type="button"
+                      class="at__icon"
+                      [attr.aria-label]="'Remove ' + r.text"
+                      title="Remove check"
+                      (click)="removeItem(r.itemId)"
+                    >
+                      ×
+                    </button>
+                  }
+                } @else {
+                  <span class="at__badge" [class]="resultClass(r.result)">
+                    {{ r.result === Result.Pending ? 'Pending' : resultText(r.result) }}
+                  </span>
+                }
+              </div>
+            </li>
+          }
+        </ol>
+
+        @if (editable()) {
+          <form class="at__add" (submit)="$event.preventDefault(); newItem().trim() && addItem()">
             <input
               class="ar-field__input"
-              maxlength="120"
-              [value]="signer()"
-              (input)="signer.set($any($event.target).value)"
+              maxlength="300"
+              placeholder="Add a check, e.g. Insulation resistance > 1 MΩ"
+              aria-label="New check"
+              [value]="newItem()"
+              (input)="newItem.set($any($event.target).value)"
             />
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">Designation</span>
-            <input
-              class="ar-field__input"
-              maxlength="120"
-              [value]="designation()"
-              (input)="designation.set($any($event.target).value)"
-            />
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">Email <span class="ar-field__opt">optional</span></span>
-            <input
-              class="ar-field__input"
-              type="email"
-              maxlength="256"
-              [value]="email()"
-              (input)="email.set($any($event.target).value)"
-            />
-          </label>
-        </div>
-        @if (problem(); as p) {
-          <p class="md__muted">{{ p }}</p>
+            <button ar-button type="submit" variant="ghost" [disabled]="!newItem().trim()">Add check</button>
+          </form>
         }
-        <div class="md__foot">
-          <button
-            ar-button
-            type="button"
-            variant="ghost"
-            [disabled]="busy() || !!problem() || !signer().trim()"
-            (click)="send(false)"
-          >
-            Get the link
-          </button>
-          <button
-            ar-button
-            type="button"
-            [disabled]="busy() || !!problem() || !signer().trim()"
-            (click)="send(true)"
-          >
-            Email the link
-          </button>
-        </div>
-        @if (link(); as l) {
-          <div class="md__form">
-            <code translate="no">{{ l.url }}</code>
-            <button ar-button type="button" variant="ghost" (click)="copyLink()">Copy</button>
+
+        @if (editable() && dirty()) {
+          <div class="at__savebar" role="status">
+            <span>You have unsaved results.</span>
+            <button ar-button type="button" [disabled]="busy()" (click)="saveResults()">
+              {{ busy() ? 'Saving…' : 'Save results' }}
+            </button>
           </div>
         }
-      </ar-card>
-    }
+      </section>
+
+      <!-- Sign-off -->
+      @if (editable()) {
+        <aside class="at__card at__side" aria-labelledby="at-sign">
+          <header class="at__card-head">
+            <h2 id="at-sign">Customer sign-off</h2>
+          </header>
+          <p class="at__muted at__lead">
+            The customer's representative gets a link to sign on their phone. It works for 14 days and can be
+            sent again.
+          </p>
+
+          <ul class="at__ready">
+            <li [class.ok]="k.pending === 0">
+              {{ k.pending === 0 ? '✓' : '•' }} Every check has a result
+              @if (k.pending) {
+                <span class="at__muted">({{ k.pending }} pending)</span>
+              }
+            </li>
+            <li [class.ok]="k.critical === 0">
+              {{ k.critical === 0 ? '✓' : '•' }} No open critical punch
+            </li>
+            <li [class.ok]="!dirty()">{{ !dirty() ? '✓' : '•' }} Results saved</li>
+          </ul>
+
+          <div class="at__fields">
+            <label class="ar-field">
+              <span class="ar-field__label">Who signs</span>
+              <input
+                class="ar-field__input"
+                maxlength="120"
+                placeholder="Name"
+                [value]="signer()"
+                (input)="signer.set($any($event.target).value)"
+              />
+            </label>
+            <label class="ar-field">
+              <span class="ar-field__label">Designation</span>
+              <input
+                class="ar-field__input"
+                maxlength="120"
+                placeholder="e.g. Plant Manager"
+                [value]="designation()"
+                (input)="designation.set($any($event.target).value)"
+              />
+            </label>
+            <label class="ar-field">
+              <span class="ar-field__label">Email <span class="ar-field__opt">optional</span></span>
+              <input
+                class="ar-field__input"
+                type="email"
+                maxlength="256"
+                [value]="email()"
+                (input)="email.set($any($event.target).value)"
+              />
+            </label>
+          </div>
+
+          @if (problem(); as p) {
+            <p class="at__problem">{{ p }}</p>
+          }
+
+          <div class="at__actions">
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="busy() || !!problem() || !signer().trim()"
+              (click)="send(false)"
+            >
+              Get the link
+            </button>
+            <button
+              ar-button
+              type="button"
+              [disabled]="busy() || !!problem() || !signer().trim() || !email().trim()"
+              [title]="email().trim() ? '' : 'Add an email to send the link'"
+              (click)="send(true)"
+            >
+              Email the link
+            </button>
+          </div>
+
+          @if (link(); as l) {
+            <div class="at__link-box">
+              <code translate="no">{{ l.url }}</code>
+              <button ar-button type="button" variant="ghost" (click)="copyLink()">Copy</button>
+            </div>
+          }
+        </aside>
+      }
+    </div>
+  } @else if (!error()) {
+    <div class="at__skel at__skel--hero" aria-busy="true" aria-label="Loading test"></div>
+    <div class="at__skel at__skel--body"></div>
   }
 </div>

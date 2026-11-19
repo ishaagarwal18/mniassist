@@ -1,3 +1,11 @@
+import { CRM_TOPICS } from './topics/crm';
+import { FINANCE_PROJECTS_TOPICS } from './topics/finance-projects';
+import { MESSAGING_TOPICS } from './topics/messaging';
+import { PURCHASING_TOPICS } from './topics/purchasing';
+import { SALES_TOPICS } from './topics/sales';
+import { SETTINGS_TOPICS } from './topics/settings';
+import { VOICE_SERVICE_TOPICS } from './topics/voice-service';
+
 /**
  * The help behind every screen's "?" button. Keyed by the route's path exactly
  * as `app.routes.ts` declares it (`templates/:id/edit`, not a resolved URL), so
@@ -16,6 +24,14 @@ export interface HelpTopic {
   readonly benefits: readonly string[];
   readonly steps: readonly string[];
   readonly tips?: readonly string[];
+  /** Every field, button and figure on the screen, with what it does — shown as "On this screen". */
+  readonly fields?: readonly HelpField[];
+}
+
+/** One field, button or figure on a screen and what it does. */
+export interface HelpField {
+  readonly name: string;
+  readonly text: string;
 }
 
 const CUSTOMER_360: HelpTopic = {
@@ -139,7 +155,7 @@ const CONTACT_FORM: HelpTopic = {
   ],
 };
 
-export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
+const BASE_TOPICS: Readonly<Record<string, HelpTopic>> = {
   home: {
     benefits: [
       'See the health of your WhatsApp numbers and your wallet balance without opening other screens.',
@@ -564,14 +580,49 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     benefits: [
       'The FAT, SAT or commissioning checklist, its results and punch list, in one record the customer signs.',
       'Signing makes the milestone billed on the test ready to invoice, with the certificate kept on the order.',
+      'Progress, failures and open punch items are counted live as you record results, so you know when it is ready to sign.',
     ],
     steps: [
-      'Record each check as Pass, Fail or N/A; a failed check becomes a punch item with a due date.',
-      'Send the link to the customer’s representative: they sign on their phone, and the certificate PDF is made.',
+      'Record each check as Pass, Fail or N/A; add a remark where the result needs explaining.',
+      'For a failed check, tick Critical if it stops handover and set the date it will be fixed: it becomes a punch item.',
+      'Click Save results. The bar at the bottom of the checklist shows while anything is unsaved.',
+      'Under Customer sign-off, enter who signs, then Get the link (to share it yourself) or Email the link.',
+      'The customer signs on their phone; the certificate PDF is made and the button appears in the top bar.',
+      'When a punch item is fixed, click Close punch on it; once all are closed, download Punch closed (PDF) for the customer.',
     ],
     tips: [
       'A test with open punch items can be signed only if every one is non-critical.',
       'A signed test isn’t changed: re-issue it to correct it, and both versions are kept.',
+      'Close punch is hidden while you have unsaved results: save first.',
+    ],
+    fields: [
+      { name: 'Open order', text: 'Opens the sales order this test belongs to, with its billing plan and milestones.' },
+      { name: 'Certificate (PDF)', text: 'Downloads the signed test certificate. Shown once the customer has signed.' },
+      { name: 'Punch closed (PDF)', text: 'Downloads the addendum confirming that the punch items open at signing have since been closed.' },
+      { name: 'Test type badge', text: 'FAT (factory acceptance, at your works), SAT (site acceptance, at the customer’s plant) or Commissioning.' },
+      { name: 'Status', text: 'Draft or In progress while results are being recorded; Sent for signature once the link is out; Signed when the customer has signed; Re-issued when a newer version replaced it.' },
+      { name: 'Version', text: 'Shown from version 2 on: each re-issue makes a new version and keeps the earlier one as signed.' },
+      { name: 'Signed by / Waiting for', text: 'Who signed and when, or who has the signing link and the date it stops working.' },
+      { name: 'Re-issue to correct', text: 'Makes a new, editable version of a signed test so a mistake can be corrected and signed again.' },
+      { name: 'Progress bar', text: 'Share of checks passed (green), failed (red) and not applicable (grey); the empty part is still pending.' },
+      { name: 'Checks · Passed · Failed · N/A · Pending', text: 'How many checks are on the test and how many have each result, counted from what is on screen, saved or not.' },
+      { name: 'Open punch', text: 'Failed checks not yet closed. Red with a “critical” count when any would block signing.' },
+      { name: 'Check', text: 'The thing being tested, e.g. “Insulation resistance > 1 MΩ”. Numbered in the order they are done.' },
+      { name: 'Pass / Fail / N/A', text: 'The result of the check. Click the chosen one again to set it back to pending.' },
+      { name: 'Remark', text: 'Optional note on the result, such as the reading taken. Printed on the certificate.' },
+      { name: 'Punch: Critical', text: 'Tick when the failure must be fixed before the customer can sign; leave clear for items that can be fixed after handover.' },
+      { name: 'Punch: Due', text: 'The date the failed item will be fixed by. Printed on the certificate’s punch list.' },
+      { name: 'Close punch', text: 'Marks a failed check as fixed today. Works on signed tests too, and builds the Punch closed PDF.' },
+      { name: '× (remove)', text: 'Removes a check that has no result yet. Not available once the test is signed.' },
+      { name: 'Add check', text: 'Adds a check specific to this project at the end of the list. Press Enter or click the button.' },
+      { name: 'Save results', text: 'Saves every result, remark and punch detail on the checklist in one go.' },
+      { name: 'Ready to sign', text: 'The three conditions for sending the link: every check has a result, no open critical punch, results saved.' },
+      { name: 'Who signs', text: 'Name of the customer’s representative who will sign. Required to make the link.' },
+      { name: 'Designation', text: 'Their job title, e.g. Plant Manager. Printed under the signature.' },
+      { name: 'Email', text: 'Where Email the link sends it. Optional if you use Get the link and share it yourself.' },
+      { name: 'Get the link', text: 'Makes the signing link and shows it here to copy into WhatsApp or your own email. It works for 14 days.' },
+      { name: 'Email the link', text: 'Makes the signing link and emails it to the address above. Needs an email.' },
+      { name: 'Copy', text: 'Copies the signing link. Sending again makes a fresh link; the earlier one stops working.' },
     ],
   },
   'billing/reports': {
@@ -1942,10 +1993,10 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     ],
     steps: [
       'View your assigned jobs for today on the home screen.',
-      'Tap Start visit when arriving on site to record arrival time.',
+      'Tap I’ve arrived — start the visit when you reach the site to record arrival time.',
       'Fill in findings, checklist items, and take or attach site photos.',
-      'Tap Request sign-off to send a WhatsApp confirmation code to the customer.',
-      'Enter the customer’s code and tap Complete visit.',
+      'Tap Send sign-off code to send a WhatsApp confirmation code to the customer.',
+      'Enter the customer’s code and tap Confirm sign-off.',
       'When back online, tap Sync to push your offline updates to the office.',
     ],
     tips: [
@@ -2420,6 +2471,18 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
  * The help for a screen: its own topic, else the nearest screen above it that has one. A form page such as
  * `settings/teams/new` or `field-service/tickets/:id/assign` is part of its list's job, so it shares that help.
  */
+/** Every topic: the base set, with each area's field-detailed topics laid over it. */
+export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
+  ...BASE_TOPICS,
+  ...CRM_TOPICS,
+  ...SALES_TOPICS,
+  ...PURCHASING_TOPICS,
+  ...MESSAGING_TOPICS,
+  ...VOICE_SERVICE_TOPICS,
+  ...SETTINGS_TOPICS,
+  ...FINANCE_PROJECTS_TOPICS,
+};
+
 export function helpTopicFor(routePath: string | null | undefined): HelpTopic | null {
   if (!routePath) return null;
   const parts = routePath.split('/');

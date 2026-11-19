@@ -17,30 +17,100 @@
   }
 
   @if (p) {
-    @if (p.needsSpecWriter) {
-      <ar-banner tone="warn"
-        >Who is writing the spec? Add the consultant or EPC contractor under Parties.</ar-banner
-      >
-    }
-    @if (p.blockers.length) {
-      <ar-banner tone="bad">Decides and is against us: {{ p.blockers.join(', ') }}</ar-banner>
+    <!-- Hero -->
+    <section class="pp__hero">
+      <div class="pp__hero-main">
+        <span class="pp__avatar" aria-hidden="true">{{ initial(p.endUserName) }}</span>
+        <div class="pp__hero-text">
+          <div class="pp__hero-meta">
+            <span class="pp__ref" translate="no">{{ p.reference }}</span>
+            <ar-chip
+              [tone]="p.outcome === Outcome.Won ? 'good' : p.outcome === Outcome.Lost ? 'bad' : 'teal'"
+              [dot]="true"
+            >
+              {{ p.outcome ? OUTCOME_TEXT[p.outcome] : STAGE_TEXT[p.stage] }}
+            </ar-chip>
+            <span class="pp__muted">{{ p.daysInStage }} days in stage</span>
+          </div>
+          <p class="pp__hero-sub" translate="no">
+            {{ p.endUserName }}
+            @if (site(p) !== '—') {
+              <span class="pp__sep">·</span> {{ site(p) }}
+            }
+            @if (p.sector) {
+              <span class="pp__sep">·</span> {{ p.sector }}
+            }
+          </p>
+        </div>
+      </div>
+      <dl class="pp__kpis">
+        <div>
+          <dt>Our scope</dt>
+          <dd>{{ rupees(p.ourScopeValueInPaise) }}</dd>
+        </div>
+        <div>
+          <dt>Specified-in</dt>
+          <dd [class.is-good]="(p.specifiedInRate ?? 0) >= 0.5">{{ percent(p.specifiedInRate) }}</dd>
+        </div>
+        <div>
+          <dt>Enquiries</dt>
+          <dd>{{ p.enquiries.length }}</dd>
+        </div>
+        <div>
+          <dt>{{ nextDate()?.label ?? 'Next date' }}</dt>
+          <dd [class.is-soon]="nextDate()?.when?.tone === 'soon'">{{ nextDate()?.when?.text ?? '—' }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    @if (p.needsSpecWriter || p.blockers.length) {
+      <div class="pp__alerts">
+        @if (p.needsSpecWriter) {
+          <ar-banner tone="warn">
+            Who is writing the spec? Add the consultant or EPC contractor under
+            <button type="button" class="pp__link pp__link--inline" (click)="tab.set('parties')">
+              Parties</button
+            >.
+          </ar-banner>
+        }
+        @if (p.blockers.length) {
+          <ar-banner tone="bad">Decides and is against us: {{ p.blockers.join(', ') }}</ar-banner>
+        }
+      </div>
     }
 
+    <!-- Stage stepper -->
     <ol class="pp__stages" aria-label="Stage">
-      @for (s of STAGES; track s) {
+      @for (s of STAGES; track s; let i = $index) {
         <li [class.done]="s < p.stage" [class.now]="s === p.stage">
           @if (p.canEdit && s !== p.stage) {
-            <button type="button" (click)="moveTo.set(s)">{{ STAGE_TEXT[s] }}</button>
+            <button type="button" [attr.aria-label]="'Move to ' + STAGE_TEXT[s]" (click)="moveTo.set(s)">
+              <span class="pp__stage-dot">{{ s < p.stage ? '✓' : i + 1 }}</span>
+              <span class="pp__stage-text">
+                <b>{{ STAGE_TEXT[s] }}</b>
+                <small>{{ STAGE_DECIDER[s] }}</small>
+              </span>
+            </button>
           } @else {
-            <span>{{ STAGE_TEXT[s] }}</span>
+            <span [attr.aria-current]="s === p.stage ? 'step' : null">
+              <span class="pp__stage-dot">{{ s < p.stage ? '✓' : i + 1 }}</span>
+              <span class="pp__stage-text">
+                <b>{{ STAGE_TEXT[s] }}</b>
+                <small>{{ STAGE_DECIDER[s] }}</small>
+              </span>
+            </span>
           }
         </li>
       }
     </ol>
 
     @if (moveTo() !== null) {
-      <ar-card [heading]="'Move to ' + STAGE_TEXT[moveTo()!]">
-        <div class="pp__move">
+      <ar-dialog [title]="'Move to ' + STAGE_TEXT[moveTo()!]" (dismiss)="busy() || moveTo.set(null)">
+        <div class="pp__dlg">
+          <p class="pp__muted">
+            From <b>{{ STAGE_TEXT[p.stage] }}</b> to <b>{{ STAGE_TEXT[moveTo()!] }}</b>. Decided by:
+            {{ STAGE_DECIDER[moveTo()!] }}.
+          </p>
           @if (moveTo() === Stage.Awarded) {
             <label class="ar-field">
               <span class="ar-field__label">Who won?</span>
@@ -63,7 +133,7 @@
               </select>
             </label>
           }
-          <label class="ar-field pp__grow">
+          <label class="ar-field">
             <span class="ar-field__label">Note <span class="ar-field__opt">optional</span></span>
             <input
               class="ar-field__input"
@@ -72,7 +142,11 @@
               (input)="moveNote.set($any($event.target).value)"
             />
           </label>
-          <button ar-button type="button" variant="ghost" (click)="moveTo.set(null)">Cancel</button>
+        </div>
+        <div dialogActions>
+          <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="moveTo.set(null)">
+            Cancel
+          </button>
           <button
             ar-button
             type="button"
@@ -83,10 +157,10 @@
             "
             (click)="move()"
           >
-            Move
+            {{ busy() ? 'Moving…' : 'Move' }}
           </button>
         </div>
-      </ar-card>
+      </ar-dialog>
     }
 
     <div class="pp__tabs" role="tablist">
@@ -133,92 +207,94 @@
     @switch (tab()) {
       @case ('overview') {
         <div class="pp__cols">
-          <ar-card heading="Overview">
-            <dl class="pp__facts">
-              <div>
-                <dt>Stage</dt>
-                <dd>{{ STAGE_TEXT[p.stage] }} · {{ p.daysInStage }} days</dd>
-              </div>
-              @if (p.outcome) {
+          <div class="pp__stack">
+            @if (p.nextStep) {
+              <section class="pp__next" [class.is-late]="(nextStepState().days ?? 0) < 0">
+                <span class="pp__eyebrow">Next step</span>
+                <p>{{ p.nextStep }}</p>
+                @if (p.nextStepDueOn) {
+                  <span class="pp__due">
+                    Due {{ p.nextStepDueOn | date: 'd MMM y' }} · {{ nextStepState().text }}
+                  </span>
+                }
+              </section>
+            } @else if (p.canEdit) {
+              <section class="pp__next is-empty">
+                <span class="pp__eyebrow">Next step</span>
+                <p>No next step set.</p>
+                <a class="pp__link pp__link--inline" [routerLink]="['/projects', p.id, 'edit']">Add one</a>
+              </section>
+            }
+
+            <ar-card heading="Details">
+              <dl class="pp__facts">
+                @if (p.outcome) {
+                  <div>
+                    <dt>Outcome</dt>
+                    <dd>
+                      {{ OUTCOME_TEXT[p.outcome] }}{{ p.outcomeNote ? ' · ' + p.outcomeNote : '' }}
+                    </dd>
+                  </div>
+                }
+                @if (p.awardedToName) {
+                  <div>
+                    <dt>Awarded to</dt>
+                    <dd translate="no">{{ p.awardedToName }}</dd>
+                  </div>
+                }
                 <div>
-                  <dt>Outcome</dt>
-                  <dd>
-                    {{ OUTCOME_TEXT[p.outcome] }}{{ p.outcomeNote ? ' · ' + p.outcomeNote : '' }}
-                  </dd>
+                  <dt>End-user</dt>
+                  <dd translate="no">{{ p.endUserName }}</dd>
                 </div>
-              }
-              @if (p.awardedToName) {
                 <div>
-                  <dt>Awarded to</dt>
-                  <dd translate="no">{{ p.awardedToName }}</dd>
+                  <dt>Site</dt>
+                  <dd translate="no">{{ site(p) }}</dd>
                 </div>
+                <div>
+                  <dt>Sector</dt>
+                  <dd>{{ p.sector || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>Our scope</dt>
+                  <dd class="pp__strong">{{ rupees(p.ourScopeValueInPaise) }}</dd>
+                </div>
+              </dl>
+              @if (p.statusNote) {
+                <p class="pp__status-note">{{ p.statusNote }}</p>
               }
-              <div>
-                <dt>End-user</dt>
-                <dd translate="no">{{ p.endUserName }}</dd>
-              </div>
-              <div>
-                <dt>Site</dt>
-                <dd translate="no">{{ site(p) }}</dd>
-              </div>
-              <div>
-                <dt>Sector</dt>
-                <dd>{{ p.sector || '—' }}</dd>
-              </div>
-              <div>
-                <dt>Our scope</dt>
-                <dd>{{ rupees(p.ourScopeValueInPaise) }}</dd>
-              </div>
-              <div>
-                <dt>Owner</dt>
-                <dd translate="no">{{ p.ownerName }}</dd>
+            </ar-card>
+
+            <ar-card heading="People">
+              <div class="pp__owner">
+                <span class="pp__avatar pp__avatar--sm" aria-hidden="true">{{ initial(p.ownerName) }}</span>
+                <span><b translate="no">{{ p.ownerName }}</b> <span class="pp__muted">owner</span></span>
               </div>
               @if (p.team.length) {
-                <div>
-                  <dt>Team</dt>
-                  <dd translate="no">
-                    @for (t of p.team; track t.userId; let last = $last) {
-                      {{ t.name }}{{ last ? '' : ', ' }}
-                    }
-                  </dd>
+                <div class="pp__team">
+                  @for (t of p.team; track t.userId) {
+                    <span class="pp__member" translate="no">
+                      <span class="pp__avatar pp__avatar--xs" aria-hidden="true">{{ initial(t.name) }}</span>
+                      {{ t.name }}
+                    </span>
+                  }
                 </div>
               }
-            </dl>
-          </ar-card>
+            </ar-card>
+          </div>
+
           <ar-card heading="Key dates">
-            <dl class="pp__facts">
-              <div>
-                <dt>Identified</dt>
-                <dd>{{ (p.identifiedOn | date: 'd MMM y') || '—' }}</dd>
-              </div>
-              <div>
-                <dt>Spec issue</dt>
-                <dd>{{ (p.specIssueOn | date: 'd MMM y') || '—' }}</dd>
-              </div>
-              <div>
-                <dt>Tender closes</dt>
-                <dd>{{ (p.tenderCloseOn | date: 'd MMM y') || '—' }}</dd>
-              </div>
-              <div>
-                <dt>Award expected</dt>
-                <dd>{{ (p.awardExpectedOn | date: 'd MMM y') || '—' }}</dd>
-              </div>
-              <div>
-                <dt>Commissioning</dt>
-                <dd>{{ (p.commissioningOn | date: 'd MMM y') || '—' }}</dd>
-              </div>
-            </dl>
-            @if (p.nextStep) {
-              <p class="pp__next">
-                <b>Next:</b> {{ p.nextStep }}
-                @if (p.nextStepDueOn) {
-                  <span class="pp__muted">by {{ p.nextStepDueOn | date: 'd MMM' }}</span>
-                }
-              </p>
-            }
-            @if (p.statusNote) {
-              <p class="pp__muted">{{ p.statusNote }}</p>
-            }
+            <ol class="pp__dates">
+              @for (d of keyDates(); track d.label) {
+                <li [class]="'is-' + d.when.tone">
+                  <span class="pp__dot" aria-hidden="true"></span>
+                  <div>
+                    <b>{{ d.label }}</b>
+                    <span>{{ d.on ? (d.on | date: 'd MMM y') : '—' }}</span>
+                  </div>
+                  <span class="pp__rel">{{ d.when.text }}</span>
+                </li>
+              }
+            </ol>
           </ar-card>
         </div>
       }
@@ -482,7 +558,7 @@
         </ar-card>
 
         @if (specDraft(); as d) {
-          <ar-card [heading]="d.category">
+          <ar-dialog [title]="d.category" width="min(620px, calc(100vw - 32px))" (dismiss)="busy() || specDraft.set(null)">
             <div class="pp__spec-form">
               <label class="ar-field">
                 <span class="ar-field__label">Status</span>
@@ -558,8 +634,7 @@
             @if (specDraftProblem(); as prob) {
               <p class="pp__muted pp__warn">{{ prob }}</p>
             }
-            <div class="pp__add">
-              <span class="pp__grow"></span>
+            <div dialogActions>
               <button ar-button type="button" variant="ghost" (click)="specDraft.set(null)">
                 Cancel
               </button>
@@ -572,7 +647,7 @@
                 Save
               </button>
             </div>
-          </ar-card>
+          </ar-dialog>
         }
       }
       @case ('enquiries') {
@@ -710,8 +785,9 @@
           <ul class="pp__events">
             @for (e of p.events; track $index) {
               <li>
+                <span class="pp__dot" aria-hidden="true"></span>
                 <span class="pp__when">{{ e.atUtc | date: 'd MMM y, HH:mm' }}</span>
-                <span>
+                <span class="pp__what">
                   @if (e.enquiryReference) {
                     <b translate="no">{{ e.enquiryReference }}</b> ·
                   }
@@ -721,6 +797,8 @@
                   <span class="pp__muted" translate="no">{{ e.userName }}</span>
                 }
               </li>
+            } @empty {
+              <li class="pp__muted pp__events-empty">Nothing recorded yet.</li>
             }
           </ul>
         </ar-card>
