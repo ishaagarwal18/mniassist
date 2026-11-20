@@ -80,8 +80,10 @@ ol {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--ar-nav);
-  border-bottom: 1px solid var(--ar-nav-line);
+  background: rgba(6, 11, 28, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.14);
 }
 .nav__row {
   display: flex;
@@ -121,13 +123,66 @@ ol {
 }
 
 .hero {
-  /* A faint blueprint grid: the one industrial cue on the page. */
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px) 0 0 / 32px 32px,
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px) 0 0 / 32px 32px,
-    var(--ar-navy);
+  position: relative;
+  overflow: hidden;
+  background-color: #060b1c;
   color: #fff;
-  padding: 64px 0 40px;
+  padding: 68px 0 44px;
+}
+.hero .wrap {
+  position: relative;
+  z-index: 1;
+}
+
+/* Base glowing radial gradient lighting and vignette matching Image 1 */
+.hero__glow {
+  position: absolute;
+  inset: -15% -10%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 65% 55% at 50% 38%, rgba(29, 78, 216, 0.35) 0%, rgba(30, 58, 138, 0.22) 38%, rgba(6, 11, 28, 0.05) 70%, transparent 100%),
+    radial-gradient(circle at 75% 25%, rgba(56, 189, 248, 0.16) 0%, transparent 45%),
+    radial-gradient(circle at 20% 65%, rgba(67, 56, 202, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 95% 85% at 50% 45%, transparent 35%, rgba(4, 7, 20, 0.65) 75%, #050814 100%);
+  animation: heroGlowBreathing 12s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+/* Precision blueprint grid with smooth radial fade mask matching Image 1 & 2 */
+.hero__bg-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(to right, rgba(96, 165, 250, 0.14) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(96, 165, 250, 0.14) 1px, transparent 1px);
+  background-size: 46px 46px;
+  background-position: center top;
+  mask-image: radial-gradient(ellipse 85% 75% at 50% 40%, rgba(0, 0, 0, 1) 25%, rgba(0, 0, 0, 0.45) 65%, transparent 95%);
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 40%, rgba(0, 0, 0, 1) 25%, rgba(0, 0, 0, 0.45) 65%, transparent 95%);
+}
+
+@keyframes heroGlowBreathing {
+  0% {
+    opacity: 0.85;
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04) translateY(-6px);
+  }
+  100% {
+    opacity: 0.85;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__glow {
+    animation: none;
+  }
 }
 .hero__grid {
   display: grid;
@@ -352,9 +407,30 @@ h3 {
 }
 
 .final {
-  background: linear-gradient(120deg, var(--ar-navy) 0%, #12306b 55%, var(--ar-primary) 130%);
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 50%, rgba(37, 99, 235, 0.28) 0%, rgba(30, 58, 138, 0.15) 50%, transparent 80%),
+    linear-gradient(120deg, #060b1c 0%, #0d1e4a 55%, #17387a 130%);
   color: #fff;
   padding: 64px 0;
+}
+.final .wrap {
+  position: relative;
+  z-index: 1;
+}
+.final__bg-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(to right, rgba(96, 165, 250, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(96, 165, 250, 0.1) 1px, transparent 1px);
+  background-size: 46px 46px;
+  background-position: center top;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 30%, transparent 100%);
 }
 .final__row {
   display: flex;
