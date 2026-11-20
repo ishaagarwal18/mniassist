@@ -176,6 +176,48 @@ export class ArLanding {
 
     afterNextRender(() => {
       this.initScrollSpy();
+      this.initHeroParallax();
+    });
+  }
+
+  private initHeroParallax(): void {
+    if (typeof window === 'undefined') return;
+    const heroEl = document.querySelector('.hero') as HTMLElement | null;
+    if (!heroEl) return;
+
+    let rafId: number | null = null;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    const onPointerMove = (e: PointerEvent) => {
+      const rect = heroEl.getBoundingClientRect();
+      targetX = ((e.clientX - rect.left) / rect.width - 0.5) * 18;
+      targetY = ((e.clientY - rect.top) / rect.height - 0.5) * 18;
+    };
+
+    const onPointerLeave = () => {
+      targetX = 0;
+      targetY = 0;
+    };
+
+    const updateLoop = () => {
+      currentX += (targetX - currentX) * 0.06;
+      currentY += (targetY - currentY) * 0.06;
+      heroEl.style.setProperty('--grid-px', `${currentX.toFixed(2)}px`);
+      heroEl.style.setProperty('--grid-py', `${currentY.toFixed(2)}px`);
+      rafId = requestAnimationFrame(updateLoop);
+    };
+
+    heroEl.addEventListener('pointermove', onPointerMove, { passive: true });
+    heroEl.addEventListener('pointerleave', onPointerLeave, { passive: true });
+    rafId = requestAnimationFrame(updateLoop);
+
+    this.destroyRef.onDestroy(() => {
+      heroEl.removeEventListener('pointermove', onPointerMove);
+      heroEl.removeEventListener('pointerleave', onPointerLeave);
+      if (rafId) cancelAnimationFrame(rafId);
     });
   }
 
