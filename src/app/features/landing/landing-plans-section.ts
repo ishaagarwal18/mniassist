@@ -129,18 +129,21 @@ import { Cycle, LANDING_PLANS, limitLines, planKey, priceLabel } from './landing
         0 20px 40px -15px rgba(15, 23, 42, 0.07),
         0 6px 18px -6px rgba(15, 23, 42, 0.04);
       transition:
-        transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
-        box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1),
-        border-color 260ms ease;
+        transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        box-shadow 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        border-color 300ms ease;
       animation: planFloat 8s ease-in-out infinite alternate;
-      will-change: transform;
+      will-change: transform, box-shadow, border-color;
+      cursor: pointer;
     }
     .plan:hover {
       animation-play-state: paused;
-      transform: translateY(-4px);
+      transform: translateY(-8px) scale(1.012);
+      border-color: #3b82f6;
       box-shadow:
-        0 28px 56px -12px rgba(15, 23, 42, 0.11),
-        0 12px 24px -8px rgba(15, 23, 42, 0.06);
+        0 0 0 1px #3b82f6,
+        0 24px 48px -12px rgba(37, 99, 235, 0.24),
+        0 12px 28px -6px rgba(15, 23, 42, 0.08);
     }
     .plan:nth-child(1) { animation-delay: 0s; }
     .plan:nth-child(2) { animation-delay: 1.6s; }
