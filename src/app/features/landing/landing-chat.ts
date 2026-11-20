@@ -52,6 +52,19 @@ import { ArIcon } from '../../ui';
       overflow: hidden;
       color: var(--ar-ink-900);
       box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      animation: gentleFloat 7s ease-in-out infinite;
+      will-change: transform;
+    }
+    @keyframes gentleFloat {
+      0% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-8px);
+      }
+      100% {
+        transform: translateY(0);
+      }
     }
     .chat__bar {
       display: flex;
@@ -123,12 +136,30 @@ import { ArIcon } from '../../ui';
       align-self: flex-end;
       max-width: 92%;
       padding: 9px 11px;
-      border: 1px solid var(--ar-ai-200);
+      border: 1px solid rgba(0, 184, 169, 0.35);
       border-left: 3px solid var(--ar-ai-500);
       border-radius: var(--ar-radius-inset);
       background: var(--ar-ai-100);
       font-size: 12.5px;
       line-height: 1.5;
+      box-shadow: 0 0 14px rgba(0, 184, 169, 0.22), inset 0 0 8px rgba(0, 184, 169, 0.05);
+      animation: tealGlowPulse 4s ease-in-out infinite alternate;
+    }
+    @keyframes tealGlowPulse {
+      0% {
+        box-shadow: 0 0 10px rgba(0, 184, 169, 0.16), inset 0 0 6px rgba(0, 184, 169, 0.03);
+        border-color: rgba(0, 184, 169, 0.28);
+      }
+      100% {
+        box-shadow: 0 0 20px rgba(0, 184, 169, 0.38), inset 0 0 12px rgba(0, 184, 169, 0.08);
+        border-color: rgba(0, 184, 169, 0.6);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .chat,
+      .ai {
+        animation: none;
+      }
     }
     .ai p {
       margin: 4px 0 0;
@@ -145,6 +176,20 @@ import { ArIcon } from '../../ui';
       padding: 0 14px 10px;
       font: 400 11px var(--ar-font-mono);
       color: var(--ar-ink-400);
+    }
+    @media (max-width: 420px) {
+      .chat__bar {
+        padding: 10px 12px;
+        gap: 8px;
+      }
+      .chat__ctx {
+        font-size: 10px;
+        padding: 2px 6px;
+      }
+      .msg {
+        max-width: 95%;
+        font-size: 12.5px;
+      }
     }
   `,
 })

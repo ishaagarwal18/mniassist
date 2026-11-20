@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, afterNextRender, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, afterNextRender, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { CurrentUserService } from '../../core/services/current-user.service';
@@ -44,7 +44,8 @@ interface Pillar {
 export class ArLanding {
   protected readonly signedIn = inject(CurrentUserService).isAuthenticated;
 
-  protected readonly activeSection = signal<string>('industries');
+  protected readonly activeSection = signal<string>('');
+  protected readonly mobileMenuOpen = signal<boolean>(false);
   protected readonly tagline = BRAND_TAGLINE;
   protected readonly year = new Date().getFullYear();
   protected readonly industryLinks = INDUSTRY_LINKS;
@@ -161,6 +162,10 @@ export class ArLanding {
     },
   ];
 
+  private readonly destroyRef = inject(DestroyRef);
+  private isClickScrolling = false;
+  private scrollTimeout?: ReturnType<typeof setTimeout>;
+
   constructor() {
     // Links like "/#plans" (the "Change" link on sign-up) land on that section.
     const fragment = inject(ActivatedRoute).snapshot.fragment;
@@ -171,34 +176,153 @@ export class ArLanding {
 
     afterNextRender(() => {
       this.initScrollSpy();
+      this.initHeroParallax();
+    });
+  }
+
+  private initHeroParallax(): void {
+    if (typeof window === 'undefined') return;
+    const heroEl = document.querySelector('.hero') as HTMLElement | null;
+    if (!heroEl) return;
+
+    let rafId: number | null = null;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    const onPointerMove = (e: PointerEvent) => {
+      const rect = heroEl.getBoundingClientRect();
+      targetX = ((e.clientX - rect.left) / rect.width - 0.5) * 18;
+      targetY = ((e.clientY - rect.top) / rect.height - 0.5) * 18;
+    };
+
+    const onPointerLeave = () => {
+      targetX = 0;
+      targetY = 0;
+    };
+
+    const updateLoop = () => {
+      currentX += (targetX - currentX) * 0.06;
+      currentY += (targetY - currentY) * 0.06;
+      heroEl.style.setProperty('--grid-px', `${currentX.toFixed(2)}px`);
+      heroEl.style.setProperty('--grid-py', `${currentY.toFixed(2)}px`);
+      rafId = requestAnimationFrame(updateLoop);
+    };
+
+    heroEl.addEventListener('pointermove', onPointerMove, { passive: true });
+    heroEl.addEventListener('pointerleave', onPointerLeave, { passive: true });
+    rafId = requestAnimationFrame(updateLoop);
+
+    this.destroyRef.onDestroy(() => {
+      heroEl.removeEventListener('pointermove', onPointerMove);
+      heroEl.removeEventListener('pointerleave', onPointerLeave);
+      if (rafId) cancelAnimationFrame(rafId);
     });
   }
 
   private initScrollSpy(): void {
-    if (typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-        if (visible.length > 0 && visible[0].target.id) {
-          this.activeSection.set(visible[0].target.id);
-        }
-      },
-      {
-        rootMargin: '-80px 0px -40% 0px',
-        threshold: [0, 0.2, 0.5, 0.8],
-      },
-    );
+    if (typeof window === 'undefined') return;
+
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          this.updateActiveSection();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+
+    this.destroyRef.onDestroy(() => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      clearTimeout(this.scrollTimeout);
+    });
+
+    this.updateActiveSection();
+  }
+
+  private updateActiveSection(): void {
+    if (typeof window === 'undefined' || this.isClickScrolling) return;
+
+    const scrollY = window.scrollY || window.pageYOffset;
+
+    // When scrolled near the bottom of the page, activate the last section
+    const atBottom =
+      window.innerHeight + scrollY >= document.documentElement.scrollHeight - 50;
+    if (atBottom) {
+      const last = this.sections[this.sections.length - 1];
+      if (last && this.activeSection() !== last.id) {
+        this.activeSection.set(last.id);
+      }
+      return;
+    }
+
+    // 60px sticky header height + 40px buffer
+    const headerOffset = 100;
+    let current = '';
 
     for (const s of this.sections) {
       const el = document.getElementById(s.id);
-      if (el) observer.observe(el);
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      if (rect.top <= headerOffset) {
+        current = s.id;
+      } else {
+        break;
+      }
+    }
+
+    if (current !== this.activeSection()) {
+      this.activeSection.set(current);
+    }
+  }
+
+  protected toggleMobileMenu(): void {
+    this.mobileMenuOpen.update((open) => !open);
+  }
+
+  protected closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
+  }
+
+  /** Scroll back to the very top (hero section) of the landing page. */
+  protected scrollToTop(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+    }
+    this.closeMobileMenu();
+    this.activeSection.set('');
+    this.isClickScrolling = true;
+    clearTimeout(this.scrollTimeout);
+    this.scrollTimeout = setTimeout(() => {
+      this.isClickScrolling = false;
+      this.updateActiveSection();
+    }, 800);
+
+    const still =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: still ? 'auto' : 'smooth' });
     }
   }
 
   protected scrollTo(id: string): void {
+    this.closeMobileMenu();
     this.activeSection.set(id);
+    this.isClickScrolling = true;
+    clearTimeout(this.scrollTimeout);
+    this.scrollTimeout = setTimeout(() => {
+      this.isClickScrolling = false;
+      this.updateActiveSection();
+    }, 800);
+
     const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     document
       .getElementById(id)

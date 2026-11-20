@@ -1,6 +1,6 @@
-<header class="nav">
+<header class="nav" [class.nav--open]="mobileMenuOpen()">
   <div class="wrap nav__row">
-    <ar-brand onDark />
+    <ar-brand onDark (click)="scrollToTop($event)" />
     <nav class="nav__links" aria-label="Sections">
       @for (s of sections; track s.id) {
         <button
@@ -21,18 +21,62 @@
         <a class="btn btn--primary nav__signup" routerLink="/signup">Create a workspace</a>
       }
     </div>
+    <button
+      type="button"
+      class="nav__toggle"
+      [attr.aria-expanded]="mobileMenuOpen()"
+      aria-label="Toggle navigation menu"
+      (click)="toggleMobileMenu()"
+    >
+      <ar-icon [name]="mobileMenuOpen() ? 'close' : 'menu'" [size]="20" />
+    </button>
   </div>
+
+  @if (mobileMenuOpen()) {
+    <div class="nav__mobile" (click)="closeMobileMenu()">
+      <nav class="nav__mobile-links" aria-label="Mobile sections" (click)="$event.stopPropagation()">
+        @for (s of sections; track s.id) {
+          <button
+            type="button"
+            class="nav__mobile-item"
+            [class.is-active]="activeSection() === s.id"
+            (click)="scrollTo(s.id)"
+          >
+            {{ s.label }}
+          </button>
+        }
+        <div class="nav__mobile-cta">
+          @if (signedIn()) {
+            <a class="btn btn--primary btn--lg" routerLink="/home" (click)="closeMobileMenu()">Open MNI Assist</a>
+          } @else {
+            <a class="btn btn--primary btn--lg" routerLink="/signup" (click)="closeMobileMenu()">Create a workspace</a>
+            <a class="btn btn--ghost btn--lg" routerLink="/login" (click)="closeMobileMenu()">Log in</a>
+          }
+        </div>
+      </nav>
+    </div>
+  }
 </header>
 
 <main>
   <section class="hero">
+    <div class="hero__bg-grid" aria-hidden="true"></div>
+    <div class="hero__glow" aria-hidden="true"></div>
     <div class="wrap hero__grid">
       <div class="hero__copy">
         <p class="eyebrow">
           <ar-icon name="sparkle" [size]="13" /> AI Business Engagement Platform for Industrial
           Companies
         </p>
-        <h1>Turn every customer conversation into business growth.</h1>
+        <h1 aria-label="Turn every customer conversation into business growth.">
+          <span class="hero__word" style="--i: 0">Turn</span>
+          <span class="hero__word" style="--i: 1">every</span>
+          <span class="hero__word" style="--i: 2">customer</span>
+          <span class="hero__word" style="--i: 3">conversation</span>
+          <span class="hero__word" style="--i: 4">into</span>
+          <span class="hero__word" style="--i: 5">business</span>
+          <span class="hero__word" style="--i: 6">growth.</span>
+        </h1>
         <p class="hero__lede">
           Customer engagement, support, CRM and aftermarket sales in one platform, built for
           machinery makers, OEMs and their dealers. On WhatsApp, where your customers already are.
@@ -154,6 +198,7 @@
   </section>
 
   <section class="final">
+    <div class="final__bg-grid" aria-hidden="true"></div>
     <div class="wrap final__row">
       <div>
         <h2>Start the conversations your competitors are missing.</h2>
@@ -176,7 +221,7 @@
 <footer class="foot">
   <div class="wrap foot__grid">
     <div class="foot__brand">
-      <ar-brand tagline />
+      <ar-brand tagline (click)="scrollToTop($event)" />
     </div>
     <nav class="foot__col" aria-label="Product">
       <strong>Product</strong>
@@ -200,7 +245,6 @@
     <nav class="foot__col" aria-label="Legal">
       <strong>Legal</strong>
       <a routerLink="/privacy">Privacy policy</a>
-      <a routerLink="/terms">Terms of service</a>
     </nav>
   </div>
   <div class="wrap foot__base">
