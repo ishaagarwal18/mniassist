@@ -47,18 +47,40 @@ interface Industry {
       gap: 10px;
       padding: 22px 20px;
       background: var(--ar-white);
-      border: 1px solid var(--ar-line-200);
+      border: 1px solid rgba(15, 23, 42, 0.08);
       border-radius: var(--ar-radius-card);
-      box-shadow: var(--ar-shadow-card);
+      box-shadow:
+        0 20px 40px -15px rgba(15, 23, 42, 0.07),
+        0 6px 18px -6px rgba(15, 23, 42, 0.04);
       transition:
-        transform var(--ar-ease),
-        border-color var(--ar-ease),
-        box-shadow var(--ar-ease);
+        transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 260ms ease,
+        box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1);
+      animation: cardFloat 8s ease-in-out infinite alternate;
+      will-change: transform;
     }
     .card:hover {
-      transform: translateY(-2px);
-      border-color: var(--ar-blue-200);
-      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+      animation-play-state: paused;
+      transform: translateY(-4px);
+      border-color: rgba(37, 99, 235, 0.28);
+      box-shadow:
+        0 28px 56px -12px rgba(15, 23, 42, 0.11),
+        0 12px 24px -8px rgba(15, 23, 42, 0.06);
+    }
+    .card:nth-child(1) { animation-delay: 0s; }
+    .card:nth-child(2) { animation-delay: 1.8s; }
+    .card:nth-child(3) { animation-delay: 3.6s; }
+    .card:nth-child(4) { animation-delay: 5.4s; }
+    @keyframes cardFloat {
+      0% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-5px);
+      }
+      100% {
+        transform: translateY(0);
+      }
     }
     .card__icon {
       width: 40px;
@@ -86,7 +108,7 @@ interface Industry {
       gap: 7px;
       margin: 6px 0 0;
       padding: 12px 0 0;
-      border-top: 1px solid var(--ar-line-200);
+      border-top: 1px solid rgba(15, 23, 42, 0.06);
       list-style: none;
       font-size: 13px;
       line-height: 1.4;
@@ -114,6 +136,7 @@ interface Industry {
     @media (prefers-reduced-motion: reduce) {
       .card,
       .card:hover {
+        animation: none;
         transition: none;
         transform: none;
       }

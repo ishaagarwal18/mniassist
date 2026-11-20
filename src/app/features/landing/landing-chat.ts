@@ -47,13 +47,24 @@ import { ArIcon } from '../../ui';
     .chat {
       margin: 0;
       background: var(--ar-bg-100);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: var(--ar-radius-modal);
       overflow: hidden;
       color: var(--ar-ink-900);
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      box-shadow:
+        0 32px 72px -16px rgba(0, 0, 0, 0.45),
+        0 16px 36px -10px rgba(0, 0, 0, 0.3),
+        0 0 32px -8px rgba(59, 130, 246, 0.15);
       animation: gentleFloat 7s ease-in-out infinite;
       will-change: transform;
+      transition:
+        transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 260ms ease;
+    }
+    .chat:hover {
+      animation-play-state: paused;
+      transform: translateY(-4px);
     }
     @keyframes gentleFloat {
       0% {

@@ -27,13 +27,17 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
     }
     details {
       background: #fff;
-      border: 1px solid #e2e8f0;
+      border: 1px solid rgba(15, 23, 42, 0.08);
       border-radius: 10px;
-      transition: border-color 160ms ease;
+      transition:
+        border-color 260ms ease,
+        box-shadow 260ms ease;
     }
     details[open] {
-      border-color: #c7d9ff;
-      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+      border-color: rgba(37, 99, 235, 0.35);
+      box-shadow:
+        0 16px 36px -10px rgba(15, 23, 42, 0.07),
+        0 4px 12px -4px rgba(15, 23, 42, 0.04);
     }
     summary {
       display: flex;

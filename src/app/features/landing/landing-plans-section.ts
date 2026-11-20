@@ -123,11 +123,45 @@ import { Cycle, LANDING_PLANS, limitLines, planKey, priceLabel } from './landing
       gap: 10px;
       padding: 22px 20px;
       background: var(--ar-white);
-      border: 1px solid var(--ar-line-200);
+      border: 1px solid rgba(15, 23, 42, 0.08);
       border-radius: var(--ar-radius-card);
+      box-shadow:
+        0 20px 40px -15px rgba(15, 23, 42, 0.07),
+        0 6px 18px -6px rgba(15, 23, 42, 0.04);
+      transition:
+        transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 260ms ease;
+      animation: planFloat 8s ease-in-out infinite alternate;
+      will-change: transform;
+    }
+    .plan:hover {
+      animation-play-state: paused;
+      transform: translateY(-4px);
+      box-shadow:
+        0 28px 56px -12px rgba(15, 23, 42, 0.11),
+        0 12px 24px -8px rgba(15, 23, 42, 0.06);
+    }
+    .plan:nth-child(1) { animation-delay: 0s; }
+    .plan:nth-child(2) { animation-delay: 1.6s; }
+    .plan:nth-child(3) { animation-delay: 3.2s; }
+    .plan:nth-child(4) { animation-delay: 4.8s; }
+    @keyframes planFloat {
+      0% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-5px);
+      }
+      100% {
+        transform: translateY(0);
+      }
     }
     .plan--featured {
-      border: 2px solid var(--ar-blue-500);
+      border: 1.5px solid rgba(37, 99, 235, 0.65);
+      box-shadow:
+        0 24px 52px -12px rgba(37, 99, 235, 0.18),
+        0 8px 24px -6px rgba(15, 23, 42, 0.06);
     }
     .plan__tag {
       position: absolute;
@@ -135,7 +169,7 @@ import { Cycle, LANDING_PLANS, limitLines, planKey, priceLabel } from './landing
       left: 18px;
       padding: 2px 9px;
       border-radius: 999px;
-      background: var(--ar-blue-500);
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
       color: #fff;
       font: 600 11px var(--ar-font-sans);
     }
@@ -162,7 +196,7 @@ import { Cycle, LANDING_PLANS, limitLines, planKey, priceLabel } from './landing
       display: grid;
       gap: 4px;
       padding: 10px 0;
-      border-block: 1px solid var(--ar-line-200);
+      border-block: 1px solid rgba(15, 23, 42, 0.06);
       font: 500 12.5px var(--ar-font-mono);
       color: var(--ar-ink-700);
     }
@@ -200,18 +234,28 @@ import { Cycle, LANDING_PLANS, limitLines, planKey, priceLabel } from './landing
       font: 600 13px var(--ar-font-sans);
       color: var(--ar-ink-900);
       text-decoration: none;
+      transition:
+        transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        box-shadow 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        background 240ms ease,
+        border-color 240ms ease,
+        color 200ms ease;
     }
     .btn:hover {
       border-color: var(--ar-ink-900);
     }
     .btn--primary {
-      border-color: transparent;
-      background: var(--ar-blue-500);
+      border-color: rgba(255, 255, 255, 0.16);
+      background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
       color: #fff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
     .btn--primary:hover {
-      border-color: transparent;
-      background: var(--ar-blue-600);
+      border-color: rgba(255, 255, 255, 0.2);
+      background: linear-gradient(180deg, #3b82f6 0%, #1e40af 100%);
+      box-shadow:
+        0 6px 20px -4px rgba(37, 99, 235, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
     }
     .btn:focus-visible,
     .toggle button:focus-visible {
@@ -245,6 +289,12 @@ import { Cycle, LANDING_PLANS, limitLines, planKey, priceLabel } from './landing
         font-size: 11.5px;
         text-align: center;
         justify-content: center;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .plan {
+        animation: none;
+        transform: none;
       }
     }
   `,

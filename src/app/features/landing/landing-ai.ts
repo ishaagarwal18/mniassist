@@ -132,19 +132,42 @@ import { ArIcon } from '../../ui';
       display: grid;
       gap: 12px;
       background: #fff;
-      border: 1px solid #e2e8f0;
+      border: 1px solid rgba(15, 23, 42, 0.08);
       border-radius: 14px;
-      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
+      box-shadow:
+        0 28px 68px -14px rgba(15, 23, 42, 0.09),
+        0 12px 28px -8px rgba(15, 23, 42, 0.04);
       font-size: 13px;
       line-height: 1.5;
       color: #17202a;
+      transition:
+        transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 260ms ease;
+      animation: demoFloat 7s ease-in-out infinite;
+      will-change: transform;
+    }
+    .demo:hover {
+      animation-play-state: paused;
+      transform: translateY(-4px);
+    }
+    @keyframes demoFloat {
+      0% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-6px);
+      }
+      100% {
+        transform: translateY(0);
+      }
     }
     .demo__head {
       display: flex;
       align-items: center;
       gap: 10px;
       padding-bottom: 12px;
-      border-bottom: 1px solid #eaecf0;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
     }
     .demo__head small {
       display: block;
@@ -184,7 +207,7 @@ import { ArIcon } from '../../ui';
       margin: 0;
       max-width: 85%;
       padding: 8px 10px;
-      border: 1px solid #eaecf0;
+      border: 1px solid rgba(15, 23, 42, 0.06);
       border-radius: 8px;
       background: #f9fafb;
     }
@@ -218,6 +241,12 @@ import { ArIcon } from '../../ui';
       }
       .demo__msg {
         max-width: 95%;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .demo {
+        animation: none;
+        transform: none;
       }
     }
   `,

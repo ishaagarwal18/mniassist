@@ -46,6 +46,7 @@ export class ArLanding {
 
   protected readonly activeSection = signal<string>('');
   protected readonly mobileMenuOpen = signal<boolean>(false);
+  protected readonly activeStoryStep = signal<number>(0);
   protected readonly tagline = BRAND_TAGLINE;
   protected readonly year = new Date().getFullYear();
   protected readonly industryLinks = INDUSTRY_LINKS;
@@ -165,6 +166,7 @@ export class ArLanding {
   private readonly destroyRef = inject(DestroyRef);
   private isClickScrolling = false;
   private scrollTimeout?: ReturnType<typeof setTimeout>;
+  private storyAutoInterval?: ReturnType<typeof setInterval>;
 
   constructor() {
     // Links like "/#plans" (the "Change" link on sign-up) land on that section.
@@ -177,7 +179,45 @@ export class ArLanding {
     afterNextRender(() => {
       this.initScrollSpy();
       this.initHeroParallax();
+      this.startStoryAuto();
     });
+
+    this.destroyRef.onDestroy(() => {
+      this.pauseStoryAuto();
+    });
+  }
+
+  protected setStoryStep(index: number): void {
+    if (index >= 0 && index < this.story.length) {
+      this.activeStoryStep.set(index);
+    }
+  }
+
+  protected prevStoryStep(): void {
+    this.activeStoryStep.update((curr) => (curr > 0 ? curr - 1 : curr));
+  }
+
+  protected nextStoryStep(): void {
+    this.activeStoryStep.update((curr) => (curr < this.story.length - 1 ? curr + 1 : 0));
+  }
+
+  protected pauseStoryAuto(): void {
+    if (this.storyAutoInterval) {
+      clearInterval(this.storyAutoInterval);
+      this.storyAutoInterval = undefined;
+    }
+  }
+
+  protected resumeStoryAuto(): void {
+    this.startStoryAuto();
+  }
+
+  private startStoryAuto(): void {
+    if (typeof window === 'undefined') return;
+    this.pauseStoryAuto();
+    this.storyAutoInterval = setInterval(() => {
+      this.nextStoryStep();
+    }, 4500);
   }
 
   private initHeroParallax(): void {
