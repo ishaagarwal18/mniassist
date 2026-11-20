@@ -66,6 +66,44 @@ describe('Public pages', () => {
     for (const p of INDUSTRY_PAGES) expect(text).toContain(p.name);
   });
 
+  it('shows the system integrators page with original content and enhanced visuals', async () => {
+    setUp('system-integrators');
+    const fixture = TestBed.createComponent(ArIndustryPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const text = (fixture.nativeElement as HTMLElement).textContent!;
+
+    // Headline & Intro
+    expect(text).toContain('Quote faster, follow up every enquiry, and never miss an AMC renewal.');
+    expect(text).toContain('You quote, install and service equipment for other businesses');
+
+    // Problems
+    expect(text).toContain('Sound familiar?');
+    expect(text).toContain('Enquiries arrive on WhatsApp, calls and email, and some never get a quote.');
+    expect(text).toContain('Quotations go out, then nobody follows up.');
+    expect(text).toContain('Renewals depend on someone remembering which customer’s AMC ends this month.');
+
+    // Uses
+    expect(text).toContain('What MNI Assist does for you');
+    expect(text).toContain('Enquiries to quotations');
+    expect(text).toContain('Installed base');
+    expect(text).toContain('AI agent for enquiries');
+    expect(text).toContain('AI renewal calls');
+
+    // Playbooks & Plan
+    expect(text).toContain('Ready AI agents for you');
+    expect(text).toContain('Lead qualification');
+    expect(text).toContain('Service and renewal reminders');
+    expect(text).toContain('Appointment booking');
+    expect(text).toContain('Pro (₹9,999 a month, excluding GST)');
+
+    // Pitch & CTAs
+    expect(text).toContain('Every quotation you send has a follow-up behind it, and every AMC renewal gets a call on time.');
+    expect(text).toContain('Create a workspace');
+    expect(text).toContain('Work out your saving');
+  });
+
   it('every industry page says AI voice agents need Pro', () => {
     for (const p of INDUSTRY_PAGES) expect(p.planFit).toContain('Pro');
   });

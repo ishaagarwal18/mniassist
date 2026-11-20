@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { CurrentUserService } from '../../core/services/current-user.service';
@@ -39,7 +39,7 @@ export const INDUSTRY_LINKS = [
         </div>
       </div>
     </header>
-    <main class="pf-wrap pf-main"><ng-content /></main>
+    <main [class.pf-wrap]="!bleed()" [class.pf-main]="true" [class.pf-main--bleed]="bleed()"><ng-content /></main>
     <footer class="pf-foot">
       <div class="pf-wrap pf-foot__row">
         <span>© {{ year }} Emnisoft Pvt Ltd. MNI Assist is a product of Emnisoft Pvt Ltd.</span>
@@ -118,6 +118,11 @@ export const INDUSTRY_LINKS = [
       padding-top: 32px;
       padding-bottom: 48px;
     }
+    .pf-main--bleed {
+      padding: 0;
+      width: 100%;
+      max-width: 100%;
+    }
     .pf-foot {
       padding: 24px 0;
       border-top: 1px solid var(--ar-line-200);
@@ -141,6 +146,7 @@ export const INDUSTRY_LINKS = [
   `,
 })
 export class ArPublicFrame {
+  readonly bleed = input(false);
   protected readonly publicHome = PUBLIC_HOME_PATH;
   protected readonly signedIn = inject(CurrentUserService).isAuthenticated;
   protected readonly industries = INDUSTRY_LINKS;
