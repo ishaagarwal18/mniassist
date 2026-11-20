@@ -1245,7 +1245,6 @@
     "POST /api/auto-reach/voice-web-widget",
     "POST /api/auto-reach/voice-web-widget/{}/rotate-key",
     "POST /api/auto-reach/wallet/configure-auto-top-up",
-    "POST /api/auto-reach/wallet/top-up",
     "POST /api/auto-reach/web-form",
     "POST /api/auto-reach/web-form/{}/set-active",
     "POST /api/auto-reach/web-push/send-test",

@@ -121,7 +121,6 @@ export class ArBilling {
 
   protected readonly topUpOpen = signal(false);
   protected readonly topUpAmount = signal(20000);
-  protected readonly topUpReference = signal('');
   protected readonly topUpGateway = signal('Razorpay');
   protected readonly availableGateways = signal<CheckoutGatewayDto[]>([]);
 
@@ -171,25 +170,22 @@ export class ArBilling {
     }
     const amountInPaise = Math.round(rupees * 100);
     const gateways = this.availableGateways();
+    if (gateways.length === 0) {
+      // The wallet is credited only by a gateway confirming a real payment.
+      this.toasts.warning('Online payment is not set up yet, so the wallet cannot be topped up. A platform administrator turns on Razorpay or PayU under Platform › Payment gateways.', 'Top-up');
+      return;
+    }
     this.busy.set(true);
     try {
-      if (gateways.length > 0) {
-        const gateway = this.topUpGateway() || gateways[0].name;
-        const start = await firstValueFrom(this.checkoutApi.startTopUp({ gateway, amountInPaise }));
-        const outcome = await this.checkout.pay(start);
-        if (outcome === 'paid') {
-          this.toasts.success(`${inr(amountInPaise)} added to the wallet.`, 'Top-up');
-          this.tick.update((n) => n + 1);
-          this.close();
-        } else if (outcome === 'failed') {
-          this.toasts.error('The payment did not go through.', 'Top-up');
-        }
-      } else {
-        const ref = this.topUpReference().trim() || `MANUAL-${Date.now()}`;
-        await firstValueFrom(this.walletApi.topUp({ amountInPaise, reference: ref }));
+      const gateway = this.topUpGateway() || gateways[0].name;
+      const start = await firstValueFrom(this.checkoutApi.startTopUp({ gateway, amountInPaise }));
+      const outcome = await this.checkout.pay(start);
+      if (outcome === 'paid') {
         this.toasts.success(`${inr(amountInPaise)} added to the wallet.`, 'Top-up');
         this.tick.update((n) => n + 1);
         this.close();
+      } else if (outcome === 'failed') {
+        this.toasts.error('The payment did not go through.', 'Top-up');
       }
     } catch (e: unknown) {
       this.toasts.error(readApiError(e) || 'The payment could not be processed.', 'Top-up');
@@ -336,44 +332,12 @@ export class ArBilling {
   protected async topUp(): Promise<void> {
     // Razorpay / PayU, when the platform has either: the payment happens on the gateway's page.
     const gateways = await this.checkout.gateways();
-    if (gateways.length > 0) {
-      await this.topUpByGateway(gateways);
+    if (gateways.length === 0) {
+      // The wallet is credited only by a gateway confirming a real payment.
+      this.toasts.warning('Online payment is not set up yet, so the wallet cannot be topped up. A platform administrator turns on Razorpay or PayU under Platform › Payment gateways.', 'Top-up');
       return;
     }
-    const answer = await this.dialogs.prompt({
-      title: 'Top up the wallet',
-      fields: [
-        {
-          key: 'rupees',
-          label: 'Amount (₹)',
-          type: 'number',
-          value: '20000',
-          min: 100,
-          required: true,
-        },
-        {
-          key: 'reference',
-          label: 'Payment reference from the gateway',
-          required: true,
-          maxLength: 128,
-        },
-      ],
-      confirmText: 'Top up',
-    });
-    if (!answer) return;
-    const rupees = Number(answer['rupees']);
-    const reference = answer['reference'];
-    this.busy.set(true);
-    try {
-      await firstValueFrom(
-        this.walletApi.topUp({ amountInPaise: Math.round(rupees * 100), reference }),
-      );
-      this.tick.update((n) => n + 1);
-    } catch {
-      this.toasts.error('The payment could not be verified.', 'Top-up');
-    } finally {
-      this.busy.set(false);
-    }
+    await this.topUpByGateway(gateways);
   }
 
   private async topUpByGateway(gateways: CheckoutGatewayDto[]): Promise<void> {

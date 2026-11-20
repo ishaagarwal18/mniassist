@@ -129,19 +129,9 @@ interface WalletView {
             </select>
           </label>
         } @else if (gatewaysLoaded() && gateways().length === 0) {
-          <p class="af__note">
-            Online payment is not set up for this platform yet. Pay by bank transfer, then enter the
-            payment reference below: the wallet is credited once the payment is confirmed.
+          <p class="af__note" role="note">
+            Online payment is not set up yet, so the wallet cannot be topped up. A platform administrator turns on Razorpay or PayU under Platform › Payment gateways.
           </p>
-          <label class="ar-field af__pay">
-            <span class="ar-field__label">Payment reference</span>
-            <input
-              class="ar-field__input"
-              placeholder="e.g. UTR or gateway payment ID"
-              [value]="reference()"
-              (input)="reference.set($any($event.target).value)"
-            />
-          </label>
         }
 
         <div class="af__row">
@@ -150,7 +140,7 @@ interface WalletView {
             type="button"
             variant="primary"
             icon="billing"
-            [disabled]="busy() || !!problem() || !gatewaysLoaded()"
+            [disabled]="busy() || !!problem() || !gatewaysLoaded() || gateways().length === 0"
             (click)="pay()"
           >
             {{ busy() ? 'Processing…' : 'Add ' + rupees(amount()) }}
@@ -314,7 +304,6 @@ export class ArOnboardingAddFunds implements OnInit {
   protected readonly gatewaysLoaded = signal(false);
   protected readonly gateway = signal('');
   protected readonly amount = signal<number>(TOP_UP_PRESETS[1]);
-  protected readonly reference = signal('');
   protected readonly busy = signal(false);
 
   protected readonly problem = computed(() => topUpProblem(this.amount()));
@@ -372,27 +361,16 @@ export class ArOnboardingAddFunds implements OnInit {
     const amountInPaise = Math.round(rupees * 100);
     this.busy.set(true);
     try {
-      if (this.gateways().length > 0) {
-        const start = await firstValueFrom(
-          this.checkoutApi.startTopUp({ gateway: this.gateway(), amountInPaise }),
-        );
-        const outcome = await this.checkout.pay(start);
-        if (outcome === 'paid') this.credited(amountInPaise);
-        else if (outcome === 'failed')
-          this.toasts.error('The payment did not go through. Nothing was charged.', 'Add funds');
-        // 'redirected': PayU takes the browser to its page and back to Billing, which shows the result.
-      } else {
-        const ref = this.reference().trim();
-        if (!ref) {
-          this.toasts.warning(
-            'Enter the payment reference from your bank or gateway.',
-            'Add funds',
-          );
-          return;
-        }
-        await firstValueFrom(this.walletApi.topUp({ amountInPaise, reference: ref }));
-        this.credited(amountInPaise);
-      }
+      // The wallet is credited only by a gateway confirming a real payment; there is no other way in.
+      if (this.gateways().length === 0) return;
+      const start = await firstValueFrom(
+        this.checkoutApi.startTopUp({ gateway: this.gateway(), amountInPaise }),
+      );
+      const outcome = await this.checkout.pay(start);
+      if (outcome === 'paid') this.credited(amountInPaise);
+      else if (outcome === 'failed')
+        this.toasts.error('The payment did not go through. Nothing was charged.', 'Add funds');
+      // 'redirected': PayU takes the browser to its page and back to Billing, which shows the result.
     } catch (e: unknown) {
       this.toasts.error(readApiError(e, 'The payment could not be processed.'), 'Add funds');
     } finally {
@@ -402,7 +380,6 @@ export class ArOnboardingAddFunds implements OnInit {
 
   private credited(amountInPaise: number): void {
     this.toasts.success(`${inr(amountInPaise)} added to the wallet.`, 'Add funds');
-    this.reference.set('');
     void this.loadWallet();
     this.funded.emit();
   }

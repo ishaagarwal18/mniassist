@@ -208,11 +208,6 @@ export interface SubscriptionDto extends EntityDto<string> {
   taxRateBasisPoints?: number;
 }
 
-export interface TopUpInput {
-  amountInPaise?: number;
-  reference?: string | null;
-}
-
 export interface UsageByCategoryDto {
   category?: PricingCategory;
   messageCount?: number;

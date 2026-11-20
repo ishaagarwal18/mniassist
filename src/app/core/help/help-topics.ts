@@ -1721,6 +1721,7 @@ const BASE_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Copy your test key id and key secret from the Razorpay Dashboard (in test mode) under Account & Settings › API keys, and paste them under Test keys.',
       'Choose Test, turn on Let the team send payment requests, click Save, then Check keys.',
       'Send yourself a payment link from the inbox and pay it with a Razorpay test card or test UPI id.',
+      'In each Razorpay mode, add a webhook with the URL shown and a secret, and enter that secret here, so payments are confirmed even when the customer closes the window early.',
       'When it works, paste the live key pair, choose Live and click Save.',
     ],
     tips: [
@@ -1732,6 +1733,8 @@ const BASE_TOPICS: Readonly<Record<string, HelpTopic>> = {
       { name: 'Test / Live', text: 'Which key pair payment links use. Test simulates payments; no real money moves.' },
       { name: 'Test keys', text: 'Razorpay’s test key id (rzp_test_…) and key secret. The secret is stored securely and never shown again.' },
       { name: 'Live keys', text: 'Razorpay’s live key id (rzp_live_…) and key secret, for real payments.' },
+      { name: 'Webhook secret', text: 'The secret you set on that mode’s webhook in the Razorpay Dashboard. Razorpay’s webhooks are applied only when they carry it.' },
+      { name: 'Webhook URL', text: 'Add it as a webhook in both Razorpay modes with the events payment.captured, payment.failed and order.paid. Copy copies it.' },
       { name: 'Let the team send payment requests', text: 'Switches payment links on. Needs both halves of the key pair in use.' },
       { name: 'Check keys', text: 'Asks Razorpay whether it accepts the key pair in use. Nothing is charged.' },
       { name: 'Requests', text: 'Every payment request sent: reference, customer, what for, amount and status. Copy link or Cancel an unpaid one.' },

@@ -21,6 +21,10 @@ export interface PaymentGatewayDto {
   enabled: boolean;
   hasLiveSecret: boolean;
   hasTestSecret: boolean;
+  hasLiveWebhookSecret: boolean;
+  hasTestWebhookSecret: boolean;
+  /** The webhook address to add in Razorpay's dashboard, in both modes. */
+  webhookUrl?: string | null;
   /** Switched on, and both halves of the pair in use are there. */
   canCollect: boolean;
 }
@@ -31,6 +35,9 @@ export interface SetPaymentGatewayInput {
   keySecret?: string | null;
   testKeyId?: string | null;
   testKeySecret?: string | null;
+  /** The secret set on the live / test webhook in Razorpay's dashboard; empty keeps the stored one. */
+  webhookSecret?: string | null;
+  testWebhookSecret?: string | null;
   testMode: boolean;
   enabled: boolean;
 }

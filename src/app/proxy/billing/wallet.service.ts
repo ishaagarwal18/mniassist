@@ -1,7 +1,6 @@
 import type {
   ConfigureAutoTopUpInput,
   GetWalletTransactionsInput,
-  TopUpInput,
   WalletDto,
   WalletTransactionDto,
 } from './models';
@@ -51,17 +50,6 @@ export class WalletService {
           skipCount: input.skipCount,
           maxResultCount: input.maxResultCount,
         },
-      },
-      { apiName: this.apiName, ...config },
-    );
-
-  topUp = (input: TopUpInput, config?: Partial<Rest.Config>) =>
-    this.restService.request<any, WalletDto>(
-      {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-        url: '/api/auto-reach/wallet/top-up',
-        body: input,
       },
       { apiName: this.apiName, ...config },
     );

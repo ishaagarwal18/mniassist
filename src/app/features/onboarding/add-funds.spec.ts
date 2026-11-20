@@ -22,13 +22,11 @@ describe('Get started add funds: amounts', () => {
 describe('Get started add funds: paying', () => {
   let startTopUp: ReturnType<typeof vi.fn>;
   let pay: ReturnType<typeof vi.fn>;
-  let topUp: ReturnType<typeof vi.fn>;
   let toasts: Record<string, ReturnType<typeof vi.fn>>;
 
   function setup(gateways: { name: string; label: string }[], granted = true) {
     startTopUp = vi.fn(() => of({ checkoutId: 'c-1' }));
     pay = vi.fn(async () => 'paid');
-    topUp = vi.fn(() => of({ balanceInPaise: 500_000 }));
     toasts = { success: vi.fn(), error: vi.fn(), warning: vi.fn() };
     TestBed.configureTestingModule({
       providers: [
@@ -37,7 +35,6 @@ describe('Get started add funds: paying', () => {
           provide: WalletService,
           useValue: {
             get: () => of({ balanceInPaise: 25_000, estimatedDaysRemaining: 3 }),
-            topUp,
           },
         },
         { provide: PlatformCheckoutService, useValue: { startTopUp } },
@@ -80,18 +77,18 @@ describe('Get started add funds: paying', () => {
     expect(funded).not.toHaveBeenCalled();
   });
 
-  it('without a gateway, asks for a payment reference before crediting', async () => {
+  it('without a gateway, never credits the wallet and says online payment is not set up', async () => {
     const fixture = setup([]);
     const comp = fixture.componentInstance as any;
     await vi.waitFor(() => expect(comp.gatewaysLoaded()).toBe(true));
+    fixture.detectChanges();
 
     await comp.pay();
-    expect(topUp).not.toHaveBeenCalled();
-    expect(toasts['warning']).toHaveBeenCalled();
-
-    comp.reference.set('UTR123456');
-    await comp.pay();
-    expect(topUp).toHaveBeenCalledWith({ amountInPaise: 500_000, reference: 'UTR123456' });
+    expect(startTopUp).not.toHaveBeenCalled();
+    expect(pay).not.toHaveBeenCalled();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).toContain('Online payment is not set up yet');
+    expect(el.querySelector('input[placeholder*="UTR"]')).toBeNull();
   });
 
   it('tells someone without the top-up permission who can add funds', () => {

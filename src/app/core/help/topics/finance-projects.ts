@@ -1013,7 +1013,7 @@ export const FINANCE_PROJECTS_TOPICS: Readonly<Record<string, HelpTopic>> = {
       { name: 'Wallet history', text: 'Every top-up (positive) and charge (red), with date, type, details, amount and the balance after.' },
       { name: 'Amount (₹)', text: 'How much to add to the wallet.' },
       { name: 'Pay with', text: 'The payment gateway to pay through. You pay on its secure page and the wallet is credited once payment succeeds.' },
-      { name: 'Payment reference / notes', text: 'Optional reference, e.g. a bank transfer or gateway reference.' },
+      { name: 'No gateway yet', text: 'Money is added only by paying through Razorpay or PayU. Until a platform administrator turns one on, the wallet cannot be topped up.' },
       { name: 'Continue to payment', text: 'Takes you to the gateway to pay.' },
     ],
   },

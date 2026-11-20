@@ -99,6 +99,22 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
                   (input)="testKeySecret.set($any($event.target).value)"
                 />
               </label>
+              <label class="ar-field" for="pm-test-hook">
+                <span class="ar-field__label">
+                  Webhook secret
+                  @if (hasTestWebhookSecret()) {
+                    <span class="ar-field__opt">(stored, leave empty to keep it)</span>
+                  }
+                </span>
+                <input
+                  id="pm-test-hook"
+                  type="password"
+                  autocomplete="off"
+                  class="ar-field__input"
+                  [value]="testWebhookSecret()"
+                  (input)="testWebhookSecret.set($any($event.target).value)"
+                />
+              </label>
             </fieldset>
             <fieldset class="pm__pair" [class.pm__pair--active]="!testMode()">
               <legend>Live keys</legend>
@@ -128,12 +144,42 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
                   (input)="keySecret.set($any($event.target).value)"
                 />
               </label>
+              <label class="ar-field" for="pm-live-hook">
+                <span class="ar-field__label">
+                  Webhook secret
+                  @if (hasLiveWebhookSecret()) {
+                    <span class="ar-field__opt">(stored, leave empty to keep it)</span>
+                  }
+                </span>
+                <input
+                  id="pm-live-hook"
+                  type="password"
+                  autocomplete="off"
+                  class="ar-field__input"
+                  [value]="webhookSecret()"
+                  (input)="webhookSecret.set($any($event.target).value)"
+                />
+              </label>
             </fieldset>
           </div>
           <p class="pm__hint">
             Find both pairs in the Razorpay Dashboard under Account &amp; Settings › API keys. Switch the
             dashboard to test mode to see the test pair.
           </p>
+          @if (webhookUrl(); as url) {
+            <div class="pm__hook">
+              <p class="pm__hint">
+                In the Razorpay Dashboard, add a webhook in each mode (Account &amp; Settings › Webhooks)
+                with this URL, the events payment.captured, payment.failed and order.paid, and a secret
+                of your choice. Enter the same secret here. Payments are then confirmed even when the
+                customer closes the window early.
+              </p>
+              <div class="pm__hook-row">
+                <code class="ar-mono">{{ url }}</code>
+                <button ar-button type="button" variant="quiet" (click)="copy(url)">Copy</button>
+              </div>
+            </div>
+          }
 
           <label class="pm__check">
             <input
@@ -328,6 +374,24 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
       color: var(--ar-ink-500);
       overflow-wrap: anywhere;
     }
+    .pm__hook {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .pm__hook-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .pm__hook-row code {
+      padding: 3px 6px;
+      border-radius: 4px;
+      background: var(--ar-bg-100);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
     .pm__actions {
       display: flex;
       justify-content: flex-end;
@@ -419,6 +483,11 @@ export class ArPaymentsSettings {
   protected readonly testKeyId = signal('');
   protected readonly testKeySecret = signal('');
   protected readonly hasTestSecret = signal(false);
+  protected readonly webhookSecret = signal('');
+  protected readonly testWebhookSecret = signal('');
+  protected readonly hasLiveWebhookSecret = signal(false);
+  protected readonly hasTestWebhookSecret = signal(false);
+  protected readonly webhookUrl = signal<string | null>(null);
   protected readonly testMode = signal(true);
   protected readonly enabled = signal(false);
   protected readonly checkingKeys = signal(false);
@@ -454,6 +523,8 @@ export class ArPaymentsSettings {
           keySecret: this.keySecret().trim() || null,
           testKeyId: this.testKeyId().trim() || null,
           testKeySecret: this.testKeySecret().trim() || null,
+          webhookSecret: this.webhookSecret().trim() || null,
+          testWebhookSecret: this.testWebhookSecret().trim() || null,
           testMode: this.testMode(),
           enabled: this.enabled(),
         }),
@@ -495,6 +566,11 @@ export class ArPaymentsSettings {
     this.testKeySecret.set('');
     this.hasLiveSecret.set(g.hasLiveSecret);
     this.hasTestSecret.set(g.hasTestSecret);
+    this.webhookSecret.set('');
+    this.testWebhookSecret.set('');
+    this.hasLiveWebhookSecret.set(g.hasLiveWebhookSecret);
+    this.hasTestWebhookSecret.set(g.hasTestWebhookSecret);
+    this.webhookUrl.set(g.webhookUrl ?? null);
     this.testMode.set(g.testMode);
     this.enabled.set(g.enabled);
   }

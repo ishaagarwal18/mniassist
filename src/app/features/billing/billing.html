@@ -335,15 +335,9 @@
           </select>
         </label>
       } @else if (availableGateways().length === 0) {
-        <label class="ar-field">
-          <span class="ar-field__label">Payment reference / notes</span>
-          <input
-            class="ar-field__input"
-            placeholder="e.g. Bank transfer / gateway ref"
-            [value]="topUpReference()"
-            (input)="topUpReference.set($any($event.target).value)"
-          />
-        </label>
+        <p class="ar-field__hint" role="note">
+          Online payment is not set up yet, so the wallet cannot be topped up. A platform administrator turns on Razorpay or PayU under Platform › Payment gateways.
+        </p>
       }
       <div dialogActions>
         <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
@@ -351,7 +345,7 @@
           ar-button
           type="button"
           variant="primary"
-          [disabled]="busy()"
+          [disabled]="busy() || availableGateways().length === 0"
           (click)="submitTopUp()"
         >
           {{ busy() ? 'Processing…' : 'Continue to payment' }}
