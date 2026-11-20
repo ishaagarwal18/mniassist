@@ -169,6 +169,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/legal/privacy-policy').then((m) => m.ArPrivacyPolicy),
   },
   {
+    path: 'terms',
+    title: 'Terms of Service · MNI Assist',
+    loadComponent: () =>
+      import('./features/legal/terms-of-service').then((m) => m.ArTermsOfService),
+  },
+  {
     // The field engineer's phone app: signed in, but no app shell. Works offline once loaded.
     path: 'field',
     title: 'Field · MNI Assist',

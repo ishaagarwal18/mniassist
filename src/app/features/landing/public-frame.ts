@@ -47,6 +47,7 @@ export const INDUSTRY_LINKS = [
           <a [routerLink]="publicHome">Plans and features</a>
           <a routerLink="/roi">ROI calculator</a>
           <a routerLink="/privacy">Privacy policy</a>
+          <a routerLink="/terms">Terms of service</a>
         </nav>
       </div>
     </footer>

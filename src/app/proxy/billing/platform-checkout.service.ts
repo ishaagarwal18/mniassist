@@ -17,11 +17,15 @@ export interface CheckoutGatewayDto {
   /** `Razorpay` or `PayU`. */
   name: string;
   label: string;
+  /** On its test keys: paying moves no real money. */
+  testMode?: boolean;
 }
 
 export interface RazorpayCheckoutDto {
   keyId: string;
   orderId: string;
+  /** Test keys: no real money moves. */
+  testMode?: boolean;
   name: string;
   description: string;
   prefillName?: string | null;

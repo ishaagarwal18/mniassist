@@ -7,13 +7,14 @@ import {
   PaymentRequestStatus,
   PublicPaymentDto,
 } from '../../proxy/payments/payment.service';
+import { loadRazorpay } from '../../core/services/platform-checkout';
 import { apiMessage } from '../signing/signing-logic';
-import { PAYMENT_STATUS_LABEL, postToCheckout, rupees } from './payment-logic';
+import { PAYMENT_STATUS_LABEL, payRequestOptions, rupees } from './payment-logic';
 
 /**
  * The page a customer opens from the link sent in their conversation: who is asking, what for, how much — and a button that
- * takes them to BillDesk to pay. No login and no app shell; the link is all they hold. After paying, BillDesk sends them back
- * here, and the page waits a little for BillDesk's own word before saying paid, since the browser coming back proves nothing.
+ * opens Razorpay's payment window over the page, paying into the seller's own Razorpay account. No login and no app shell; the
+ * link is all they hold. What the window hands back is checked by the server with Razorpay before the page says paid.
  */
 @Component({
   selector: 'ar-pay-page',
@@ -27,6 +28,11 @@ import { PAYMENT_STATUS_LABEL, postToCheckout, rupees } from './payment-logic';
       } @else if (payment(); as p) {
         <section class="pay__card" [class.pay__card--paid]="p.status === Status.Paid">
           <p class="pay__payee">Payment to {{ p.payeeName }}</p>
+          @if (p.testMode) {
+            <p class="pay__test" role="note">
+              Test mode: no real money moves. Pay with one of Razorpay's test cards or test UPI ids.
+            </p>
+          }
           <h1 class="pay__amount">{{ amount(p.amountInPaise) }}</h1>
           <p class="pay__desc">{{ p.description }}</p>
           <p class="pay__ref">
@@ -47,10 +53,10 @@ import { PAYMENT_STATUS_LABEL, postToCheckout, rupees } from './payment-logic';
               <p class="pay__fail" role="alert">{{ e }}</p>
             }
             <button type="button" class="pay__btn" [disabled]="busy()" (click)="pay()">
-              {{ busy() ? 'Opening BillDesk…' : 'Pay ' + amount(p.amountInPaise) }}
+              {{ busy() ? 'Opening Razorpay…' : 'Pay ' + amount(p.amountInPaise) }}
             </button>
             <p class="pay__small">
-              You'll be taken to BillDesk's secure page to pay by UPI, card or net banking.
+              Pay securely through Razorpay by UPI, card, net banking or wallet.
             </p>
           } @else {
             <p class="pay__note" role="status">
@@ -97,6 +103,15 @@ import { PAYMENT_STATUS_LABEL, postToCheckout, rupees } from './payment-logic';
       margin: 0;
       color: var(--ar-ink-500);
       font-size: 14px;
+    }
+    .pay__test {
+      margin: 0;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: var(--ar-amber-100);
+      color: var(--ar-amber-700);
+      font-size: 13px;
+      font-weight: 500;
     }
     .pay__amount {
       margin: 0;
@@ -173,13 +188,13 @@ export class ArPayPage {
   protected readonly checking = signal(false);
 
   constructor() {
-    void this.load(this.route.snapshot.queryParamMap.get('returned') === '1');
+    void this.load();
   }
 
   protected amount = rupees;
   protected label = (s: PaymentRequestStatus) => PAYMENT_STATUS_LABEL[s];
 
-  private async load(returned: boolean): Promise<void> {
+  private async load(): Promise<void> {
     try {
       this.payment.set(await firstValueFrom(this.api.get(this.token)));
     } catch (e: unknown) {
@@ -192,31 +207,71 @@ export class ArPayPage {
     } finally {
       this.loading.set(false);
     }
-
-    // Back from BillDesk: its webhook may land a moment after the customer does, so look again a few times before saying anything.
-    if (returned && this.payment()?.status === PaymentRequestStatus.Pending) {
-      this.checking.set(true);
-      for (let i = 0; i < 5 && this.payment()?.status === PaymentRequestStatus.Pending; i++) {
-        await new Promise((r) => setTimeout(r, 2000));
-        try {
-          this.payment.set(await firstValueFrom(this.api.get(this.token)));
-        } catch {
-          break;
-        }
-      }
-      this.checking.set(false);
-    }
   }
 
   protected async pay(): Promise<void> {
     this.busy.set(true);
     this.error.set(null);
     try {
-      const checkout = await firstValueFrom(this.api.checkout(this.token));
-      postToCheckout(document, checkout.actionUrl, checkout.fields).submit();
+      const [checkout, Razorpay] = await Promise.all([
+        firstValueFrom(this.api.checkout(this.token)),
+        loadRazorpay(),
+      ]);
+      const window = new Razorpay(
+        payRequestOptions(
+          checkout,
+          (r) => void this.complete(r),
+          () => {
+            // Closed without finishing: a payment may still have gone through, so ask once.
+            this.busy.set(false);
+            void this.refresh();
+          },
+        ),
+      );
+      window.on('payment.failed', () => void this.refresh());
+      window.open();
     } catch (e: unknown) {
       this.error.set(apiMessage(e, 'The payment could not be started. Please try again.'));
       this.busy.set(false);
+    }
+  }
+
+  private async complete(r: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  }): Promise<void> {
+    this.checking.set(true);
+    try {
+      this.payment.set(
+        await firstValueFrom(
+          this.api.complete(this.token, {
+            razorpayPaymentId: r.razorpay_payment_id,
+            razorpayOrderId: r.razorpay_order_id,
+            razorpaySignature: r.razorpay_signature,
+          }),
+        ),
+      );
+      if (this.payment()?.status === PaymentRequestStatus.Pending) {
+        // The bank has not settled it yet: look again a few times before saying anything.
+        for (let i = 0; i < 5 && this.payment()?.status === PaymentRequestStatus.Pending; i++) {
+          await new Promise((res) => setTimeout(res, 2000));
+          await this.refresh();
+        }
+      }
+    } catch (e: unknown) {
+      this.error.set(apiMessage(e, 'Your payment could not be confirmed yet. Refresh this page in a minute.'));
+    } finally {
+      this.checking.set(false);
+      this.busy.set(false);
+    }
+  }
+
+  private async refresh(): Promise<void> {
+    try {
+      this.payment.set(await firstValueFrom(this.api.get(this.token)));
+    } catch {
+      /* keep what is shown */
     }
   }
 }

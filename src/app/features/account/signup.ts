@@ -218,7 +218,8 @@ import { ArCaptcha } from '../../ui/captcha';
       </form>
       <p class="lg__foot">
         MNI Assist — AI Business Engagement Platform for Industrial Companies ·
-        <a routerLink="/privacy" class="lg__foot-link">{{ i18n.t('Privacy policy') }}</a>
+        <a routerLink="/privacy" class="lg__foot-link">{{ i18n.t('Privacy policy') }}</a> ·
+        <a routerLink="/terms" class="lg__foot-link">{{ i18n.t('Terms of service') }}</a>
       </p>
     </div>
   `,

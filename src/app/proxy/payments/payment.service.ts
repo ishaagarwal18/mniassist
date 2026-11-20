@@ -10,27 +10,34 @@ export enum PaymentRequestStatus {
   Cancelled = 4,
 }
 
-export enum BillDeskEnvironment {
-  Uat = 0,
-  Production = 1,
-}
-
+/** The workspace's own Razorpay account. Key secrets are never sent back, only whether one is stored. */
 export interface PaymentGatewayDto {
-  merchantId?: string | null;
-  clientId?: string | null;
-  environment: BillDeskEnvironment;
+  /** Live key id, `rzp_live_…`. */
+  keyId?: string | null;
+  /** Test key id, `rzp_test_…`. */
+  testKeyId?: string | null;
+  /** The test pair is in use: payments are simulated and no money moves. */
+  testMode: boolean;
   enabled: boolean;
-  hasSecret: boolean;
-  webhookUrl: string;
+  hasLiveSecret: boolean;
+  hasTestSecret: boolean;
+  /** Switched on, and both halves of the pair in use are there. */
+  canCollect: boolean;
 }
 
 export interface SetPaymentGatewayInput {
-  merchantId?: string | null;
-  clientId?: string | null;
+  keyId?: string | null;
   /** Only when setting or rotating it; empty keeps the stored one. */
-  secret?: string | null;
-  environment: BillDeskEnvironment;
+  keySecret?: string | null;
+  testKeyId?: string | null;
+  testKeySecret?: string | null;
+  testMode: boolean;
   enabled: boolean;
+}
+
+export interface PaymentGatewayCheckDto {
+  ok: boolean;
+  message: string;
 }
 
 export interface CreatePaymentRequestInput {
@@ -54,6 +61,8 @@ export interface PaymentRequestDto {
   paidAtUtc?: string | null;
   transactionId?: string | null;
   failureReason?: string | null;
+  /** Its latest attempt used the test keys: no real money moved. */
+  isTest: boolean;
   creationTime: string;
 }
 
@@ -73,14 +82,29 @@ export interface PublicPaymentDto {
   canPay: boolean;
   expiresAtUtc: string;
   failureReason?: string | null;
+  /** The seller is on Razorpay's test keys: paying moves no real money. */
+  testMode: boolean;
 }
 
+/** What Razorpay's checkout window needs for one attempt. */
 export interface PaymentCheckoutDto {
-  actionUrl: string;
-  fields: Record<string, string>;
+  keyId: string;
+  orderId: string;
+  amountInPaise: number;
+  currency: string;
+  payeeName: string;
+  description: string;
+  reference: string;
+  testMode: boolean;
 }
 
-/** Payment requests and the workspace's BillDesk account. Routes follow ABP's conventional-controller naming for PaymentAppService. */
+export interface CompletePaymentInput {
+  razorpayPaymentId: string;
+  razorpayOrderId: string;
+  razorpaySignature: string;
+}
+
+/** Payment requests and the workspace's Razorpay account. Routes follow ABP's conventional-controller naming for PaymentAppService. */
 @Injectable({ providedIn: 'root' })
 export class PaymentService {
   private restService = inject(RestService);
@@ -95,6 +119,12 @@ export class PaymentService {
   setGateway = (input: SetPaymentGatewayInput, config?: Partial<Rest.Config>) =>
     this.restService.request<SetPaymentGatewayInput, PaymentGatewayDto>(
       { method: 'POST', url: '/api/auto-reach/payment/set-gateway', body: input },
+      { apiName: this.apiName, ...config },
+    );
+
+  testGateway = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, PaymentGatewayCheckDto>(
+      { method: 'POST', url: '/api/auto-reach/payment/test-gateway' },
       { apiName: this.apiName, ...config },
     );
 
@@ -143,6 +173,12 @@ export class PaymentPublicService {
   checkout = (token: string) =>
     this.restService.request<any, PaymentCheckoutDto>(
       { method: 'POST', url: `/api/payments/public/${token}/checkout` },
+      { apiName: this.apiName, ...this.own },
+    );
+
+  complete = (token: string, input: CompletePaymentInput) =>
+    this.restService.request<CompletePaymentInput, PublicPaymentDto>(
+      { method: 'POST', url: `/api/payments/public/${token}/complete`, body: input },
       { apiName: this.apiName, ...this.own },
     );
 }

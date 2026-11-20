@@ -22,6 +22,9 @@ export interface NavItem {
   /** Shown only for platform host administration. Hidden for tenant workspaces. */
   readonly hostOnly?: boolean;
 
+  /** A `menu` item the host still keeps in the sidebar: the platform team manages its own staff daily. */
+  readonly hostSidebar?: boolean;
+
   /** Shown in tenant workspace mode and to the host administrator. */
   readonly tenantOnly?: boolean;
 
@@ -877,6 +880,7 @@ export const NAV: readonly NavGroup[] = [
         icon: 'user',
         route: '/admin/users',
         menu: 'settings',
+        hostSidebar: true,
         permission: 'AbpIdentity.Users',
       },
       {
@@ -906,6 +910,7 @@ export const NAV: readonly NavGroup[] = [
         icon: 'shield',
         route: '/admin/roles',
         menu: 'settings',
+        hostSidebar: true,
         permission: 'AbpIdentity.Roles',
       },
       {

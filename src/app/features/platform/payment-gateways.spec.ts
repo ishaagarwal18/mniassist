@@ -8,7 +8,7 @@ import {
   PaymentGatewayConfigDto,
   PaymentGatewayConfigService,
 } from '../../proxy/billing/payment-gateway-config.service';
-import { BillDeskEnvironment, PaymentService } from '../../proxy/payments/payment.service';
+import { PaymentService } from '../../proxy/payments/payment.service';
 import { ArPaymentGateways } from './payment-gateways';
 
 @Component({ selector: 'ar-topbar', template: '<ng-content />' })
@@ -21,11 +21,15 @@ const config: PaymentGatewayConfigDto = {
   razorpay: {
     active: true,
     enabled: true,
-    keyId: 'rzp_test_abc123',
-    keyIdSource: 'saved',
     testMode: true,
-    keySecretSource: 'saved',
+    keyId: null,
+    keyIdSource: 'none',
+    keySecretSource: 'none',
     webhookSecretSource: 'none',
+    testKeyId: 'rzp_test_abc123',
+    testKeyIdSource: 'saved',
+    testKeySecretSource: 'saved',
+    testWebhookSecretSource: 'none',
     verifyAmountViaApi: true,
   },
   payU: {
@@ -63,15 +67,6 @@ describe('Payment gateways', () => {
         {
           provide: PaymentService,
           useValue: {
-            getGateway: () =>
-              of({
-                merchantId: '',
-                clientId: '',
-                hasSecret: false,
-                environment: BillDeskEnvironment.Uat,
-                enabled: false,
-                webhookUrl: '',
-              }),
             getList: () => of({ totalCount: 0, items: [] }),
             setGateway: vi.fn(),
             cancel: vi.fn(),
@@ -101,13 +96,17 @@ describe('Payment gateways', () => {
   it('shows each gateway’s state and where its values come from, with secrets left empty', async () => {
     const { root } = await create();
     expect(root.textContent).toContain('Offered at checkout');
+    expect(root.textContent).toContain('Test mode');
     expect(root.textContent).toContain('Test keys');
+    expect(root.textContent).toContain('Live keys');
     expect(root.textContent).toContain('Keys missing');
+    expect(root.textContent).not.toContain('BillDesk');
     expect(root.textContent).toContain('In use from the server configuration: cfgKey');
     expect(root.textContent).toContain('/api/payments/razorpay/webhook');
-    const keyId = root.querySelector<HTMLInputElement>('input[name="rzpKeyId"]')!;
+    const keyId = root.querySelector<HTMLInputElement>('input[name="rzpTestKeyId"]')!;
     expect(keyId.value).toBe('rzp_test_abc123');
-    const secret = root.querySelector<HTMLInputElement>('input[name="rzpKeySecret"]')!;
+    expect(root.querySelector<HTMLInputElement>('input[name="rzpKeyId"]')!.value).toBe('');
+    const secret = root.querySelector<HTMLInputElement>('input[name="rzpTestKeySecret"]')!;
     expect(secret.value).toBe('');
     expect(secret.placeholder).toContain('Saved');
     // A key from the server configuration is not copied into the field, so saving does not pin it.
@@ -116,7 +115,7 @@ describe('Payment gateways', () => {
 
   it('saves Razorpay, sending a secret only when one was typed', async () => {
     const { fixture, root } = await create();
-    const hook = root.querySelector<HTMLInputElement>('input[name="rzpWebhookSecret"]')!;
+    const hook = root.querySelector<HTMLInputElement>('input[name="rzpTestWebhookSecret"]')!;
     hook.value = ' whsec ';
     hook.dispatchEvent(new Event('input'));
     fixture.detectChanges();
@@ -124,17 +123,21 @@ describe('Payment gateways', () => {
     await fixture.whenStable();
     expect(api.updateRazorpay).toHaveBeenCalledWith({
       active: true,
-      keyId: 'rzp_test_abc123',
+      testMode: true,
+      keyId: '',
       keySecret: null,
-      webhookSecret: 'whsec',
+      webhookSecret: null,
+      testKeyId: 'rzp_test_abc123',
+      testKeySecret: null,
+      testWebhookSecret: 'whsec',
       verifyAmountViaApi: true,
     });
   });
 
-  it('refuses a key id that is not a Razorpay key before sending anything', async () => {
+  it('refuses a key in the wrong slot before sending anything', async () => {
     const { fixture, root } = await create();
     const keyId = root.querySelector<HTMLInputElement>('input[name="rzpKeyId"]')!;
-    keyId.value = 'sk_live_123';
+    keyId.value = 'rzp_test_123';
     keyId.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     button(root, 'Save Razorpay').click();
@@ -155,10 +158,14 @@ describe('Payment gateways', () => {
     await new Promise((resolve) => setTimeout(resolve));
     expect(api.updateRazorpay).toHaveBeenCalledWith({
       active: true,
-      keyId: 'rzp_test_abc123',
+      testMode: true,
+      keyId: '',
+      testKeyId: 'rzp_test_abc123',
       verifyAmountViaApi: true,
-      clearKeySecret: true,
+      clearKeySecret: false,
       clearWebhookSecret: false,
+      clearTestKeySecret: true,
+      clearTestWebhookSecret: false,
     });
   });
 

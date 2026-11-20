@@ -1,4 +1,4 @@
-import { PaymentRequestStatus } from '../../proxy/payments/payment.service';
+import { PaymentRequestStatus, type PaymentCheckoutDto } from '../../proxy/payments/payment.service';
 
 export const PAYMENT_STATUS_LABEL: Record<PaymentRequestStatus, string> = {
   [PaymentRequestStatus.Pending]: 'Awaiting payment',
@@ -30,7 +30,7 @@ export function amountProblem(text: string): string | null {
   return null;
 }
 
-/** The form that sends the customer's browser to BillDesk's checkout, built off-screen and submitted. */
+/** A form that sends the browser to a hosted checkout (PayU's), built off-screen and submitted. */
 export function postToCheckout(
   doc: Document,
   actionUrl: string,
@@ -49,4 +49,24 @@ export function postToCheckout(
   }
   doc.body.appendChild(form);
   return form;
+}
+
+/** Razorpay Checkout's options for a customer paying a payment request. */
+export function payRequestOptions(
+  c: PaymentCheckoutDto,
+  handler: (r: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => void,
+  onDismiss: () => void,
+) {
+  return {
+    key: c.keyId,
+    order_id: c.orderId,
+    amount: c.amountInPaise,
+    currency: c.currency || 'INR',
+    name: c.payeeName,
+    description: `${c.description} (${c.reference})`,
+    notes: { reference: c.reference },
+    theme: { color: '#0f766e' },
+    handler,
+    modal: { ondismiss: onDismiss },
+  };
 }

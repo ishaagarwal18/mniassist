@@ -895,7 +895,7 @@ export const SALES_TOPICS: Readonly<Record<string, HelpTopic>> = {
     fields: [
       { name: 'Portal on', text: 'Customers can open their links and send requests only while this is on.' },
       { name: 'Send for quotation', text: 'A request becomes a draft quotation for your team to check and issue.' },
-      { name: 'Order and pay', text: 'The quotation is issued at once and paid on a BillDesk link; paying marks it won and issues the stock. Needs payments on the plan.' },
+      { name: 'Order and pay', text: 'The quotation is issued at once and paid on a Razorpay link; paying marks it won and issues the stock. Needs payments on the plan and a Razorpay account in Settings › Payments.' },
       { name: 'Heading on the page / A line under it', text: 'What customers see at the top of their page.' },
       { name: 'Links work for (days)', text: 'How long each link stays valid.' },
       { name: 'Minimum order, ₹', text: 'The smallest request a customer can send.' },

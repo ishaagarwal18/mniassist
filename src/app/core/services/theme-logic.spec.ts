@@ -34,6 +34,7 @@ describe('theme', () => {
       '/reorder/acme',
       '/catalogue/acme',
       '/privacy',
+      '/terms',
       '/field',
       '/?x=1',
     ]) {

@@ -708,7 +708,7 @@ ${text}`
     }
   }
 
-  // ---- Payment requests (BillDesk) -----------------------------------------------------------------------------------
+  // ---- Payment requests (Razorpay) -----------------------------------------------------------------------------------
 
   private readonly paymentsApi = inject(PaymentService);
   protected readonly canRequestPayment = grantedPolicy(

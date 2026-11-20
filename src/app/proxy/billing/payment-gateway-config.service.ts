@@ -8,11 +8,18 @@ export interface RazorpayConfigDto {
   active: boolean;
   /** Offered at checkout now: switched on and both keys present. */
   enabled: boolean;
+  /** The test pair is in use: payments are simulated and no money moves. */
+  testMode: boolean;
+  /** Live key id, `rzp_live_…`. */
   keyId?: string | null;
   keyIdSource: PaymentConfigSource;
-  testMode: boolean;
   keySecretSource: PaymentConfigSource;
   webhookSecretSource: PaymentConfigSource;
+  /** Test key id, `rzp_test_…`. */
+  testKeyId?: string | null;
+  testKeyIdSource: PaymentConfigSource;
+  testKeySecretSource: PaymentConfigSource;
+  testWebhookSecretSource: PaymentConfigSource;
   verifyAmountViaApi: boolean;
 }
 
@@ -34,13 +41,21 @@ export interface PaymentGatewayConfigDto {
 
 export interface UpdateRazorpayConfigInput {
   active: boolean;
-  /** Empty: use the server configuration's key id, if any. */
+  /** Use the test pair instead of the live one. */
+  testMode: boolean;
+  /** Live key id. Empty: use the server configuration's, if any. */
   keyId?: string | null;
   /** Empty keeps the stored secret. */
   keySecret?: string | null;
   clearKeySecret?: boolean;
   webhookSecret?: string | null;
   clearWebhookSecret?: boolean;
+  /** Test key id. Empty: use the server configuration's, if any. */
+  testKeyId?: string | null;
+  testKeySecret?: string | null;
+  clearTestKeySecret?: boolean;
+  testWebhookSecret?: string | null;
+  clearTestWebhookSecret?: boolean;
   verifyAmountViaApi: boolean;
 }
 

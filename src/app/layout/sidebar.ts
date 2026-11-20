@@ -443,13 +443,18 @@ export class ArSidebar {
       .map((r) => byRoute.get(r))
       .filter((i): i is NavItem => Boolean(i));
     const daily = allowed
-      .map((group) => ({ ...group, items: group.items.filter((i) => !i.menu) }))
+      .map((group) => ({ ...group, items: group.items.filter((i) => !this.offSidebar(i)) }))
       .filter((group) => group.items.length > 0);
     if (favourites.length === 0) return daily;
     const fav: NavGroup = { heading: FAVOURITES, items: favourites };
     // After the heading-less top (Home, Tasks…), before the departments.
     return daily[0] && !daily[0].heading ? [daily[0], fav, ...daily.slice(1)] : [fav, ...daily];
   });
+
+  /** Kept on its hub page (Settings, All reports) rather than in the sidebar. */
+  private offSidebar(item: NavItem): boolean {
+    return !!item.menu && !(item.hostSidebar && this.account.isHost());
+  }
 
   protected isFavourite(item: NavItem): boolean {
     return this.favouriteRoutes().includes(item.route);
@@ -540,7 +545,9 @@ export class ArSidebar {
       }
     }
     if (!best) return '';
-    if (best.menu && !this.favouriteRoutes().includes(best.route)) return HUB_ROUTE[best.menu];
+    if (best.menu && this.offSidebar(best) && !this.favouriteRoutes().includes(best.route)) {
+      return HUB_ROUTE[best.menu];
+    }
     return best.route;
   });
 

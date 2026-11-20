@@ -29,7 +29,7 @@
           var isPublic =
             p === '/' ||
             /^\/(sign|f|pay|t|r|reorder|catalogue)\//.test(p) ||
-            /^\/(privacy|field)(\/|$)/.test(p);
+            /^\/(privacy|terms|field)(\/|$)/.test(p);
           if (localStorage.getItem('ar.theme') === 'dark' && !isPublic) {
             document.documentElement.setAttribute('data-theme', 'dark');
           }

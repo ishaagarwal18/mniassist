@@ -19,7 +19,7 @@ const day = 86_400_000;
 
 /**
  * Q4: unpaid ERP invoices, chased on WhatsApp. Reminders go out 3 days before the due date and at 7 and 15 days overdue with the
- * amount, the invoice number and (when BillDesk is connected) a pay link. They stop when the ERP sync reads the invoice back as paid.
+ * amount, the invoice number and (when Razorpay is connected) a pay link. They stop when the ERP sync reads the invoice back as paid.
  */
 @Component({
   selector: 'ar-collections',

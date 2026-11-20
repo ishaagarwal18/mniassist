@@ -1,4 +1,4 @@
-import { amountProblem, postToCheckout, rupees } from './payment-logic';
+import { amountProblem, payRequestOptions, postToCheckout, rupees } from './payment-logic';
 
 describe('payment helpers', () => {
   it('formats rupees with Indian grouping and two decimals', () => {
@@ -17,17 +17,43 @@ describe('payment helpers', () => {
 
   it('builds a hidden form posting each field to the checkout', () => {
     const form = postToCheckout(document, 'https://pay.example/checkout', {
-      mercid: 'M1',
-      bdorderid: 'BD1',
-      rdata: 'x',
+      key: 'M1',
+      txnid: 'T1',
+      hash: 'x',
     });
     expect(form.method.toLowerCase()).toBe('post');
     expect(form.action).toBe('https://pay.example/checkout');
     expect(Array.from(form.querySelectorAll('input')).map((i) => `${i.name}=${i.value}`)).toEqual([
-      'mercid=M1',
-      'bdorderid=BD1',
-      'rdata=x',
+      'key=M1',
+      'txnid=T1',
+      'hash=x',
     ]);
     form.remove();
+  });
+
+  it('opens Razorpay on the order made for this attempt, with the seller named and the reference shown', () => {
+    const handler = () => undefined;
+    const o = payRequestOptions(
+      {
+        keyId: 'rzp_test_A',
+        orderId: 'order_1',
+        amountInPaise: 150000,
+        currency: 'INR',
+        payeeName: 'Vertex Drives',
+        description: 'Advance',
+        reference: 'PAY-2026-0001',
+        testMode: true,
+      },
+      handler,
+      () => undefined,
+    );
+    expect(o).toMatchObject({
+      key: 'rzp_test_A',
+      order_id: 'order_1',
+      amount: 150000,
+      name: 'Vertex Drives',
+      description: 'Advance (PAY-2026-0001)',
+    });
+    expect(o.handler).toBe(handler);
   });
 });

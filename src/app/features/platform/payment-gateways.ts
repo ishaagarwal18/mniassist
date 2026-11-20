@@ -12,8 +12,6 @@ import {
   PaymentGatewayTestResultDto,
 } from '../../proxy/billing/payment-gateway-config.service';
 import {
-  BillDeskEnvironment,
-  PaymentGatewayDto,
   PaymentRequestDto,
   PaymentRequestStatus,
   PaymentService,
@@ -34,12 +32,16 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
   [PaymentRequestStatus.Cancelled]: 'neutral',
 };
 
-/** The Razorpay form as entered. Secrets start empty: the server never sends them back. */
+/** The Razorpay form as entered: both key pairs and which is in use. Secrets start empty: the server never sends them back. */
 interface RazorpayForm {
   active: boolean;
+  testMode: boolean;
   keyId: string;
   keySecret: string;
   webhookSecret: string;
+  testKeyId: string;
+  testKeySecret: string;
+  testWebhookSecret: string;
   verifyAmountViaApi: boolean;
 }
 
@@ -50,11 +52,25 @@ interface PayUForm {
   testMode: boolean;
 }
 
-type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
+type SecretField =
+  | 'keySecret'
+  | 'webhookSecret'
+  | 'testKeySecret'
+  | 'testWebhookSecret'
+  | 'merchantSalt';
+
+const SECRET_LABEL: Record<SecretField, string> = {
+  keySecret: 'live Razorpay key secret',
+  webhookSecret: 'live Razorpay webhook secret',
+  testKeySecret: 'test Razorpay key secret',
+  testWebhookSecret: 'test Razorpay webhook secret',
+  merchantSalt: 'PayU salt',
+};
 
 /**
- * Platform › Payment gateways: Platform gateway configuration for Razorpay and PayU, plus BillDesk merchant
- * collections and customer payment requests raised from conversations.
+ * Platform › Payment gateways: the platform's own Razorpay (test and live key pairs) and PayU accounts, which workspaces pay the
+ * platform through, and the payment requests raised from the platform's own conversations. Each workspace connects its own
+ * Razorpay account for collecting from its customers under Settings › Payments.
  */
 @Component({
   selector: 'ar-payment-gateways',
@@ -63,7 +79,7 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
   template: `
     <ar-topbar
       title="Payment gateways"
-      help="Manage checkout payment accounts (Razorpay, PayU) and customer collection gateways (BillDesk)."
+      help="The platform's own Razorpay and PayU accounts, which workspaces pay the platform through. Razorpay keeps a test and a live key pair; the switch says which is in use."
     />
     <div class="pg-nav">
       <ar-tabs [tabs]="tabs" [(active)]="activeTab" />
@@ -92,11 +108,9 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
               } @else {
                 <ar-chip tone="warn" [dot]="true">Keys missing</ar-chip>
               }
-              @if (c.razorpay.keyId) {
-                <ar-chip [tone]="c.razorpay.testMode ? 'amber' : 'teal'">{{
-                  c.razorpay.testMode ? 'Test keys' : 'Live keys'
-                }}</ar-chip>
-              }
+              <ar-chip [tone]="c.razorpay.testMode ? 'amber' : 'teal'">{{
+                c.razorpay.testMode ? 'Test mode' : 'Live mode'
+              }}</ar-chip>
             </header>
             <p>
               UPI, cards, net banking and wallets. Keys are on Razorpay's dashboard under Account
@@ -113,6 +127,75 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
                 />
                 Offer Razorpay at checkout
               </label>
+              <div class="mode" role="radiogroup" aria-label="Which Razorpay keys to use">
+                <label class="mode__opt" [class.mode__opt--on]="rzp.testMode">
+                  <input type="radio" name="rzpMode" [value]="true" [(ngModel)]="rzp.testMode" [disabled]="busy()" />
+                  <span><strong>Test</strong> <small>Simulated payments. No real money.</small></span>
+                </label>
+                <label class="mode__opt" [class.mode__opt--on]="!rzp.testMode">
+                  <input type="radio" name="rzpMode" [value]="false" [(ngModel)]="rzp.testMode" [disabled]="busy()" />
+                  <span><strong>Live</strong> <small>Real payments into the platform's account.</small></span>
+                </label>
+              </div>
+              <fieldset class="pair" [class.pair--active]="rzp.testMode">
+                <legend>Test keys</legend>
+              <label class="ar-field">
+                <span>Key id</span>
+                <input
+                  class="ar-field__input"
+                  name="rzpTestKeyId"
+                  autocomplete="off"
+                  spellcheck="false"
+                  translate="no"
+                  placeholder="rzp_test_…"
+                  [(ngModel)]="rzp.testKeyId"
+                  [disabled]="busy()"
+                />
+                <small>{{ sourceText(c.razorpay.testKeyIdSource, 'test key id') }}</small>
+              </label>
+              <label class="ar-field">
+                <span>Key secret</span>
+                <input
+                  class="ar-field__input"
+                  type="password"
+                  name="rzpTestKeySecret"
+                  autocomplete="new-password"
+                  [placeholder]="secretPlaceholder(c.razorpay.testKeySecretSource)"
+                  [(ngModel)]="rzp.testKeySecret"
+                  [disabled]="busy()"
+                />
+                <small>{{ sourceText(c.razorpay.testKeySecretSource, 'key secret') }}</small>
+              </label>
+              @if (c.razorpay.testKeySecretSource === 'saved') {
+                <div class="inline">
+                  <button ar-button variant="quiet" type="button" [disabled]="busy()" (click)="clearSecret('testKeySecret')">
+                    Remove saved key secret
+                  </button>
+                </div>
+              }
+              <label class="ar-field">
+                <span>Webhook secret</span>
+                <input
+                  class="ar-field__input"
+                  type="password"
+                  name="rzpTestWebhookSecret"
+                  autocomplete="new-password"
+                  [placeholder]="secretPlaceholder(c.razorpay.testWebhookSecretSource)"
+                  [(ngModel)]="rzp.testWebhookSecret"
+                  [disabled]="busy()"
+                />
+                <small>{{ sourceText(c.razorpay.testWebhookSecretSource, 'webhook secret') }}</small>
+              </label>
+              @if (c.razorpay.testWebhookSecretSource === 'saved') {
+                <div class="inline">
+                  <button ar-button variant="quiet" type="button" [disabled]="busy()" (click)="clearSecret('testWebhookSecret')">
+                    Remove saved webhook secret
+                  </button>
+                </div>
+              }
+              </fieldset>
+              <fieldset class="pair" [class.pair--active]="!rzp.testMode">
+                <legend>Live keys</legend>
               <label class="ar-field">
                 <span>Key id</span>
                 <input
@@ -121,7 +204,7 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
                   autocomplete="off"
                   spellcheck="false"
                   translate="no"
-                  placeholder="rzp_live_… or rzp_test_…"
+                  placeholder="rzp_live_…"
                   [(ngModel)]="rzp.keyId"
                   [disabled]="busy()"
                 />
@@ -142,13 +225,7 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
               </label>
               @if (c.razorpay.keySecretSource === 'saved') {
                 <div class="inline">
-                  <button
-                    ar-button
-                    variant="quiet"
-                    type="button"
-                    [disabled]="busy()"
-                    (click)="clearSecret('keySecret')"
-                  >
+                  <button ar-button variant="quiet" type="button" [disabled]="busy()" (click)="clearSecret('keySecret')">
                     Remove saved key secret
                   </button>
                 </div>
@@ -168,20 +245,15 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
               </label>
               @if (c.razorpay.webhookSecretSource === 'saved') {
                 <div class="inline">
-                  <button
-                    ar-button
-                    variant="quiet"
-                    type="button"
-                    [disabled]="busy()"
-                    (click)="clearSecret('webhookSecret')"
-                  >
+                  <button ar-button variant="quiet" type="button" [disabled]="busy()" (click)="clearSecret('webhookSecret')">
                     Remove saved webhook secret
                   </button>
                 </div>
               }
+              </fieldset>
               @if (c.razorpayWebhookUrl) {
                 <p class="hook">
-                  Webhook URL for your Razorpay dashboard:
+                  Webhook URL for your Razorpay dashboard (both modes):
                   <code>{{ c.razorpayWebhookUrl }}</code>
                   <button
                     ar-button
@@ -332,116 +404,6 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
             }
           </section>
 
-          <section class="card" aria-labelledby="pg-billdesk">
-            <header class="head">
-              <h2 id="pg-billdesk" translate="no">BillDesk collections</h2>
-              <ar-chip [tone]="billDeskEnabled() ? 'good' : 'neutral'" [dot]="true">
-                {{ billDeskEnabled() ? 'Collecting active' : 'Not collecting yet' }}
-              </ar-chip>
-              <ar-chip [tone]="billDeskEnvironment() === Env.Uat ? 'amber' : 'teal'">
-                {{ billDeskEnvironment() === Env.Uat ? 'Sandbox (UAT)' : 'Live Production' }}
-              </ar-chip>
-            </header>
-            <p>
-              Collect payments from customer conversations in WhatsApp inbox via BillDesk's secure
-              checkout.
-            </p>
-
-            <div class="fields">
-              <label class="check">
-                <input
-                  type="checkbox"
-                  [checked]="billDeskEnabled()"
-                  (change)="billDeskEnabled.set($any($event.target).checked)"
-                />
-                Enable customer payment requests via BillDesk
-              </label>
-              <label class="ar-field">
-                <span>System environment</span>
-                <select
-                  class="ar-field__input"
-                  (change)="billDeskEnvironment.set(+$any($event.target).value)"
-                >
-                  <option [value]="Env.Uat" [selected]="billDeskEnvironment() === Env.Uat">
-                    Test (UAT) - Sandbox
-                  </option>
-                  <option
-                    [value]="Env.Production"
-                    [selected]="billDeskEnvironment() === Env.Production"
-                  >
-                    Live Production
-                  </option>
-                </select>
-              </label>
-              <label class="ar-field">
-                <span>Merchant ID</span>
-                <input
-                  class="ar-field__input ar-mono"
-                  placeholder="e.g. BD_MERCHANT_ID"
-                  [value]="billDeskMerchantId()"
-                  (input)="billDeskMerchantId.set($any($event.target).value)"
-                />
-              </label>
-              <label class="ar-field">
-                <span>Client ID</span>
-                <input
-                  class="ar-field__input ar-mono"
-                  placeholder="e.g. BD_CLIENT_ID"
-                  [value]="billDeskClientId()"
-                  (input)="billDeskClientId.set($any($event.target).value)"
-                />
-              </label>
-              <label class="ar-field">
-                <span
-                  >Signing secret
-                  @if (billDeskHasSecret()) {
-                    <small>(Stored - leave blank to keep)</small>
-                  }
-                </span>
-                <input
-                  type="password"
-                  autocomplete="off"
-                  class="ar-field__input"
-                  [placeholder]="
-                    billDeskHasSecret() ? 'Saved. Leave empty to keep it' : 'Enter signing secret'
-                  "
-                  [value]="billDeskSecret()"
-                  (input)="billDeskSecret.set($any($event.target).value)"
-                />
-              </label>
-              @if (billDeskWebhookUrl()) {
-                <p class="hook">
-                  BillDesk Webhook URL:
-                  <code>{{ billDeskWebhookUrl() }}</code>
-                  <button
-                    ar-button
-                    variant="quiet"
-                    type="button"
-                    (click)="copy(billDeskWebhookUrl()!)"
-                  >
-                    Copy
-                  </button>
-                </p>
-              }
-              <div class="actions">
-                <button
-                  ar-button
-                  type="button"
-                  variant="primary"
-                  [disabled]="savingBillDesk()"
-                  (click)="saveBillDesk()"
-                >
-                  {{ savingBillDesk() ? 'Saving…' : 'Save BillDesk account' }}
-                </button>
-              </div>
-            </div>
-            @if (billDeskNotice(); as n) {
-              <p class="test test--ok">{{ n }}</p>
-            }
-            @if (billDeskError(); as e) {
-              <p class="test test--bad">{{ e }}</p>
-            }
-          </section>
         }
       } @else if (activeTab() === 'Payment requests') {
         <section class="card card--full">
@@ -578,6 +540,50 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
       border-radius: 4px;
       font-size: 11.5px;
     }
+    .mode {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.5rem;
+    }
+    .mode__opt {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
+      font: 400 13px/1.4 var(--ar-font-sans);
+      color: var(--ar-ink-800);
+      cursor: pointer;
+    }
+    .mode__opt--on {
+      border-color: var(--ar-teal-600);
+      background: var(--ar-bg-50);
+    }
+    .mode__opt small {
+      display: block;
+      font-size: 12px;
+      color: var(--ar-ink-500);
+    }
+    .pair {
+      margin: 0;
+      padding: 0.6rem 0.75rem 0.75rem;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      opacity: 0.75;
+    }
+    .pair--active {
+      opacity: 1;
+      border-color: var(--ar-teal-600);
+    }
+    .pair legend {
+      padding: 0 4px;
+      font: 600 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
     .actions {
       display: flex;
       justify-content: flex-end;
@@ -628,9 +634,13 @@ export class ArPaymentGateways implements OnInit {
 
   protected readonly rzp: RazorpayForm = {
     active: false,
+    testMode: true,
     keyId: '',
     keySecret: '',
     webhookSecret: '',
+    testKeyId: '',
+    testKeySecret: '',
+    testWebhookSecret: '',
     verifyAmountViaApi: true,
   };
 
@@ -641,21 +651,9 @@ export class ArPaymentGateways implements OnInit {
     testMode: true,
   };
 
-  // BillDesk state
-  protected readonly Env = BillDeskEnvironment;
   protected readonly Status = PaymentRequestStatus;
   protected readonly money = rupees;
-  protected readonly billDeskMerchantId = signal('');
-  protected readonly billDeskClientId = signal('');
-  protected readonly billDeskSecret = signal('');
-  protected readonly billDeskHasSecret = signal(false);
-  protected readonly billDeskEnvironment = signal(BillDeskEnvironment.Uat);
-  protected readonly billDeskEnabled = signal(false);
-  protected readonly billDeskWebhookUrl = signal<string | null>(null);
   protected readonly paymentRequests = signal<PaymentRequestDto[]>([]);
-  protected readonly savingBillDesk = signal(false);
-  protected readonly billDeskNotice = signal<string | null>(null);
-  protected readonly billDeskError = signal<string | null>(null);
 
   protected toneOf(status: PaymentRequestStatus): ChipTone {
     return STATUS_TONE[status] ?? 'neutral';
@@ -674,7 +672,7 @@ export class ArPaymentGateways implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    await Promise.all([this.loadConfig(), this.loadBillDesk()]);
+    await Promise.all([this.loadConfig(), this.loadRequests()]);
   }
 
   private async loadConfig(): Promise<void> {
@@ -685,46 +683,12 @@ export class ArPaymentGateways implements OnInit {
     }
   }
 
-  private async loadBillDesk(): Promise<void> {
+  private async loadRequests(): Promise<void> {
     try {
-      const g = await firstValueFrom(this.paymentService.getGateway());
-      this.billDeskMerchantId.set(g.merchantId ?? '');
-      this.billDeskClientId.set(g.clientId ?? '');
-      this.billDeskHasSecret.set(g.hasSecret);
-      this.billDeskEnvironment.set(g.environment);
-      this.billDeskEnabled.set(g.enabled);
-      this.billDeskWebhookUrl.set(g.webhookUrl);
-
       const page = await firstValueFrom(this.paymentService.getList({ maxResultCount: 100 }));
       this.paymentRequests.set(page.items ?? []);
-    } catch (e: unknown) {
+    } catch {
       this.paymentRequests.set([]);
-      this.billDeskError.set(readApiError(e, 'The BillDesk settings could not be loaded.'));
-    }
-  }
-
-  protected async saveBillDesk(): Promise<void> {
-    this.savingBillDesk.set(true);
-    this.billDeskNotice.set(null);
-    this.billDeskError.set(null);
-    try {
-      const g = await firstValueFrom(
-        this.paymentService.setGateway({
-          merchantId: this.billDeskMerchantId().trim() || null,
-          clientId: this.billDeskClientId().trim() || null,
-          secret: this.billDeskSecret().trim() || null,
-          environment: this.billDeskEnvironment(),
-          enabled: this.billDeskEnabled(),
-        }),
-      );
-      this.billDeskSecret.set('');
-      this.billDeskHasSecret.set(g.hasSecret);
-      this.billDeskEnabled.set(g.enabled);
-      this.billDeskNotice.set('BillDesk merchant settings saved successfully.');
-    } catch (e: unknown) {
-      this.billDeskError.set(apiMessage(e, 'The BillDesk account could not be saved.'));
-    } finally {
-      this.savingBillDesk.set(false);
     }
   }
 
@@ -741,9 +705,13 @@ export class ArPaymentGateways implements OnInit {
   private show(c: PaymentGatewayConfigDto): void {
     this.config.set(c);
     this.rzp.active = c.razorpay.active;
+    this.rzp.testMode = c.razorpay.testMode;
     this.rzp.keyId = c.razorpay.keyIdSource === 'saved' ? (c.razorpay.keyId ?? '') : '';
+    this.rzp.testKeyId = c.razorpay.testKeyIdSource === 'saved' ? (c.razorpay.testKeyId ?? '') : '';
     this.rzp.keySecret = '';
     this.rzp.webhookSecret = '';
+    this.rzp.testKeySecret = '';
+    this.rzp.testWebhookSecret = '';
     this.rzp.verifyAmountViaApi = c.razorpay.verifyAmountViaApi;
 
     this.payu.active = c.payU.active;
@@ -758,9 +726,11 @@ export class ArPaymentGateways implements OnInit {
       const value =
         what === 'key id'
           ? c?.razorpay.keyId
-          : what === 'merchant key'
-            ? c?.payU.merchantKey
-            : null;
+          : what === 'test key id'
+            ? c?.razorpay.testKeyId
+            : what === 'merchant key'
+              ? c?.payU.merchantKey
+              : null;
       return value
         ? `In use from the server configuration: ${value}. Enter one here to replace it.`
         : `The server configuration's ${what} is in use. Enter one here to replace it.`;
@@ -778,8 +748,13 @@ export class ArPaymentGateways implements OnInit {
   protected async saveRazorpay(): Promise<void> {
     if (this.busy()) return;
     const keyId = this.rzp.keyId.trim();
-    if (keyId && !/^rzp_(test|live)_[A-Za-z0-9]+$/.test(keyId)) {
-      this.toasts.error('A Razorpay key id starts rzp_test_ or rzp_live_.', 'Check the key id');
+    const testKeyId = this.rzp.testKeyId.trim();
+    if (keyId && !/^rzp_live_[A-Za-z0-9]+$/.test(keyId)) {
+      this.toasts.error('A live Razorpay key id starts rzp_live_.', 'Check the live key id');
+      return;
+    }
+    if (testKeyId && !/^rzp_test_[A-Za-z0-9]+$/.test(testKeyId)) {
+      this.toasts.error('A test Razorpay key id starts rzp_test_.', 'Check the test key id');
       return;
     }
     await this.run(async () => {
@@ -787,9 +762,13 @@ export class ArPaymentGateways implements OnInit {
         await firstValueFrom(
           this.api.updateRazorpay({
             active: this.rzp.active,
+            testMode: this.rzp.testMode,
             keyId,
             keySecret: this.rzp.keySecret.trim() || null,
             webhookSecret: this.rzp.webhookSecret.trim() || null,
+            testKeyId,
+            testKeySecret: this.rzp.testKeySecret.trim() || null,
+            testWebhookSecret: this.rzp.testWebhookSecret.trim() || null,
             verifyAmountViaApi: this.rzp.verifyAmountViaApi,
           }),
         ),
@@ -825,12 +804,7 @@ export class ArPaymentGateways implements OnInit {
   protected async clearSecret(field: SecretField): Promise<void> {
     const c = this.config();
     if (this.busy() || !c) return;
-    const label =
-      field === 'keySecret'
-        ? 'Razorpay key secret'
-        : field === 'webhookSecret'
-          ? 'Razorpay webhook secret'
-          : 'PayU salt';
+    const label = SECRET_LABEL[field];
     const ok = await this.dialogs.confirm({
       title: `Remove the saved ${label}?`,
       message:
@@ -850,10 +824,14 @@ export class ArPaymentGateways implements OnInit {
             })
           : this.api.updateRazorpay({
               active: c.razorpay.active,
+              testMode: c.razorpay.testMode,
               keyId: c.razorpay.keyIdSource === 'saved' ? c.razorpay.keyId : '',
+              testKeyId: c.razorpay.testKeyIdSource === 'saved' ? c.razorpay.testKeyId : '',
               verifyAmountViaApi: c.razorpay.verifyAmountViaApi,
               clearKeySecret: field === 'keySecret',
               clearWebhookSecret: field === 'webhookSecret',
+              clearTestKeySecret: field === 'testKeySecret',
+              clearTestWebhookSecret: field === 'testWebhookSecret',
             }),
       );
       this.show(saved);

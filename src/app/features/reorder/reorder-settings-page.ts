@@ -76,13 +76,13 @@ import { REORDER_PAGE_STYLES, problem } from './reorder-pages';
               <span
                 ><b>Order and pay</b>
                 <small
-                  >The quotation is issued at once and the customer pays on a BillDesk link; paying
+                  >The quotation is issued at once and the customer pays on a Razorpay link; paying
                   marks it won and issues the stock. A request with a part that has no price goes to
                   your team as a draft instead.</small
                 >
                 @if (!settings()?.paymentsReady) {
                   <small class="mode__off"
-                    >Needs payment links: payments on the plan and a BillDesk account that is set up
+                    >Needs payment links: payments on the plan and a Razorpay account that is set up
                     and switched on.</small
                   >
                 }

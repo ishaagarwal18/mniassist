@@ -11,7 +11,7 @@ export function parseTheme(raw: string | null | undefined): Theme {
 /**
  * Whether a path follows the user's theme choice. Public pages a customer opens
  * (the front page, pay, sign a quote, re-order, catalogue, ticket and form pages,
- * privacy) and the offline field app have fixed light designs and always stay
+ * privacy, terms) and the offline field app have fixed light designs and always stay
  * light. The app, sign-in and sign-up follow the choice.
  *
  * index.html repeats this rule inline to apply the theme before Angular boots;
@@ -21,6 +21,6 @@ export function isThemedPath(path: string): boolean {
   const p = path.split(/[?#]/)[0] || '/';
   if (p === '/' || p === '') return false;
   if (/^\/(sign|f|pay|t|r|reorder|catalogue)\//.test(p)) return false;
-  if (/^\/(privacy|field)(\/|$)/.test(p)) return false;
+  if (/^\/(privacy|terms|field)(\/|$)/.test(p)) return false;
   return true;
 }

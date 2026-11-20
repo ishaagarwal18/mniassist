@@ -54,12 +54,36 @@ export interface RazorpayResponse {
   razorpay_signature: string;
 }
 
-interface RazorpayInstance {
+export interface RazorpayInstance {
   open(): void;
   on(event: 'payment.failed', cb: (e: unknown) => void): void;
 }
 
-type RazorpayCtor = new (options: ReturnType<typeof razorpayOptions>) => RazorpayInstance;
+export type RazorpayCtor = new (options: object) => RazorpayInstance;
+
+let razorpayLoad: Promise<RazorpayCtor> | null = null;
+
+/** Razorpay's checkout script, loaded once and only when someone pays: the platform's checkout and a customer's pay page share it. */
+export function loadRazorpay(): Promise<RazorpayCtor> {
+  const existing = (window as unknown as { Razorpay?: RazorpayCtor }).Razorpay;
+  if (existing) return Promise.resolve(existing);
+  razorpayLoad ??= new Promise<RazorpayCtor>((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = RAZORPAY_SCRIPT;
+    s.async = true;
+    s.onload = () => {
+      const ctor = (window as unknown as { Razorpay?: RazorpayCtor }).Razorpay;
+      if (ctor) resolve(ctor);
+      else reject(new Error('Razorpay did not load.'));
+    };
+    s.onerror = () => {
+      razorpayLoad = null;
+      reject(new Error('Razorpay could not be reached.'));
+    };
+    document.head.appendChild(s);
+  });
+  return razorpayLoad;
+}
 
 /**
  * Takes a workspace through paying the platform (M11-7): asks which gateway when more than
@@ -71,7 +95,6 @@ type RazorpayCtor = new (options: ReturnType<typeof razorpayOptions>) => Razorpa
 export class PlatformCheckoutRunner {
   private readonly api = inject(PlatformCheckoutService);
   private readonly dialogs = inject(ConfirmService);
-  private scriptLoad: Promise<RazorpayCtor> | null = null;
 
   async gateways(): Promise<CheckoutGatewayDto[]> {
     try {
@@ -106,7 +129,7 @@ export class PlatformCheckoutRunner {
       return 'redirected';
     }
 
-    const Razorpay = await this.loadRazorpay();
+    const Razorpay = await loadRazorpay();
     return new Promise<CheckoutOutcome>((resolve) => {
       let settled = false;
       const done = (o: CheckoutOutcome) => {
@@ -139,26 +162,5 @@ export class PlatformCheckoutRunner {
       instance.on('payment.failed', () => done('failed'));
       instance.open();
     });
-  }
-
-  private loadRazorpay(): Promise<RazorpayCtor> {
-    const existing = (window as unknown as { Razorpay?: RazorpayCtor }).Razorpay;
-    if (existing) return Promise.resolve(existing);
-    this.scriptLoad ??= new Promise<RazorpayCtor>((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = RAZORPAY_SCRIPT;
-      s.async = true;
-      s.onload = () => {
-        const ctor = (window as unknown as { Razorpay?: RazorpayCtor }).Razorpay;
-        if (ctor) resolve(ctor);
-        else reject(new Error('Razorpay did not load.'));
-      };
-      s.onerror = () => {
-        this.scriptLoad = null;
-        reject(new Error('Razorpay could not be reached.'));
-      };
-      document.head.appendChild(s);
-    });
-    return this.scriptLoad;
   }
 }

@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
 import {
-  BillDeskEnvironment,
+  PaymentGatewayDto,
   PaymentRequestDto,
   PaymentRequestStatus,
   PaymentService,
@@ -27,8 +27,8 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
 };
 
 /**
- * Collecting payment from customers: the workspace's own BillDesk merchant account (where the money goes), and every request
- * sent from a conversation with where it stands. Requests themselves are raised from the inbox, next to the customer.
+ * Collecting payment from customers: the workspace's own Razorpay account (where the money goes) with its test and live key
+ * pairs, and every request sent from a conversation with where it stands. Requests themselves are raised from the inbox.
  */
 @Component({
   selector: 'ar-payments-settings',
@@ -37,65 +37,104 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
   template: `
     <ar-topbar
       title="Payments"
-      [subtitle]="enabled() ? 'Collecting through BillDesk' : 'Not collecting yet'"
-      help="Send a customer a payment link from their conversation in the inbox. They pay on BillDesk's secure page by UPI, card or net banking, into your own BillDesk merchant account. A request is marked paid only when BillDesk's signed confirmation arrives for exactly the amount asked."
+      [subtitle]="
+        !enabled() ? 'Not collecting yet' : testMode() ? 'Collecting through Razorpay (test mode)' : 'Collecting through Razorpay'
+      "
+      help="Send a customer a payment link from their conversation in the inbox. They pay in Razorpay's window by UPI, card, net banking or wallet, into your own Razorpay account. A request is marked paid only when Razorpay confirms the payment, captured, for exactly the amount asked. Use test mode to try the whole flow without real money."
     />
 
     <div class="pm ar-scroll">
       @if (canManage()) {
         <section class="pm__card">
-          <h2 class="pm__h">BillDesk account</h2>
-          <div class="pm__grid">
-            <label class="ar-field" for="pm-merchant">
-              <span class="ar-field__label">Merchant ID</span>
-              <input
-                id="pm-merchant"
-                class="ar-field__input ar-mono"
-                [value]="merchantId()"
-                (input)="merchantId.set($any($event.target).value)"
-              />
-            </label>
-            <label class="ar-field" for="pm-client">
-              <span class="ar-field__label">Client ID</span>
-              <input
-                id="pm-client"
-                class="ar-field__input ar-mono"
-                [value]="clientId()"
-                (input)="clientId.set($any($event.target).value)"
-              />
-            </label>
-            <label class="ar-field" for="pm-secret">
-              <span class="ar-field__label">
-                Signing secret
-                @if (hasSecret()) {
-                  <span class="ar-field__opt">(stored — leave empty to keep it)</span>
-                }
+          <div class="pm__head">
+            <h2 class="pm__h">Razorpay account</h2>
+            <ar-chip [tone]="testMode() ? 'amber' : 'good'" [dot]="true">
+              {{ testMode() ? 'Test mode' : 'Live' }}
+            </ar-chip>
+          </div>
+
+          <div class="pm__mode" role="radiogroup" aria-label="Which keys to use">
+            <label class="pm__mode-opt" [class.pm__mode-opt--on]="testMode()">
+              <input type="radio" name="pm-mode" [checked]="testMode()" (change)="testMode.set(true)" />
+              <span>
+                <strong>Test</strong>
+                <small>Simulated payments with Razorpay's test cards and UPI ids. No real money.</small>
               </span>
-              <input
-                id="pm-secret"
-                type="password"
-                autocomplete="off"
-                class="ar-field__input"
-                [value]="secret()"
-                (input)="secret.set($any($event.target).value)"
-              />
             </label>
-            <label class="ar-field" for="pm-env">
-              <span class="ar-field__label">System</span>
-              <select
-                id="pm-env"
-                class="ar-field__input"
-                (change)="environment.set(+$any($event.target).value)"
-              >
-                <option [value]="Env.Uat" [selected]="environment() === Env.Uat">
-                  Test (UAT) — no real money
-                </option>
-                <option [value]="Env.Production" [selected]="environment() === Env.Production">
-                  Live
-                </option>
-              </select>
+            <label class="pm__mode-opt" [class.pm__mode-opt--on]="!testMode()">
+              <input type="radio" name="pm-mode" [checked]="!testMode()" (change)="testMode.set(false)" />
+              <span>
+                <strong>Live</strong>
+                <small>Real payments into your Razorpay account.</small>
+              </span>
             </label>
           </div>
+
+          <div class="pm__pairs">
+            <fieldset class="pm__pair" [class.pm__pair--active]="testMode()">
+              <legend>Test keys</legend>
+              <label class="ar-field" for="pm-test-key">
+                <span class="ar-field__label">Key id</span>
+                <input
+                  id="pm-test-key"
+                  class="ar-field__input ar-mono"
+                  placeholder="rzp_test_…"
+                  [value]="testKeyId()"
+                  (input)="testKeyId.set($any($event.target).value)"
+                />
+              </label>
+              <label class="ar-field" for="pm-test-secret">
+                <span class="ar-field__label">
+                  Key secret
+                  @if (hasTestSecret()) {
+                    <span class="ar-field__opt">(stored, leave empty to keep it)</span>
+                  }
+                </span>
+                <input
+                  id="pm-test-secret"
+                  type="password"
+                  autocomplete="off"
+                  class="ar-field__input"
+                  [value]="testKeySecret()"
+                  (input)="testKeySecret.set($any($event.target).value)"
+                />
+              </label>
+            </fieldset>
+            <fieldset class="pm__pair" [class.pm__pair--active]="!testMode()">
+              <legend>Live keys</legend>
+              <label class="ar-field" for="pm-live-key">
+                <span class="ar-field__label">Key id</span>
+                <input
+                  id="pm-live-key"
+                  class="ar-field__input ar-mono"
+                  placeholder="rzp_live_…"
+                  [value]="keyId()"
+                  (input)="keyId.set($any($event.target).value)"
+                />
+              </label>
+              <label class="ar-field" for="pm-live-secret">
+                <span class="ar-field__label">
+                  Key secret
+                  @if (hasLiveSecret()) {
+                    <span class="ar-field__opt">(stored, leave empty to keep it)</span>
+                  }
+                </span>
+                <input
+                  id="pm-live-secret"
+                  type="password"
+                  autocomplete="off"
+                  class="ar-field__input"
+                  [value]="keySecret()"
+                  (input)="keySecret.set($any($event.target).value)"
+                />
+              </label>
+            </fieldset>
+          </div>
+          <p class="pm__hint">
+            Find both pairs in the Razorpay Dashboard under Account &amp; Settings › API keys. Switch the
+            dashboard to test mode to see the test pair.
+          </p>
+
           <label class="pm__check">
             <input
               type="checkbox"
@@ -104,13 +143,10 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
             />
             <span>Let the team send payment requests</span>
           </label>
-          @if (webhookUrl(); as url) {
-            <p class="pm__hint">
-              Give BillDesk this webhook address for your account:
-              <span class="ar-mono">{{ url }}</span>
-            </p>
-          }
           <div class="pm__actions">
+            <button ar-button type="button" variant="ghost" [disabled]="checkingKeys()" (click)="checkKeys()">
+              {{ checkingKeys() ? 'Checking…' : 'Check keys' }}
+            </button>
             <button
               ar-button
               type="button"
@@ -168,6 +204,9 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
                 <ng-template #template let-r>
                   <div>
                     <ar-chip [tone]="toneOf(r.status)">{{ labelOf(r.status) }}</ar-chip>
+                    @if (r.isTest) {
+                      <ar-chip tone="amber">Test</ar-chip>
+                    }
                     @if (r.status === Status.Failed && r.failureReason) {
                       <span class="pm__why block text-xs">{{ r.failureReason }}</span>
                     }
@@ -218,10 +257,63 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
       font: 600 14px var(--ar-font-sans);
       color: var(--ar-ink-900);
     }
-    .pm__grid {
+    .pm__head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pm__mode {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 10px;
+    }
+    .pm__mode-opt {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px 12px;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
+      cursor: pointer;
+      font: 400 13px/1.4 var(--ar-font-sans);
+      color: var(--ar-ink-800);
+    }
+    .pm__mode-opt--on {
+      border-color: var(--ar-teal-600);
+      background: var(--ar-bg-50);
+    }
+    .pm__mode-opt span {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .pm__mode-opt small {
+      font-size: 12px;
+      color: var(--ar-ink-500);
+    }
+    .pm__pairs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .pm__pair {
+      margin: 0;
+      padding: 10px 12px 12px;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      opacity: 0.75;
+    }
+    .pm__pair--active {
+      opacity: 1;
+      border-color: var(--ar-teal-600);
+    }
+    .pm__pair legend {
+      padding: 0 4px;
+      font: 600 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-700);
     }
     .pm__check {
       display: flex;
@@ -239,6 +331,7 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
     .pm__actions {
       display: flex;
       justify-content: flex-end;
+      gap: 8px;
     }
     .pm__ok {
       margin: 0;
@@ -306,7 +399,6 @@ export class ArPaymentsSettings {
   private readonly api = inject(PaymentService);
   private readonly permissions = inject(PermissionService);
 
-  protected readonly Env = BillDeskEnvironment;
   protected readonly Status = PaymentRequestStatus;
   protected toneOf(status: PaymentRequestStatus): ChipTone {
     return STATUS_TONE[status] ?? 'neutral';
@@ -321,13 +413,15 @@ export class ArPaymentsSettings {
   );
   protected readonly canCancel = grantedPolicy('AutoReach.Payments.Cancel', this.permissions);
 
-  protected readonly merchantId = signal('');
-  protected readonly clientId = signal('');
-  protected readonly secret = signal('');
-  protected readonly hasSecret = signal(false);
-  protected readonly environment = signal(BillDeskEnvironment.Uat);
+  protected readonly keyId = signal('');
+  protected readonly keySecret = signal('');
+  protected readonly hasLiveSecret = signal(false);
+  protected readonly testKeyId = signal('');
+  protected readonly testKeySecret = signal('');
+  protected readonly hasTestSecret = signal(false);
+  protected readonly testMode = signal(true);
   protected readonly enabled = signal(false);
-  protected readonly webhookUrl = signal<string | null>(null);
+  protected readonly checkingKeys = signal(false);
   protected readonly requests = signal<PaymentRequestDto[]>([]);
   protected readonly saving = signal(false);
   protected readonly notice = signal<string | null>(null);
@@ -340,13 +434,7 @@ export class ArPaymentsSettings {
   private async load(): Promise<void> {
     try {
       if (this.canManage()) {
-        const g = await firstValueFrom(this.api.getGateway());
-        this.merchantId.set(g.merchantId ?? '');
-        this.clientId.set(g.clientId ?? '');
-        this.hasSecret.set(g.hasSecret);
-        this.environment.set(g.environment);
-        this.enabled.set(g.enabled);
-        this.webhookUrl.set(g.webhookUrl);
+        this.apply(await firstValueFrom(this.api.getGateway()));
       }
       const page = await firstValueFrom(this.api.getList({ maxResultCount: 100 }));
       this.requests.set(page.items ?? []);
@@ -362,22 +450,53 @@ export class ArPaymentsSettings {
     try {
       const g = await firstValueFrom(
         this.api.setGateway({
-          merchantId: this.merchantId().trim() || null,
-          clientId: this.clientId().trim() || null,
-          secret: this.secret().trim() || null,
-          environment: this.environment(),
+          keyId: this.keyId().trim() || null,
+          keySecret: this.keySecret().trim() || null,
+          testKeyId: this.testKeyId().trim() || null,
+          testKeySecret: this.testKeySecret().trim() || null,
+          testMode: this.testMode(),
           enabled: this.enabled(),
         }),
       );
-      this.secret.set('');
-      this.hasSecret.set(g.hasSecret);
-      this.enabled.set(g.enabled);
-      this.notice.set(g.enabled ? 'Saved. The team can now send payment requests.' : 'Saved.');
+      this.apply(g);
+      this.notice.set(
+        !g.enabled
+          ? 'Saved.'
+          : g.testMode
+            ? 'Saved. The team can send payment requests in test mode: no real money moves.'
+            : 'Saved. The team can now send payment requests.',
+      );
     } catch (e: unknown) {
       this.error.set(apiMessage(e, 'The account could not be saved.'));
     } finally {
       this.saving.set(false);
     }
+  }
+
+  protected async checkKeys(): Promise<void> {
+    this.checkingKeys.set(true);
+    this.notice.set(null);
+    this.error.set(null);
+    try {
+      const r = await firstValueFrom(this.api.testGateway());
+      if (r.ok) this.notice.set(r.message);
+      else this.error.set(r.message);
+    } catch (e: unknown) {
+      this.error.set(apiMessage(e, 'The keys could not be checked.'));
+    } finally {
+      this.checkingKeys.set(false);
+    }
+  }
+
+  private apply(g: PaymentGatewayDto): void {
+    this.keyId.set(g.keyId ?? '');
+    this.testKeyId.set(g.testKeyId ?? '');
+    this.keySecret.set('');
+    this.testKeySecret.set('');
+    this.hasLiveSecret.set(g.hasLiveSecret);
+    this.hasTestSecret.set(g.hasTestSecret);
+    this.testMode.set(g.testMode);
+    this.enabled.set(g.enabled);
   }
 
   protected async cancel(r: PaymentRequestDto): Promise<void> {
