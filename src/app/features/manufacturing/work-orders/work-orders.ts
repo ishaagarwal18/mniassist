@@ -177,6 +177,7 @@ export function progressPercent(
         } @else {
           <ejs-grid
             arGrid="work-orders"
+            [arGridSearch]="false"
             [dataSource]="filteredWorkOrders()"
             [allowSelection]="true"
             [selectionSettings]="{ mode: 'Row', type: 'Single' }"
@@ -736,6 +737,11 @@ export function progressPercent(
       display: flex;
       flex-direction: column;
       gap: 14px;
+    }
+    /* The page scrolls as a whole: sections keep their natural height instead of
+       being squeezed to fit the viewport (which hid the list and spilled the detail). */
+    .wo > * {
+      flex-shrink: 0;
     }
     .wo ar-card {
       display: block;

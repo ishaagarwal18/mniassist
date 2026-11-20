@@ -183,14 +183,13 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
               <button
                 type="button"
                 [class.on]="!isInternal()"
-                [disabled]="!t.conversationId"
                 (click)="isInternal.set(false)"
               >
                 Reply to customer
               </button>
             </div>
             @if (!isInternal() && !t.conversationId) {
-              <p class="td__hint">This ticket has no conversation to reply through yet.</p>
+              <p class="td__hint">Not linked to a conversation yet: the reply goes to the customer's email address.</p>
             }
             <textarea
               class="ar-field__input"
@@ -205,7 +204,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
                 ar-button
                 type="button"
                 variant="primary"
-                [disabled]="sending() || !body().trim() || (!isInternal() && !t.conversationId)"
+                [disabled]="sending() || !body().trim()"
                 (click)="send(t.id)"
               >
                 {{ sending() ? 'Sending…' : isInternal() ? 'Add note' : 'Send reply' }}

@@ -147,6 +147,29 @@ import { PageContextService } from './page-context.service';
             </dl>
           }
 
+          @if (t.dialogs?.length) {
+            <p class="rsb__help-label">{{ i18n.t('Popups on this screen') }}</p>
+            <div class="rsb__help-dialogs">
+              @for (d of t.dialogs; track $index) {
+                <details class="rsb__help-dialog">
+                  <summary>{{ d.name }}</summary>
+                  <p class="rsb__help-opens"><span>{{ i18n.t('Opens from:') }}</span> <span>{{ d.opens }}</span></p>
+                  <p class="rsb__help-dialog-text">{{ d.text }}</p>
+                  @if (d.fields?.length) {
+                    <dl class="rsb__help-fields">
+                      @for (f of d.fields; track $index) {
+                        <div>
+                          <dt>{{ f.name }}</dt>
+                          <dd>{{ f.text }}</dd>
+                        </div>
+                      }
+                    </dl>
+                  }
+                </details>
+              }
+            </div>
+          }
+
           @if (t.tips?.length) {
             <div class="rsb__help-tip">
               @for (tip of t.tips; track $index) {

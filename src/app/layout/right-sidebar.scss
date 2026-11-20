@@ -293,3 +293,33 @@
   margin: 0;
   color: var(--ar-ink-600);
 }
+
+.rsb__help-dialogs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rsb__help-dialog {
+  border: 1px solid var(--ar-line-200);
+  border-radius: 8px;
+  padding: 0 10px;
+  font: 400 12px/1.5 var(--ar-font-sans);
+}
+.rsb__help-dialog > summary {
+  cursor: pointer;
+  padding: 7px 0;
+  font-weight: 600;
+  color: var(--ar-ink-800);
+}
+.rsb__help-dialog[open] {
+  padding-bottom: 10px;
+}
+.rsb__help-opens {
+  margin: 0 0 4px;
+  color: var(--ar-ink-500);
+  font-style: italic;
+}
+.rsb__help-dialog-text {
+  margin: 0 0 8px;
+  color: var(--ar-ink-600);
+}

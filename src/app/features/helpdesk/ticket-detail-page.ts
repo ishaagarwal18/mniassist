@@ -182,7 +182,6 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
                     <button
                       type="button"
                       [class.active]="!isInternal()"
-                      [disabled]="!t.conversationId"
                       (click)="isInternal.set(false)"
                     >
                       Reply to Customer
@@ -190,8 +189,8 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
                   </div>
                   @if (!isInternal() && !t.conversationId) {
                     <p class="composer-hint">
-                      This ticket has no connected customer conversation channel to send a reply
-                      through.
+                      This ticket isn't linked to a customer conversation yet, so the reply goes to the
+                      customer's email address and this ticket follows that email thread.
                     </p>
                   }
                   <textarea
@@ -212,7 +211,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
                       type="button"
                       variant="primary"
                       [disabled]="
-                        sending() || !body().trim() || (!isInternal() && !t.conversationId)
+                        sending() || !body().trim()
                       "
                       (click)="send(t.id)"
                     >

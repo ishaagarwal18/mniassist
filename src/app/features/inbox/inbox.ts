@@ -15,8 +15,10 @@ import {
   computed,
   effect,
   inject,
+  ElementRef,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { SmsChannelService, SmsTemplateDto } from '../../proxy/sms/sms-channel.service';
@@ -59,6 +61,7 @@ import { CurrentUserService } from '../../core/services/current-user.service';
 import { ArAuthHref, ArAuthSrc } from '../../core/media/protected-media';
 import { ArShareLocationDialog, SharedLocation } from './share-location-dialog';
 import { ArConversationWorkStatus, workChipFor } from './conversation-work-status';
+import { channelBadge, clockTime, dayHeading, statusTicks } from './thread-display.logic';
 @Component({
   selector: 'ar-inbox',
   imports: [
@@ -85,6 +88,7 @@ import { ArConversationWorkStatus, workChipFor } from './conversation-work-statu
     ArSelect,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown.escape)': 'closeMenus()' },
   templateUrl: './inbox.html',
   styleUrl: './inbox.scss',
 })
@@ -185,6 +189,77 @@ export class ArInbox {
       ? { label: `Window open · ${left}`, tone: 'teal' }
       : { label: 'Window closed', tone: 'bad' };
   }
+
+  // ---- Display helpers and layout -----------------------------------------------------------
+  protected readonly dayHeading = dayHeading;
+  protected readonly clockTime = clockTime;
+  protected readonly statusTicks = statusTicks;
+  protected readonly channelBadge = channelBadge;
+
+  /** The header's two grouped menus: every way to call, and the less-used actions. */
+  protected readonly callMenuOpen = signal(false);
+  protected readonly moreOpen = signal(false);
+
+  protected closeMenus(): void {
+    this.callMenuOpen.set(false);
+    this.moreOpen.set(false);
+    this.snoozeOpen.set(false);
+    this.assignOpen.set(false);
+    this.filtersOpen.set(false);
+  }
+
+  /** Opens one header menu and closes the others. */
+  protected toggleMenu(which: 'call' | 'more' | 'snooze'): void {
+    const open = { call: this.callMenuOpen, more: this.moreOpen, snooze: this.snoozeOpen }[which]();
+    this.closeMenus();
+    if (!open) ({ call: this.callMenuOpen, more: this.moreOpen, snooze: this.snoozeOpen })[which].set(true);
+  }
+
+  /** The quick tabs above the list; each maps onto the filters the list already has. */
+  protected readonly quickTab = computed<'all' | 'mine' | 'unread' | 'soon'>(() =>
+    this.mineOnly() ? 'mine' : this.unreadOnly() ? 'unread' : this.closingSoon() ? 'soon' : 'all',
+  );
+
+  protected setTab(tab: 'all' | 'mine' | 'unread' | 'soon'): void {
+    this.unreadOnly.set(tab === 'unread');
+    this.closingSoon.set(tab === 'soon');
+    this.setMine(tab === 'mine');
+  }
+
+  /** Enter sends; Shift+Enter starts a new line. Typing in an IME (composition) never sends. */
+  protected onComposerKey(e: KeyboardEvent): void {
+    if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+    e.preventDefault();
+    void this.send();
+  }
+
+  /** A closed window reopens only with an approved template: the Message customer page sends one. */
+  protected openTemplate(contactId: string | undefined): void {
+    if (contactId) void this.router.navigate(['/contacts', contactId, 'message']);
+  }
+
+  /** The thread opens at the newest message and follows new ones as they arrive. */
+  private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
+  private readonly followThread = effect(() => {
+    const t = this.selected();
+    const count = t?.messages.length ?? 0;
+    const el = this.scroller()?.nativeElement;
+    if (!el || !count) return;
+    setTimeout(() => (el.scrollTop = el.scrollHeight));
+  });
+
+  /** Menus, suggestions and drafts of one conversation don't follow you to the next. */
+  private lastThreadId: string | null = null;
+  private readonly resetOnSwitch = effect(() => {
+    const id = this.selectedId();
+    if (id === this.lastThreadId) return;
+    this.lastThreadId = id;
+    untracked(() => {
+      this.closeMenus();
+      this.suggestions.set([]);
+      this.cannedOpen.set(false);
+    });
+  });
 
   protected select(id: string): void {
     this.inbox.select(id);
