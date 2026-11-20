@@ -381,7 +381,10 @@ h1 {
   .proof,
   .eyebrow,
   .pillar,
-  .trust__item {
+  .trust__item,
+  .final__mesh,
+  .final__divider,
+  .final__row {
     animation: none;
     opacity: 1;
     transform: none;
@@ -652,16 +655,104 @@ h3 {
   line-height: 1.55;
 }
 
+/* ==========================================================================
+   CTA Section (.final) - Enterprise SaaS Redesign
+   ========================================================================== */
 .final {
   position: relative;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse 70% 60% at 50% 40%, rgba(37, 99, 235, 0.28) 0%, transparent 75%),
-    radial-gradient(circle at 20% 80%, rgba(30, 58, 138, 0.25) 0%, transparent 50%),
-    radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.16) 0%, transparent 45%),
-    linear-gradient(120deg, #060b1c 0%, #0d1e4a 55%, #17387a 130%);
+  background-color: #050914;
   color: #fff;
-  padding: 64px 0;
+  padding: 84px 0 80px;
+}
+
+/* Thin animated blue-to-teal gradient top divider */
+.final__divider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(37, 99, 235, 0.85) 25%,
+    rgba(0, 184, 169, 0.9) 50%,
+    rgba(56, 189, 248, 0.85) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: ctaBorderFlow 10s linear infinite;
+  z-index: 2;
+}
+
+@keyframes ctaBorderFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+/* Multi-layer animated ambient mesh gradient: navy, electric blue & teal */
+.final__mesh {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 20% 35%, rgba(37, 99, 235, 0.3) 0%, transparent 48%),
+    radial-gradient(circle at 78% 60%, rgba(13, 148, 136, 0.22) 0%, transparent 45%),
+    radial-gradient(circle at 55% 20%, rgba(56, 189, 248, 0.16) 0%, transparent 42%),
+    radial-gradient(ellipse 90% 70% at 50% 60%, rgba(11, 25, 48, 0.8) 0%, #050914 100%);
+  animation: ctaAmbientMesh 22s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+@keyframes ctaAmbientMesh {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate3d(24px, -14px, 0) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(-18px, 16px, 0) scale(0.98);
+    opacity: 0.88;
+  }
+}
+
+/* Soft ambient blue/teal glow behind CTA content */
+.final__glow {
+  position: absolute;
+  top: 50%;
+  right: 10%;
+  transform: translateY(-50%);
+  width: 520px;
+  height: 360px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.24) 0%, rgba(0, 184, 169, 0.12) 45%, transparent 72%);
+  filter: blur(52px);
+}
+
+/* Very faint precision CSS grid */
+.final__bg-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(to right, rgba(96, 165, 250, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(96, 165, 250, 0.045) 1px, transparent 1px);
+  background-size: 44px 44px;
+  background-position: center top;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 35%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 35%, transparent 100%);
 }
 
 .final .wrap {
@@ -669,93 +760,316 @@ h3 {
   z-index: 1;
 }
 
-.final__bg-grid {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background-image:
-    linear-gradient(to right, rgba(96, 165, 250, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(96, 165, 250, 0.05) 1px, transparent 1px);
-  background-size: 46px 46px;
-  background-position: center top;
-  mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 30%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 30%, transparent 100%);
-}
-
+/* Row entrance animation and flex layout */
 .final__row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 20px 32px;
+  gap: 32px 48px;
+  animation: ctaFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes ctaFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.final__content {
+  max-width: 580px;
+}
+
+.final h2 {
+  font-size: clamp(26px, 3.2vw, 36px);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  color: #ffffff;
 }
 
 .final__sub {
-  margin-top: 10px;
+  margin-top: 12px;
   color: #cbd5e1;
-  font-size: 15px;
+  font-size: 16px;
+  line-height: 1.6;
 }
 
+.final__cta,
 .final .hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
   margin-top: 0;
 }
 
+/* CTA Buttons: subtle hover lift, scale and ambient glow */
+.final .btn {
+  position: relative;
+  transition:
+    transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background 240ms ease,
+    border-color 240ms ease,
+    color 240ms ease;
+}
+
+.final .btn:hover {
+  transform: translateY(-3px) scale(1.02);
+}
+
+.final .btn--white {
+  background: #ffffff;
+  color: #0b1f33;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.final .btn--white:hover {
+  background: #ffffff;
+  color: #1258e0;
+  box-shadow:
+    0 12px 28px -4px rgba(255, 255, 255, 0.25),
+    0 0 24px rgba(56, 189, 248, 0.35);
+}
+
+.final .btn--primary {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+}
+
+.final .btn--primary:hover {
+  background: linear-gradient(180deg, #3b82f6 0%, #1e40af 100%);
+  box-shadow:
+    0 12px 28px -4px rgba(37, 99, 235, 0.5),
+    0 0 24px rgba(56, 189, 248, 0.4);
+}
+
+.final .btn--light {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #f1f5f9;
+}
+
+.final .btn--light:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(96, 165, 250, 0.7);
+  color: #ffffff;
+  box-shadow:
+    0 8px 24px -4px rgba(0, 0, 0, 0.4),
+    0 0 18px rgba(59, 130, 246, 0.25);
+}
+
+/* Small animated arrow in primary CTA */
+.final__btn-primary {
+  gap: 8px;
+}
+
+.final__arrow {
+  display: inline-flex;
+  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  margin-top: 1px;
+}
+
+.final__btn-primary:hover .final__arrow {
+  transform: translateX(4px);
+}
+
+/* ==========================================================================
+   Footer (.foot) - Enterprise SaaS Redesign
+   ========================================================================== */
 .foot {
-  padding: 48px 0 24px;
-  background: var(--ar-bg-50);
-  border-top: 1px solid var(--ar-line-200);
+  position: relative;
+  padding: 60px 0 28px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   font-size: 13px;
   color: var(--ar-ink-500);
 }
 
-.foot__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, 1fr));
-  gap: 32px;
+/* Subtle gradient divider line above footer */
+.foot__divider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(37, 99, 235, 0.25) 25%,
+    rgba(0, 184, 169, 0.25) 50%,
+    rgba(56, 189, 248, 0.25) 75%,
+    transparent 100%
+  );
 }
 
+.foot__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) repeat(4, minmax(0, 1fr));
+  gap: 36px 40px;
+}
+
+.foot__brand {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 20px;
+}
+
+.foot__brand ar-brand {
+  cursor: pointer;
+  transition: filter 260ms ease, transform 260ms ease;
+  align-self: flex-start;
+}
+
+.foot__brand ar-brand:hover {
+  filter: drop-shadow(0 0 12px rgba(37, 99, 235, 0.35));
+}
+
+.foot__desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ar-ink-500);
+  max-width: 38ch;
+}
+
+/* Subtle hover transition to footer columns */
 .foot__col {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 9px;
+  transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.foot__col:hover {
+  transform: translateY(-2px);
 }
 
 .foot__col strong {
-  margin-bottom: 4px;
-  font-size: 12px;
-  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ar-ink-900);
 }
 
+/* Smooth animated underlines and electric blue hover on footer links */
 .foot__col a,
 .foot__col button {
-  padding: 0;
+  position: relative;
+  padding: 2px 0;
   border: 0;
   background: none;
   font: inherit;
+  font-size: 13px;
   color: var(--ar-ink-500);
   text-decoration: none;
   cursor: pointer;
+  transition: color 240ms ease;
+}
+
+.foot__col a::after,
+.foot__col button::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, #1769ff, #00b8a9);
+  border-radius: 1px;
+  transition: width 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .foot__col a:hover,
 .foot__col button:hover {
-  color: var(--ar-blue-600);
+  color: #1258e0;
 }
 
+.foot__col a:hover::after,
+.foot__col button:hover::after {
+  width: 100%;
+}
+
+/* Minimal bottom copyright and back-to-top button row */
 .foot__base {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-top: 36px;
-  padding-top: 18px;
-  border-top: 1px solid var(--ar-line-200);
-  font-size: 12px;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
+  font-size: 12.5px;
   color: var(--ar-ink-400);
+}
+
+.foot__copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.foot__dot {
+  color: var(--ar-ink-300);
+}
+
+.foot__domain {
+  font-family: var(--ar-font-mono);
+  font-size: 11.5px;
+  color: var(--ar-ink-500);
+}
+
+.foot__totop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+  cursor: pointer;
+  transition:
+    transform 240ms ease,
+    background 240ms ease,
+    border-color 240ms ease,
+    color 240ms ease,
+    box-shadow 240ms ease;
+}
+
+.foot__totop:hover {
+  transform: translateY(-2px);
+  background: #ffffff;
+  border-color: #3b82f6;
+  color: #1258e0;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15);
+}
+
+.foot__totop-icon {
+  transform: rotate(-90deg);
+  transition: transform 240ms ease;
+  margin-top: -1px;
+}
+
+.foot__totop:hover .foot__totop-icon {
+  transform: rotate(-90deg) translateX(2px);
 }
 
 .nav__toggle {
@@ -962,27 +1276,42 @@ h3 {
   }
 
   .final {
-    padding: 48px 0;
+    padding: 56px 0;
   }
 
   .final__row {
     flex-direction: column;
     align-items: flex-start;
+    gap: 28px;
   }
 
+  .final__cta,
   .final .hero__cta {
+    flex-direction: column;
     width: 100%;
+    gap: 10px;
+  }
+
+  .final__cta .btn,
+  .final .hero__cta .btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .foot__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px 16px;
+    gap: 28px 20px;
   }
 
   .foot__base {
     flex-direction: column;
-    gap: 8px;
+    gap: 16px;
     align-items: flex-start;
+  }
+
+  .foot__totop {
+    width: 100%;
+    justify-content: center;
   }
 }
 

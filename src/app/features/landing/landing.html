@@ -237,21 +237,30 @@
     </div>
   </section>
 
-  <section class="final">
+  <section class="final" aria-label="Call to action">
+    <div class="final__divider" aria-hidden="true"></div>
+    <div class="final__mesh" aria-hidden="true"></div>
+    <div class="final__glow" aria-hidden="true"></div>
     <div class="final__bg-grid" aria-hidden="true"></div>
     <div class="wrap final__row">
-      <div>
+      <div class="final__content">
         <h2>Start the conversations your competitors are missing.</h2>
         <p class="final__sub">Pick a plan, create your workspace and connect your number.</p>
       </div>
-      <div class="hero__cta">
+      <div class="final__cta">
         @if (signedIn()) {
-        <a class="btn btn--primary btn--lg" routerLink="/home">Open MNI Assist</a>
+        <a class="btn btn--primary btn--lg final__btn-primary" routerLink="/home">
+          <span>Open MNI Assist</span>
+          <ar-icon name="chevron" [size]="14" class="final__arrow" />
+        </a>
         } @else {
-        <a class="btn btn--white btn--lg" routerLink="/signup">Create a workspace</a>
+        <a class="btn btn--white btn--lg final__btn-primary" routerLink="/signup">
+          <span>Create a workspace</span>
+          <ar-icon name="chevron" [size]="14" class="final__arrow" />
+        </a>
         }
-        <button type="button" class="btn btn--light btn--lg" (click)="scrollTo('plans')">
-          Compare plans
+        <button type="button" class="btn btn--light btn--lg final__btn-secondary" (click)="scrollTo('plans')">
+          <span>Compare plans</span>
         </button>
       </div>
     </div>
@@ -259,9 +268,13 @@
 </main>
 
 <footer class="foot">
+  <div class="foot__divider" aria-hidden="true"></div>
   <div class="wrap foot__grid">
     <div class="foot__brand">
       <ar-brand tagline (click)="scrollToTop($event)" />
+      <p class="foot__desc">
+        AI business engagement platform for machinery makers, OEMs and their dealer networks on WhatsApp.
+      </p>
     </div>
     <nav class="foot__col" aria-label="Product">
       <strong>Product</strong>
@@ -288,7 +301,14 @@
     </nav>
   </div>
   <div class="wrap foot__base">
-    <span>© {{ year }} Emnisoft Pvt Ltd. MNI Assist is a product of Emnisoft Pvt Ltd.</span>
-    <span>mniassist.com</span>
+    <div class="foot__copy">
+      <span>© {{ year }} Emnisoft Pvt Ltd. MNI Assist is a product of Emnisoft Pvt Ltd.</span>
+      <span class="foot__dot" aria-hidden="true">·</span>
+      <span class="foot__domain">mniassist.com</span>
+    </div>
+    <button type="button" class="foot__totop" (click)="scrollToTop($event)" aria-label="Scroll back to top">
+      <span>Back to top</span>
+      <ar-icon name="chevron" [size]="13" class="foot__totop-icon" />
+    </button>
   </div>
 </footer>
