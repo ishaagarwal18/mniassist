@@ -25,6 +25,7 @@ import { ArTopbar } from '../../layout/topbar';
 import { planByKey, priceLabel } from '../landing/landing-plans';
 import { ArBanner, ArButton, ArChip, ArDialog, ArMeter } from '../../ui';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { PlanCatalogService, type PlanDefinitionDto } from '../../proxy/billing/plan-catalog.service';
 import { ArGrid } from '../../ui/grid';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
@@ -113,6 +114,22 @@ export class ArBilling {
   private readonly route = inject(ActivatedRoute);
   private readonly checkout = inject(PlatformCheckoutRunner);
   private readonly checkoutApi = inject(PlatformCheckoutService);
+  private readonly planCatalog = inject(PlanCatalogService);
+
+  /** The plans this workspace can pick, each with its own price, limits, modules and selling points. */
+  private readonly offeredResource = rxResource({
+    params: () => ({ tick: this.tick() }),
+    stream: () =>
+      this.planCatalog.getOffered({ skipHandleError: true }).pipe(map((r) => r.items ?? [])),
+    defaultValue: [] as PlanDefinitionDto[],
+  });
+  protected readonly offered = computed(() => {
+    try {
+      return this.offeredResource.value();
+    } catch {
+      return [] as PlanDefinitionDto[];
+    }
+  });
 
   protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
   protected readonly isPage = this.mode !== 'list';
@@ -276,8 +293,9 @@ export class ArBilling {
     });
   }
 
-  protected readonly planName = computed(() =>
-    this.d().plan != null ? PLAN_NAME[this.d().plan!] : PLAN_NAME[0],
+  protected readonly planName = computed(
+    () =>
+      this.usage().planName ?? (this.d().plan != null ? PLAN_NAME[this.d().plan!] : PLAN_NAME[0]),
   );
 
   protected readonly usage = computed(() => this.d().usage);
@@ -424,6 +442,40 @@ export class ArBilling {
   protected dismissRequested(): void {
     this.requestedKey.set(null);
     void this.router.navigate([], { queryParams: { plan: null }, replaceUrl: true });
+  }
+
+  /** A plan's modules as readable names, A–Z. */
+  protected planFeatures(p: PlanDefinitionDto): string[] {
+    return (p.features ?? []).map(featureLabel).sort((a, b) => a.localeCompare(b));
+  }
+
+  protected limit(n: number): string {
+    return n >= 2_000_000_000 ? 'Unlimited' : n.toLocaleString('en-IN');
+  }
+
+  /** Moves to a plan from the comparison. */
+  protected async choosePlan(p: PlanDefinitionDto): Promise<void> {
+    if (p.isCurrent) return;
+    if (
+      !(await this.dialogs.confirm({
+        title: `Move to the ${p.name} plan?`,
+        message: `${this.money(p.monthlyFeeInPaise)}/month + GST. The new plan, its modules and limits apply straight away; the difference for the rest of this period is on your next invoice.`,
+        confirmText: 'Change plan',
+      }))
+    )
+      return;
+    this.busy.set(true);
+    try {
+      await firstValueFrom(
+        this.billingApi.changePlan({ plan: p.basePlan, planId: p.id }, { skipHandleError: true }),
+      );
+      this.toasts.success(`You are now on the ${p.name} plan.`, 'Plan changed');
+      this.tick.update((n) => n + 1);
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The plan could not be changed.'), 'Billing');
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   protected async changePlan(plan: SubscriptionPlan): Promise<void> {

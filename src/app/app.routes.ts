@@ -1716,6 +1716,11 @@ export const routes: Routes = [
           import('./features/platform/support-sign-in').then((m) => m.ArSupportSignIn),
       },
       {
+        path: 'platform/plans',
+        title: 'Plans · MNI Assist',
+        loadComponent: () => import('./features/platform/plans-page').then((m) => m.ArPlansPage),
+      },
+      {
         path: 'platform/feature-flags',
         title: 'Feature flags · MNI Assist',
         loadComponent: () =>

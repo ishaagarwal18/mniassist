@@ -643,6 +643,36 @@ export const SETTINGS_TOPICS: Readonly<Record<string, HelpTopic>> = {
       { name: 'Audit Note', text: 'Why the rule exists, kept with it.' },
     ],
   },
+  'platform/plans': {
+    summary:
+      'The plans workspaces subscribe to: price, limits, the modules each switches on and the selling points shown on Billing. Public plans appear on every workspace’s Billing page; private ones are assigned by the platform team.',
+    benefits: [
+      'Change prices, limits and modules without a release.',
+      'Offer a new plan to every workspace, or keep it for chosen ones.',
+      'Each plan’s card on Billing shows exactly what it includes.',
+    ],
+    steps: [
+      'Click New plan, or Edit on an existing one.',
+      'Set the name, monthly fee, members, numbers and contacts.',
+      'Tick the modules it switches on and add its selling points, one per line.',
+      'Turn on Show on Billing to offer it to every workspace, then click Save plan.',
+    ],
+    tips: [
+      'Editing a plan changes it for every workspace on it straight away.',
+      'Archive a plan to stop offering it; workspaces already on it keep it. The four built-in plans cannot be archived.',
+      'Assign a private plan from a workspace’s Manage dialog (Platform › Workspaces).',
+    ],
+    fields: [
+      { name: 'Name · Monthly fee', text: 'What workspaces see and pay each month, before GST.' },
+      { name: 'Members · Connected numbers · Contacts', text: 'The plan’s limits. Tick Unlimited for no limit.' },
+      { name: 'Modules it switches on', text: 'The parts of the app the plan opens up (Voice, Payments, Finance…). Roles follow them.' },
+      { name: 'Selling points on Billing', text: 'Text shown on the plan’s card, such as Priority support. They do not switch anything on.' },
+      { name: 'Recorded as', text: 'For a plan you add: the built-in plan invoices and reports file it under.' },
+      { name: 'Order on Billing', text: 'Where the plan sits in the comparison; lower comes first.' },
+      { name: 'Show on Billing', text: 'Public: every workspace can pick it. Private: only the platform team assigns it.' },
+      { name: 'Archive / Restore', text: 'Stops or resumes offering a plan you added. Workspaces on it keep it.' },
+    ],
+  },
   'platform/payment-gateways': {
     summary:
       'The Razorpay and PayU accounts workspaces pay the platform through when they top up their wallet or pay an invoice. Key secrets and salts go to secret storage and are never shown again.',

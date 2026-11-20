@@ -1067,6 +1067,13 @@ export const NAV: readonly NavGroup[] = [
         hostOnly: true,
       },
       {
+        label: 'Plans',
+        icon: 'billing',
+        route: '/platform/plans',
+        permission: 'AutoReach.Administration.ManageTenants',
+        hostOnly: true,
+      },
+      {
         label: 'Feature flags',
         icon: 'feature-flags',
         route: '/platform/feature-flags',

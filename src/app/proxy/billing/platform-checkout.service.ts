@@ -31,6 +31,9 @@ export interface RazorpayCheckoutDto {
   prefillName?: string | null;
   prefillEmail?: string | null;
   prefillContact?: string | null;
+  /** Set when the payment also saves the card for automatic top-ups. */
+  customerId?: string | null;
+  recurring?: boolean;
 }
 
 export interface PayUCheckoutDto {
@@ -79,6 +82,13 @@ export class PlatformCheckoutService {
   startTopUp = (input: { gateway: string; amountInPaise: number }, config?: Partial<Rest.Config>) =>
     this.restService.request<any, CheckoutStartDto>(
       { method: 'POST', url: '/api/auto-reach/platform-checkout/start-top-up', body: input },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  /** A Razorpay top-up that also saves the card for automatic top-ups (up to ₹15,000 a charge). */
+  startCardSetup = (input: { amountInPaise: number }, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CheckoutStartDto>(
+      { method: 'POST', url: '/api/auto-reach/platform-checkout/start-card-setup', body: input },
       { apiName: this.apiName, skipHandleError: true, ...config },
     );
 

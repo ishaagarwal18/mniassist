@@ -11,7 +11,6 @@ import {
   PaymentService,
 } from '../../proxy/payments/payment.service';
 import { ArButton, ArChip } from '../../ui';
-import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../ui/grid';
@@ -32,7 +31,7 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
  */
 @Component({
   selector: 'ar-payments-settings',
-  imports: [ArTopbar, ArButton, ArChip, ArSelect, ArGrid, GridModule],
+  imports: [ArTopbar, ArButton, ArChip, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

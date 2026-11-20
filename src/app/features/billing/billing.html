@@ -151,12 +151,7 @@
             Add money
           </button>
         </section>
-        <ar-auto-top-up-card
-          [enabledIn]="!!d().autoTopUp"
-          [amountInPaise]="d().autoAmountInPaise ?? 0"
-          [thresholdInPaise]="d().lowThresholdInPaise"
-          (saved)="reloadWallet()"
-        />
+        <ar-auto-top-up-card (saved)="reloadWallet()" />
       </div>
     </section>
 
@@ -170,39 +165,68 @@
         </p>
       </header>
       <section class="card">
-        <div class="plans">
-          @for (p of planLadder; track p) {
-            <button
-              class="plan"
-              [class.plan--current]="p === d().plan"
-              [class.plan--chosen]="p === requested()?.plan"
-              [attr.aria-pressed]="p === requested()?.plan"
-              [disabled]="busy() || !canManagePlan()"
-              [title]="canManagePlan() ? '' : 'Changing the plan needs the Manage plan permission'"
-              (click)="changePlan(p)"
+        <div class="pcmp">
+          @for (p of offered(); track p.id) {
+            <article
+              class="pc"
+              [class.pc--current]="p.isCurrent"
+              [class.pc--chosen]="p.builtIn != null && p.builtIn === requested()?.plan"
             >
-              <span class="plan__name">{{ planLabel(p) }}</span>
-              @if (p === d().plan) {
-                <ar-chip tone="good">current</ar-chip>
-              } @else if (p === requested()?.plan) {
-                <ar-chip tone="teal">selected</ar-chip>
+              <header class="pc__head">
+                <h3 class="pc__name">{{ p.name }}</h3>
+                @if (p.isCurrent) {
+                  <ar-chip tone="good">Current</ar-chip>
+                } @else if (p.builtIn != null && p.builtIn === requested()?.plan) {
+                  <ar-chip tone="teal">Selected</ar-chip>
+                }
+              </header>
+              <p class="pc__price">
+                {{ money(p.monthlyFeeInPaise) }}<span class="pc__per">/month + GST</span>
+              </p>
+              @if (p.description) {
+                <p class="pc__desc">{{ p.description }}</p>
               }
-            </button>
-          }
-        </div>
-        <div class="feat">
-          <p class="feat__h">
-            Included on {{ planName() }}
-            <span class="feat__count">{{ usage().features?.length ?? 0 }} features</span>
-          </p>
-          @if (usage().features?.length) {
-            <ul class="feat__list">
-              @for (f of featureLabels(); track f) {
-                <li class="feat__item"><span class="feat__tick" aria-hidden="true">✓</span>{{ f }}</li>
+              <ul class="pc__limits">
+                <li><b>{{ limit(p.includedAgentSeats) }}</b> members</li>
+                <li><b>{{ limit(p.channelLimit) }}</b> numbers</li>
+                <li><b>{{ limit(p.contactLimit) }}</b> contacts</li>
+              </ul>
+              @if (p.highlights.length) {
+                <ul class="pc__list pc__list--hl">
+                  @for (h of p.highlights; track h) {
+                    <li><span class="pc__tick" aria-hidden="true">★</span>{{ h }}</li>
+                  }
+                </ul>
               }
-            </ul>
-          } @else {
-            <p class="card__sub">Core features only.</p>
+              <p class="pc__mods">
+                {{ p.features.length ? p.features.length + ' modules' : 'Core features only' }}
+              </p>
+              @if (p.features.length) {
+                <ul class="pc__list">
+                  @for (f of planFeatures(p); track f) {
+                    <li><span class="pc__tick" aria-hidden="true">✓</span>{{ f }}</li>
+                  }
+                </ul>
+              }
+              <div class="pc__foot">
+                @if (p.isCurrent) {
+                  <span class="pc__note">Your plan</span>
+                } @else {
+                  <button
+                    ar-button
+                    type="button"
+                    [variant]="p.builtIn != null && p.builtIn === requested()?.plan ? 'primary' : 'ghost'"
+                    [disabled]="busy() || !canManagePlan()"
+                    [title]="canManagePlan() ? '' : 'Changing the plan needs the Manage plan permission'"
+                    (click)="choosePlan(p)"
+                  >
+                    Switch to {{ p.name }}
+                  </button>
+                }
+              </div>
+            </article>
+          } @empty {
+            <p class="card__sub">The plans could not be loaded. Try again in a moment.</p>
           }
         </div>
       </section>

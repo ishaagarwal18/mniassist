@@ -10,7 +10,8 @@
     "test": "node scripts/run-tests.mjs",
     "test:browser": "node scripts/browser-acceptance.mjs",
     "check:routes": "node scripts/check-proxy-routes.mjs",
-    "refresh:routes": "node scripts/check-proxy-routes.mjs --refresh https://mniassist.com"
+    "refresh:routes": "node scripts/check-proxy-routes.mjs --refresh https://mniassist.com",
+    "start:prod-api": "node scripts/serve-local.mjs --configuration prod-api"
   },
   "private": true,
   "packageManager": "npm@10.9.7",

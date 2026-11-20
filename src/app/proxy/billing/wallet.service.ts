@@ -26,6 +26,13 @@ export class WalletService {
       { apiName: this.apiName, ...config },
     );
 
+  /** Deletes the saved card; automatic top-up stops with it. */
+  removeSavedCard = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WalletDto>(
+      { method: 'POST', url: '/api/auto-reach/wallet/remove-saved-card' },
+      { apiName: this.apiName, ...config },
+    );
+
   get = (config?: Partial<Rest.Config>) =>
     this.restService.request<any, WalletDto>(
       {

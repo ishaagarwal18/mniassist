@@ -25,10 +25,15 @@ export interface BillingSummaryDto {
 
 export interface ChangePlanInput {
   plan?: SubscriptionPlan;
+  /** A plan from PlanCatalogService.getOffered; wins over `plan`. */
+  planId?: string | null;
 }
 
 export interface PlanUsageDto {
   plan?: SubscriptionPlan;
+  /** The plan on Platform › Plans the workspace is on, and its name. */
+  planId?: string | null;
+  planName?: string | null;
   channelLimit?: number;
   channelsUsed?: number;
   seatLimit?: number;
@@ -228,6 +233,21 @@ export interface WalletDto extends EntityDto<string> {
   estimatedDaysRemaining?: number | null;
   /** When per-message charges start, while still ahead; until then delivered messages are recorded but not charged. */
   chargesStartOnUtc?: string | null;
+  /** A card is saved for automatic top-ups. */
+  hasCard?: boolean;
+  /** `Visa •••• 4242`. */
+  cardLabel?: string | null;
+  /** Saved with the platform's test keys: only charged while those are in use. */
+  cardTestMode?: boolean;
+  cardSavedAtUtc?: string | null;
+  autoTopUpLastAttemptUtc?: string | null;
+  /** Failed automatic charges in a row; at three, automatic top-up switches itself off. */
+  autoTopUpFailures?: number;
+  autoTopUpLastError?: string | null;
+  /** The most one automatic top-up may charge (₹15,000). */
+  maxAutoTopUpInPaise?: number;
+  /** An automatic charge was made and its answer has not arrived yet. */
+  autoTopUpWaiting?: boolean;
 }
 
 export interface WalletTransactionDto extends EntityDto<string> {

@@ -1015,6 +1015,11 @@ export const FINANCE_PROJECTS_TOPICS: Readonly<Record<string, HelpTopic>> = {
       { name: 'Pay with', text: 'The payment gateway to pay through. You pay on its secure page and the wallet is credited once payment succeeds.' },
       { name: 'No gateway yet', text: 'Money is added only by paying through Razorpay or PayU. Until a platform administrator turns one on, the wallet cannot be topped up.' },
       { name: 'Continue to payment', text: 'Takes you to the gateway to pay.' },
+      { name: 'Low-balance threshold (₹)', text: 'You are alerted when the balance falls to this; with automatic top-up on, the saved card is charged then.' },
+      { name: 'Pay and save card', text: 'Pays a first top-up by card through Razorpay and saves the card for automatic top-ups of up to ₹15,000 each.' },
+      { name: 'Top-up amount (₹)', text: 'What each automatic top-up charges the saved card: ₹100 to ₹15,000. Above ₹15,000 RBI rules need the cardholder to approve each charge.' },
+      { name: 'Top up automatically when the balance reaches the threshold', text: 'Charges the saved card when the balance is at or under the threshold. The wallet is credited once Razorpay confirms the charge, which can take up to a day. After three failed charges in a row it switches itself off.' },
+      { name: 'Remove card', text: 'Deletes the saved card at Razorpay and here. Automatic top-up stops.' },
     ],
   },
   'billing/invoices': {

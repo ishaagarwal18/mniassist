@@ -270,6 +270,111 @@
   gap: 6px;
 }
 
+/* Plan comparison */
+.pcmp {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+.pc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-card);
+  background: var(--ar-white);
+  min-width: 0;
+}
+.pc--current {
+  border-color: var(--ar-teal-500, #2f9e8f);
+  box-shadow: 0 0 0 1px var(--ar-teal-500, #2f9e8f);
+}
+.pc--chosen {
+  border-color: var(--ar-blue-500);
+  box-shadow: 0 0 0 1px var(--ar-blue-500);
+}
+.pc__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pc__name {
+  margin: 0;
+  font: 600 15px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+}
+.pc__price {
+  margin: 0;
+  font: 700 20px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+  font-variant-numeric: tabular-nums;
+}
+.pc__per {
+  margin-left: 3px;
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+.pc__desc {
+  margin: 0;
+  font: 400 12.5px/1.45 var(--ar-font-sans);
+  color: var(--ar-ink-600);
+}
+.pc__limits {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  border-top: 1px solid var(--ar-line-200);
+  border-bottom: 1px solid var(--ar-line-200);
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+.pc__limits b {
+  color: var(--ar-ink-900);
+  font-weight: 600;
+}
+.pc__mods {
+  margin: 2px 0 0;
+  font: 600 11.5px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.pc__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 400 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}
+.pc__list li {
+  display: flex;
+  gap: 6px;
+}
+.pc__list--hl {
+  color: var(--ar-ink-900);
+  font-weight: 500;
+}
+.pc__tick {
+  flex: none;
+  color: var(--ar-teal-600);
+}
+.pc__foot {
+  margin-top: auto;
+  padding-top: 8px;
+}
+.pc__note {
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-teal-600);
+}
+
 /* Plan features */
 .feat {
   margin-top: 16px;

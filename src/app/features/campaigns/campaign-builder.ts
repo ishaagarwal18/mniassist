@@ -7,8 +7,17 @@ import {
   toScheduleInput,
 } from './campaign-schedule.logic';
 import { PermissionService } from '@abp/ng.core';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { readApiError } from '../../core/util/api-error';
 import { TemplateService as TemplateApi } from '../../proxy/messaging/template.service';
@@ -79,7 +88,36 @@ export class ArCampaignBuilder {
   private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(CampaignStore);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly cockpitOrigin = inject(CockpitOriginService);
+
+  /** The campaign named in `?open=<id>` when the page was opened, until the list has loaded and it has been opened. */
+  private pendingOpen: string | null = this.route.snapshot.queryParamMap.get('open');
+
+  constructor() {
+    // A link to /campaigns?open=<id> (a breadcrumb back, a notification, a new draft) opens that campaign once it is listed.
+    effect(() => {
+      const list = this.campaigns();
+      const wanted = this.pendingOpen;
+      if (!wanted || this.loading()) return;
+      untracked(() => {
+        this.pendingOpen = null;
+        const c = list.find((x) => x.id === wanted);
+        if (!c) {
+          this.setOpen(null);
+          return;
+        }
+        if (this.openId() !== c.id) void this.toggle(c);
+        // Bring it into view once it has rendered.
+        setTimeout(() =>
+          this.host.nativeElement
+            .querySelector(`[data-campaign="${CSS.escape(c.id)}"]`)
+            ?.scrollIntoView({ block: 'start', behavior: 'smooth' }),
+        );
+      });
+    });
+  }
   protected readonly channels = inject(ChannelService).channels;
 
   protected readonly canCreate = grantedPolicy('AutoReach.Campaigns.Create', this.permissions);

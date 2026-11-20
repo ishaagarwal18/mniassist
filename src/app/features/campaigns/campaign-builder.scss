@@ -46,6 +46,29 @@
 .camp__row:hover {
   background: var(--ar-bg-100);
 }
+.camp__row:focus-visible {
+  outline: 2px solid var(--ar-teal-600);
+  outline-offset: -2px;
+}
+.camp--open {
+  border-color: var(--ar-teal-600);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 6%);
+}
+.camp--open .camp__row {
+  background: var(--ar-bg-50);
+}
+.camp__caret {
+  font-size: 12px;
+  color: var(--ar-ink-400);
+  transition: transform 0.15s ease;
+}
+.camp--open .camp__caret {
+  transform: rotate(180deg);
+}
+.camp {
+  scroll-margin-top: 12px;
+  flex: none;
+}
 .camp__name {
   margin: 0;
   font: 600 14px var(--ar-font-sans);
@@ -87,7 +110,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 12px 16px;
   margin-top: 12px;
 }
 .panel__cost {
@@ -96,7 +120,10 @@
 }
 .panel__actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
+  margin-top: 10px;
 }
 
 .timing {
@@ -179,7 +206,7 @@
 }
 .report__grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 8px 20px;
   font: 400 12px var(--ar-font-sans);
   color: var(--ar-ink-500);

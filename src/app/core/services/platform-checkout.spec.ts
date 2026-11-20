@@ -39,5 +39,28 @@ describe('platform checkout', () => {
       currency: 'INR',
       prefill: { email: 'a@b.c', name: '', contact: '' },
     });
+    expect(o).not.toHaveProperty('recurring');
+  });
+
+  it('asks Razorpay to save the card when the top-up sets up automatic top-ups', () => {
+    const o = razorpayOptions(
+      {
+        checkoutId: 'c2',
+        gateway: 'Razorpay',
+        amountInPaise: 100000,
+        currency: 'INR',
+        razorpay: {
+          keyId: 'rzp_test_x',
+          orderId: 'order_2',
+          name: 'MNI Assist',
+          description: 'Wallet top-up, saving the card',
+          customerId: 'cust_1',
+          recurring: true,
+        },
+      },
+      () => undefined,
+      () => undefined,
+    );
+    expect(o).toMatchObject({ customer_id: 'cust_1', recurring: '1', order_id: 'order_2' });
   });
 });

@@ -86,8 +86,13 @@
   }
 
   @for (c of campaigns(); track c.id) {
-    <article class="camp">
-      <button class="camp__row" (click)="toggle(c)">
+    <article class="camp" [class.camp--open]="openId() === c.id" [attr.data-campaign]="c.id">
+      <button
+        class="camp__row"
+        type="button"
+        [attr.aria-expanded]="openId() === c.id"
+        (click)="toggle(c)"
+      >
         <div class="camp__id">
           <h2 class="camp__name">{{ c.name }}</h2>
           <p class="camp__meta">
@@ -105,6 +110,7 @@
             {{ count(c.dispatched) }} / {{ count(c.estimatedRecipients) }}
           </span>
           <ar-chip [tone]="tone(c.state)" [dot]="c.state === 'running'">{{ c.state }}</ar-chip>
+          <span class="camp__caret" aria-hidden="true">▾</span>
         </div>
       </button>
 

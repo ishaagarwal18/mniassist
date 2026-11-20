@@ -45,6 +45,8 @@ export function razorpayOptions(
     theme: { color: '#0f766e' },
     handler,
     modal: { ondismiss: onDismiss },
+    // Saving the card for automatic top-ups: Razorpay needs the customer and the recurring flag.
+    ...(r.recurring && r.customerId ? { customer_id: r.customerId, recurring: '1' } : {}),
   };
 }
 
