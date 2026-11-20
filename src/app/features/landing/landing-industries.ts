@@ -42,6 +42,7 @@ interface Industry {
       gap: 16px;
     }
     .card {
+      position: relative;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -53,19 +54,33 @@ interface Industry {
         0 20px 40px -15px rgba(15, 23, 42, 0.07),
         0 6px 18px -6px rgba(15, 23, 42, 0.04);
       transition:
-        transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
-        border-color 260ms ease,
-        box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1);
+        transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        border-color 300ms ease,
+        box-shadow 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
       animation: cardFloat 8s ease-in-out infinite alternate;
-      will-change: transform;
+      will-change: transform, box-shadow, border-color;
+      cursor: pointer;
     }
     .card:hover {
       animation-play-state: paused;
-      transform: translateY(-4px);
-      border-color: rgba(37, 99, 235, 0.28);
+      transform: translateY(-8px) scale(1.012);
+      border-color: #3b82f6;
       box-shadow:
-        0 28px 56px -12px rgba(15, 23, 42, 0.11),
-        0 12px 24px -8px rgba(15, 23, 42, 0.06);
+        0 0 0 1px #3b82f6,
+        0 24px 48px -12px rgba(37, 99, 235, 0.24),
+        0 12px 28px -6px rgba(15, 23, 42, 0.08);
+    }
+    .card:hover .card__icon {
+      transform: translateY(-3px) scale(1.1);
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      border-color: #3b82f6;
+      box-shadow: 0 4px 14px -2px rgba(37, 99, 235, 0.35);
+    }
+    .card:hover h3 {
+      color: #1d4ed8;
+    }
+    .card:hover li ar-icon {
+      transform: scale(1.15);
     }
     .card:nth-child(1) { animation-delay: 0s; }
     .card:nth-child(2) { animation-delay: 1.8s; }
@@ -91,11 +106,17 @@ interface Industry {
       background: linear-gradient(135deg, var(--ar-blue-100), #fff);
       border: 1px solid var(--ar-blue-200);
       color: var(--ar-blue-600);
+      transition:
+        transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        background 300ms ease,
+        border-color 300ms ease,
+        box-shadow 300ms ease;
     }
     h3 {
       margin: 4px 0 0;
       font: 650 16px var(--ar-font-sans);
       color: var(--ar-ink-900);
+      transition: color 260ms ease;
     }
     p {
       margin: 0;
@@ -122,6 +143,7 @@ interface Industry {
       flex: none;
       margin-top: 2px;
       color: var(--ar-green-600);
+      transition: transform 260ms ease;
     }
     @media (max-width: 1020px) {
       .grid {
