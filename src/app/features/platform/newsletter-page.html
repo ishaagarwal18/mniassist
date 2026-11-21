@@ -1,0 +1,214 @@
+<ar-topbar
+  title="Newsletter"
+  [subtitle]="counts().confirmed + ' confirmed subscribers'"
+  help="Write and send the platform newsletter to everyone who signed up in the website footer and confirmed by email (double opt-in). Every email carries its own unsubscribe link."
+>
+  @if (tab() === 'issues') {
+    <button ar-button variant="primary" icon="plus" type="button" (click)="openNew()">New newsletter</button>
+  } @else {
+    <button ar-button variant="ghost" icon="download" type="button" [disabled]="busy()" (click)="exportCsv()">
+      Export CSV
+    </button>
+  }
+</ar-topbar>
+
+<div class="nlp ar-scroll">
+  <div class="nlp__stats">
+    <div class="nlp__stat nlp__stat--good">
+      <span class="nlp__stat-n">{{ counts().confirmed }}</span>
+      <span class="nlp__stat-k">Confirmed</span>
+    </div>
+    <div class="nlp__stat">
+      <span class="nlp__stat-n">{{ counts().pending }}</span>
+      <span class="nlp__stat-k">Waiting to confirm</span>
+    </div>
+    <div class="nlp__stat">
+      <span class="nlp__stat-n">{{ counts().unsubscribed }}</span>
+      <span class="nlp__stat-k">Unsubscribed</span>
+    </div>
+  </div>
+
+  <div class="nlp__tabs" role="tablist" aria-label="Newsletter">
+    <button type="button" role="tab" [attr.aria-selected]="tab() === 'issues'" (click)="tab.set('issues')">
+      Newsletters
+    </button>
+    <button type="button" role="tab" [attr.aria-selected]="tab() === 'subscribers'" (click)="tab.set('subscribers')">
+      Subscribers
+    </button>
+  </div>
+
+  @if (tab() === 'issues') {
+    @if (issuesError(); as e) {
+      <p class="nlp__err" role="alert">{{ e }}</p>
+    }
+    <ul class="nlp__issues">
+      @for (i of issues(); track i.id) {
+        <li class="nlp__issue">
+          <div class="nlp__issue-main">
+            <div class="nlp__issue-head">
+              <strong class="nlp__issue-subject">{{ i.subject }}</strong>
+              @if (issueStatus(i); as st) {
+                <ar-chip [tone]="st.tone" [dot]="i.status === IssueStatus.Sending">{{ st.label }}</ar-chip>
+              }
+            </div>
+            <span class="nlp__issue-meta">
+              @if (i.status === IssueStatus.Draft) {
+                Draft · last saved {{ (i.lastModificationTime ?? i.creationTime) | date: 'd MMM y, HH:mm' }}
+              } @else {
+                {{ i.sentCount }} delivered
+                @if (i.failedCount) {
+                  · <span class="nlp__bad">{{ i.failedCount }} failed</span>
+                }
+                of {{ i.recipientCount }} ·
+                {{ i.status === IssueStatus.Sent ? 'sent' : 'started' }}
+                {{ (i.sentAtUtc ?? i.sendStartedAtUtc) | date: 'd MMM y, HH:mm' }}
+              }
+            </span>
+            @if (i.status === IssueStatus.Sending) {
+              <span class="nlp__bar" role="progressbar" [attr.aria-valuenow]="issueProgress(i)" aria-valuemin="0" aria-valuemax="100">
+                <span [style.width.%]="issueProgress(i)"></span>
+              </span>
+            }
+          </div>
+          <div class="nlp__issue-actions">
+            @if (i.status === IssueStatus.Draft) {
+              <button ar-button variant="ghost" type="button" (click)="open(i)">Edit</button>
+              <button ar-button variant="primary" type="button" icon="send" [disabled]="busy() || !counts().confirmed" (click)="send(i)">
+                Send
+              </button>
+              <button ar-button variant="quiet" type="button" aria-label="Delete draft" title="Delete draft" (click)="remove(i)">
+                Delete
+              </button>
+            } @else {
+              <button ar-button variant="ghost" type="button" (click)="open(i)">View</button>
+            }
+          </div>
+        </li>
+      } @empty {
+        <li class="nlp__empty">
+          <strong>No newsletters yet.</strong>
+          <span>Write one with New newsletter. Send yourself a test before it goes to the list.</span>
+        </li>
+      }
+    </ul>
+  } @else {
+    <div class="nlp__filters">
+      <input
+        class="ar-field__input nlp__search"
+        type="search"
+        placeholder="Search email addresses"
+        aria-label="Search email addresses"
+        [value]="filter()"
+        (input)="setFilter($any($event.target).value)"
+      />
+      <select class="ar-field__input nlp__status" aria-label="Status" (change)="setStatusFilter($any($event.target).value)">
+        <option value="">All statuses</option>
+        <option [value]="Status.Confirmed">Confirmed</option>
+        <option [value]="Status.Pending">Waiting to confirm</option>
+        <option [value]="Status.Unsubscribed">Unsubscribed</option>
+      </select>
+    </div>
+
+    <div class="nlp__table-wrap">
+      <table class="nlp__table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Signed up</th>
+            <th>Confirmed</th>
+            <th>Notice</th>
+            <th><span class="nlp__sr">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of subscribers(); track s.id) {
+            <tr>
+              <td class="nlp__email" translate="no">{{ s.email }}</td>
+              <td>
+                @if (subscriberStatus(s.status); as st) {
+                  <ar-chip [tone]="st.tone">{{ st.label }}</ar-chip>
+                }
+              </td>
+              <td>{{ s.requestedAtUtc | date: 'd MMM y' }}</td>
+              <td>{{ s.confirmedAtUtc ? (s.confirmedAtUtc | date: 'd MMM y') : '—' }}</td>
+              <td class="ar-mono">{{ s.consentNoticeVersion }}</td>
+              <td class="nlp__row-actions">
+                <button ar-button variant="quiet" type="button" [title]="'Erase ' + s.email" (click)="erase(s)">Erase</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="nlp__empty-cell">
+                {{ filter() || statusFilter() !== null ? 'No subscribers match.' : 'Nobody has signed up yet. The form is in the website footer.' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (pages() > 1) {
+      <div class="nlp__pager">
+        <button ar-button variant="ghost" type="button" [disabled]="page() === 0" (click)="page.set(page() - 1)">← Previous</button>
+        <span>Page {{ page() + 1 }} of {{ pages() }} · {{ total() }} in all</span>
+        <button ar-button variant="ghost" type="button" [disabled]="page() + 1 >= pages()" (click)="page.set(page() + 1)">Next →</button>
+      </div>
+    }
+  }
+</div>
+
+@if (editing(); as ed) {
+  <ar-dialog
+    [title]="ed.readOnly ? ed.subject : ed.id ? 'Edit newsletter' : 'New newsletter'"
+    width="min(1100px, calc(100vw - 32px))"
+    (dismiss)="editing.set(null)"
+  >
+    <div class="nle">
+      <div class="nle__form">
+        <label class="ar-field">
+          <span class="ar-field__label">Subject line</span>
+          <input
+            class="ar-field__input"
+            maxlength="200"
+            placeholder="What's new in MNI Assist · November"
+            [readOnly]="ed.readOnly"
+            [value]="ed.subject"
+            (input)="edit('subject', $any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field nle__body">
+          <span class="ar-field__label">Body (HTML)</span>
+          <textarea
+            class="ar-field__input nle__code"
+            spellcheck="false"
+            [readOnly]="ed.readOnly"
+            [value]="ed.body"
+            (input)="edit('body', $any($event.target).value)"
+          ></textarea>
+          <span class="nle__hint">
+            Simple HTML with inline styles works best in email: headings, paragraphs, lists, links and images.
+            The unsubscribe footer is added for you.
+          </span>
+        </label>
+        @if (editError(); as e) {
+          <p class="nlp__err" role="alert">{{ e }}</p>
+        }
+      </div>
+      <div class="nle__preview">
+        <span class="nle__preview-k">Preview</span>
+        <iframe class="nle__frame" title="Newsletter preview" sandbox="" [srcdoc]="preview()"></iframe>
+      </div>
+    </div>
+    <div dialogActions>
+      <button ar-button variant="ghost" type="button" (click)="editing.set(null)">Close</button>
+      <button ar-button variant="ghost" type="button" icon="mail" [disabled]="busy()" (click)="sendTest()">Send a test</button>
+      @if (!ed.readOnly) {
+        <button ar-button variant="ghost" type="button" [disabled]="busy()" (click)="save()">Save draft</button>
+        <button ar-button variant="primary" type="button" icon="send" [disabled]="busy() || !counts().confirmed" (click)="send()">
+          Send to {{ counts().confirmed }}
+        </button>
+      }
+    </div>
+  </ar-dialog>
+}

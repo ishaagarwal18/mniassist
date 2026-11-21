@@ -498,7 +498,7 @@ export class ArFeatureFlags implements OnInit {
       );
       this.tick.update((n) => n + 1);
     } catch (e: unknown) {
-      this.toast.error(readApiError(e, 'Failed to update feature flag rule.'));
+      this.toast.error(readApiError(e, 'The feature flag rule was not saved. Try again.'));
     }
   }
 

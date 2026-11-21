@@ -18,7 +18,8 @@ import { PermissionService } from '@abp/ng.core';
 import { HUB_ROUTE, NAV, NavGroup, NavItem, visibleForSetup } from './nav.model';
 import { OnboardingStore } from '../core/services/onboarding.store';
 import { ArAvatar } from '../ui/avatar';
-import { ArIcon } from '../ui/icon';
+import { ArIcon, IconName } from '../ui/icon';
+import { SubNavService } from './sub-nav.service';
 import { ArBrand } from './brand';
 import { NavDrawer } from './nav-drawer';
 import { ArAppearanceSettings } from './appearance-settings';
@@ -30,12 +31,10 @@ import { BrandingStore } from '../core/services/branding.store';
 import { PwaService } from '../core/services/pwa.service';
 import { PlanService } from '../core/services/plan.service';
 import { canAccessNavItem } from '../core/auth/permission';
+import { OPTIONAL_AREAS, filterByWorkAreas, readWorkAreas, writeWorkAreas } from './work-areas';
 
 const COLLAPSED_KEY = 'ar.sidebar.collapsed';
-// v3: the groups were renamed (Nov 2026); folds saved under the old names would leave every group open.
-const FOLDED_KEY = 'ar.sidebar.foldedGroups.v3';
-
-/** The group of starred pages. Not in NAV, so it starts open: see {@link readFolded}. */
+/** The group of starred pages; not in NAV. */
 const FAVOURITES = 'Favourites';
 
 /** Favourites are per person: two people sharing a browser keep their own. */
@@ -51,23 +50,6 @@ function readFavourites(userId: string | null): readonly string[] {
   } catch {
     return [];
   }
-}
-
-function allGroupHeadings(): Set<string> {
-  return new Set(NAV.map((g) => g.heading).filter((h): h is string => Boolean(h)));
-}
-
-function readFolded(): ReadonlySet<string> {
-  try {
-    const raw = localStorage.getItem(FOLDED_KEY);
-    if (raw !== null) {
-      return new Set(JSON.parse(raw) as string[]);
-    }
-  } catch {
-    /* storage blocked */
-  }
-  // Default when application loads: all menu groups are collapsed
-  return allGroupHeadings();
 }
 
 function readCollapsed(): boolean {
@@ -148,39 +130,36 @@ function readCollapsed(): boolean {
         <div
           class="sb__group"
           [class.sb__group--active]="hasActiveItem(group)"
-          [class.sb__group--folded]="isFolded(group)"
         >
-          @if (group.heading) {
-            <!-- A heading folds its group away; the group holding this page is highlighted as selected. -->
-            <button
-              type="button"
-              class="sb__heading"
-              [class.sb__heading--folded]="isFolded(group)"
-              [class.sb__heading--active]="hasActiveItem(group)"
-              [attr.aria-expanded]="!isFolded(group)"
-              [attr.title]="
-                i18n.t(isFolded(group) ? 'Show {0}' : 'Hide {0}', i18n.t(group.heading))
-              "
-              (click)="toggleGroup(group)"
-            >
-              <span class="sb__heading-title">
-                <span class="sb__heading-bar" aria-hidden="true"></span>
-                <span class="sb__heading-text">{{ i18n.t(group.heading) }}</span>
-              </span>
-              <span class="sb__heading-meta">
-                @if (hasActiveItem(group)) {
-                  <span
-                    class="sb__heading-active-dot"
-                    [class.sb__heading-active-dot--glow]="isFolded(group)"
-                    [attr.title]="i18n.t('Active section')"
-                    aria-hidden="true"
-                  ></span>
+          @if (group.heading && !searching()) {
+            <!-- Only the group is listed here; its pages show as tabs above the screen (ar-sub-nav). -->
+            <div class="sb__row">
+              <button
+                type="button"
+                class="sb__item sb__item--group"
+                [class.sb__item--on]="isCurrentGroup(group)"
+                [attr.aria-current]="isCurrentGroup(group) ? 'true' : null"
+                [attr.aria-label]="collapsed() ? i18n.t(group.heading) : null"
+                (mouseenter)="showMenuTooltip($event, group.heading)"
+                (mouseleave)="hideMenuTooltip()"
+                (focus)="showMenuTooltip($event, group.heading)"
+                (blur)="hideMenuTooltip()"
+                (click)="selectGroup(group)"
+              >
+                <span class="sb__bar" aria-hidden="true"></span>
+                <ar-icon [name]="groupIcon(group)" [size]="16" />
+                <span class="sb__label">{{ i18n.t(group.heading) }}</span>
+                @if (hasActiveItem(group) && !isCurrentGroup(group)) {
+                  <span class="sb__heading-active-dot" aria-hidden="true"></span>
                 }
-                <ar-icon class="sb__heading-chev" name="chevdown" [size]="12" />
-              </span>
-            </button>
-          }
-          @if (!isFolded(group)) {
+              </button>
+            </div>
+          } @else {
+            @if (group.heading) {
+              <p class="sb__heading sb__heading--static">
+                <span class="sb__heading-text">{{ i18n.t(group.heading) }}</span>
+              </p>
+            }
             <div class="sb__group-items">
               @for (item of group.items; track item.route) {
                 <!-- One item is lit: the one whose route is the longest match for the page,
@@ -239,6 +218,45 @@ function readCollapsed(): boolean {
         <p class="sb__none">{{ i18n.t('No menu items match “{0}”.', menuQuery().trim()) }}</p>
       }
     </nav>
+
+    <!-- Work areas: a person hides the departments they never use, so the menu shows their day. -->
+    @if (!collapsed() && !searching() && areaChoices().length > 1) {
+      <div class="sb__areas">
+        @if (areasOpen()) {
+          <fieldset class="sb__areas-panel">
+            <legend class="sb__areas-title">{{ i18n.t('Show these areas in the menu') }}</legend>
+            @for (area of areaChoices(); track area) {
+              <label class="sb__areas-option">
+                <input
+                  type="checkbox"
+                  [id]="'sb-area-' + $index"
+                  [checked]="isAreaOn(area)"
+                  (change)="toggleArea(area)"
+                />
+                {{ i18n.t(area) }}
+              </label>
+            }
+            <div class="sb__areas-actions">
+              <button type="button" class="sb__areas-link" (click)="showAllAreas()">
+                {{ i18n.t('Show everything') }}
+              </button>
+              <button type="button" class="sb__areas-done" (click)="areasOpen.set(false)">
+                {{ i18n.t('Done') }}
+              </button>
+            </div>
+          </fieldset>
+        } @else {
+          <button type="button" class="sb__areas-open" (click)="areasOpen.set(true)">
+            <ar-icon name="settings-menu" [size]="13" />
+            @if (hiddenAreaCount() > 0) {
+              {{ i18n.t('{0} areas hidden · Change', hiddenAreaCount()) }}
+            } @else {
+              {{ i18n.t('Too much here? Choose your work areas') }}
+            }
+          </button>
+        }
+      </div>
+    }
     <div #menuTooltip class="sb__tooltip" popover="manual" aria-hidden="true"></div>
 
     <div class="sb__foot">
@@ -299,9 +317,6 @@ export class ArSidebar {
 
   protected readonly menuOpen = signal(false);
 
-  /** Menu groups folded away by their heading, remembered per browser. */
-  private readonly folded = signal<ReadonlySet<string>>(readFolded());
-
   /** Whether this group contains the currently active route item. */
   protected hasActiveItem(group: NavGroup): boolean {
     const current = this.active();
@@ -312,51 +327,81 @@ export class ArSidebar {
     // The user id arrives after sign-in config loads; read that person's stars when it does.
     effect(() => {
       const id = this.account.id();
-      untracked(() => this.favouriteRoutes.set(readFavourites(id)));
+      untracked(() => {
+        this.favouriteRoutes.set(readFavourites(id));
+        this.workAreas.set(readWorkAreas(id));
+      });
       // The picture is per person too: load it once someone is signed in.
       if (id) untracked(() => this.picture.ensureLoaded());
     });
 
-    // When navigating to a page, ensure its parent group is unfolded so the selection is in view.
+    // A group picked by hand stays picked only while the page is one of its pages.
     this.router.events
       .pipe(
         filter((e): e is NavigationEnd => e instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
       .subscribe(() => {
-        const route = this.active();
-        if (!route) return;
-        const group = this.nav().find((g) => g.items.some((i) => i.route === route));
-        if (group?.heading && this.folded().has(group.heading)) {
-          const next = new Set(this.folded());
-          next.delete(group.heading);
-          this.folded.set(next);
-          try {
-            localStorage.setItem(FOLDED_KEY, JSON.stringify([...next]));
-          } catch {
-            /* storage blocked */
-          }
-        }
+        const picked = this.pickedHeading();
+        if (!picked) return;
+        const group = this.nav().find((g) => g.heading === picked);
+        if (!group || !this.hasActiveItem(group)) this.pickedHeading.set(null);
       });
+
+    // The horizontal menu above the screen shows the pages of the current group.
+    this.subNav.toggleFavourite = (route) => {
+      const item = this.allowed()
+        .flatMap((g) => g.items)
+        .find((i) => i.route === route);
+      if (item) this.toggleFavourite(item);
+    };
+    effect(() => {
+      const group = this.currentGroup();
+      const active = this.active();
+      const favourites = this.favouriteRoutes();
+      untracked(() => {
+        this.subNav.group.set(group);
+        this.subNav.active.set(active);
+        this.subNav.favourites.set(favourites);
+      });
+    });
   }
 
-  /** Folded, unless the bar shows icons only, or a search is on. */
-  protected isFolded(group: NavGroup): boolean {
-    if (!group.heading || this.collapsed() || this.searching()) return false;
-    return this.folded().has(group.heading);
+  private readonly subNav = inject(SubNavService);
+
+  /** The group last clicked in the sidebar, while its page is open. */
+  private readonly pickedHeading = signal<string | null>(null);
+
+  /**
+   * The group whose pages the horizontal menu shows: the one picked, else the department holding
+   * this page (a starred page still shows its own department, not Favourites).
+   */
+  protected readonly currentGroup = computed<NavGroup | null>(() => {
+    const groups = this.nav().filter((g) => g.heading);
+    const picked = this.pickedHeading();
+    if (picked) {
+      const g = groups.find((x) => x.heading === picked);
+      if (g) return g;
+    }
+    const holding = groups.filter((g) => this.hasActiveItem(g));
+    return holding.find((g) => g.heading !== FAVOURITES) ?? holding[0] ?? null;
+  });
+
+  protected isCurrentGroup(group: NavGroup): boolean {
+    return this.currentGroup()?.heading === group.heading;
   }
 
-  protected toggleGroup(group: NavGroup): void {
-    const name = group.heading;
-    if (!name) return;
-    const next = new Set(this.folded());
-    if (this.isFolded(group)) next.delete(name);
-    else next.add(name);
-    this.folded.set(next);
-    try {
-      localStorage.setItem(FOLDED_KEY, JSON.stringify([...next]));
-    } catch {
-      /* storage blocked: the choice just won't persist */
+  protected groupIcon(group: NavGroup): IconName {
+    return group.heading === FAVOURITES ? 'star' : (group.items[0]?.icon ?? 'chevron');
+  }
+
+  /** Shows the group's pages above the screen and opens its first page, unless already on one. */
+  protected selectGroup(group: NavGroup): void {
+    this.hideMenuTooltip();
+    this.pickedHeading.set(group.heading);
+    this.drawer.close();
+    if (!this.hasActiveItem(group) && group.items[0]) {
+      void this.router.navigateByUrl(group.items[0].route);
     }
   }
 
@@ -435,21 +480,66 @@ export class ArSidebar {
   /** Starred pages, in the order they were starred; per user and per browser. */
   private readonly favouriteRoutes = signal<readonly string[]>([]);
 
-  /** The sidebar: favourites first, then day-to-day work. Set-up and report pages live on their hubs. */
-  protected readonly nav = computed<readonly NavGroup[]>(() => {
+  /** The work areas this person chose to see; null until they choose (everything shows). */
+  private readonly workAreas = signal<ReadonlySet<string> | null>(null);
+  protected readonly areasOpen = signal(false);
+
+  /** The optional areas this person may open at all, in menu order. */
+  protected readonly areaChoices = computed(() =>
+    this.allowed()
+      .map((g) => g.heading)
+      .filter((h): h is string => !!h && OPTIONAL_AREAS.includes(h)),
+  );
+
+  protected readonly hiddenAreaCount = computed(() => {
+    const chosen = this.workAreas();
+    return chosen === null ? 0 : this.areaChoices().filter((a) => !chosen.has(a)).length;
+  });
+
+  protected isAreaOn(area: string): boolean {
+    const chosen = this.workAreas();
+    return chosen === null || chosen.has(area);
+  }
+
+  protected toggleArea(area: string): void {
+    const next = new Set(this.workAreas() ?? this.areaChoices());
+    if (next.has(area)) next.delete(area);
+    else next.add(area);
+    this.saveAreas(next);
+  }
+
+  protected showAllAreas(): void {
+    this.saveAreas(null);
+    this.areasOpen.set(false);
+  }
+
+  private saveAreas(areas: ReadonlySet<string> | null): void {
+    this.workAreas.set(areas);
+    writeWorkAreas(this.account.id(), areas);
+  }
+
+  /** The sidebar: favourites first, then day-to-day work in the chosen areas. */
+  protected readonly nav = computed(() => this.buildNav(true));
+
+  /** Search looks through every area, including hidden ones, so nothing is lost by hiding it. */
+  private readonly navForSearch = computed(() => this.buildNav(false));
+
+  /** Set-up and report pages live on their hubs, not here. */
+  private buildNav(byArea: boolean): readonly NavGroup[] {
     const allowed = this.allowed();
     const byRoute = new Map(allowed.flatMap((g) => g.items).map((i) => [i.route, i] as const));
     const favourites = this.favouriteRoutes()
       .map((r) => byRoute.get(r))
       .filter((i): i is NavItem => Boolean(i));
-    const daily = allowed
+    const all = allowed
       .map((group) => ({ ...group, items: group.items.filter((i) => !this.offSidebar(i)) }))
       .filter((group) => group.items.length > 0);
+    const daily = byArea ? filterByWorkAreas(all, this.workAreas()) : all;
     if (favourites.length === 0) return daily;
     const fav: NavGroup = { heading: FAVOURITES, items: favourites };
     // After the heading-less top (Home, Tasks…), before the departments.
     return daily[0] && !daily[0].heading ? [daily[0], fav, ...daily.slice(1)] : [fav, ...daily];
-  });
+  }
 
   /** Kept on its hub page (Settings, All reports) rather than in the sidebar. */
   private offSidebar(item: NavItem): boolean {
@@ -479,9 +569,9 @@ export class ArSidebar {
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('menuSearch');
 
   protected readonly shown = computed<readonly NavGroup[]>(() => {
-    const groups = this.nav();
     const terms = this.menuQuery().trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (terms.length === 0) return groups;
+    if (terms.length === 0) return this.nav();
+    const groups = this.navForSearch();
     const hits = (text: string) => terms.every((t) => text.includes(t));
     return groups
       .map((group) => {

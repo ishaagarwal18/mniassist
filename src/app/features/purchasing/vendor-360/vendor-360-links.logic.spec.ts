@@ -30,7 +30,7 @@ const link = (label: string) =>
 
 describe('vendor 360 links', () => {
   it('opens the purchasing lists on this supplier, with the full counts', () => {
-    expect(link('Vendor bills')).toMatchObject({
+    expect(link('Supplier bills')).toMatchObject({
       route: '/purchasing/bills',
       params: { supplier: 's1', name: 'Bharat Gears' },
       count: 7,
@@ -62,7 +62,7 @@ describe('vendor 360 links', () => {
     expect(link('Inward goods receipt')?.permission).toBe('AutoReach.GoodsReceiptNotes.Create');
     expect(link('Record a bill')?.permission).toBe('AutoReach.VendorBills.Create');
     expect(link('Issue a debit note')?.permission).toBe('AutoReach.VendorDebitNotes.Create');
-    expect(link('Vendor bills')?.permission).toBeUndefined();
+    expect(link('Supplier bills')?.permission).toBeUndefined();
   });
 
   it('shows only the screens the role opens and the actions it may do', () => {
@@ -84,7 +84,7 @@ describe('vendor 360 links', () => {
       () => true,
       () => false,
     );
-    expect(viewer).toContain('Vendor bills');
+    expect(viewer).toContain('Supplier bills');
     expect(viewer).not.toContain('Record a bill');
     expect(viewer).not.toContain('Supplier details');
     expect(viewer).not.toContain('New purchase order');

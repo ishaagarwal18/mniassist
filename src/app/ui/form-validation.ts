@@ -205,3 +205,24 @@ export class ArForm implements OnDestroy {
     this.host.removeEventListener('click', this.onClick, true);
   }
 }
+
+/**
+ * Checks one field as the person leaves it, so a mistyped email, phone number or amount is
+ * flagged at once rather than after pressing Save. An empty field is left alone here: a
+ * required field someone has not reached yet is only flagged by the Save checks.
+ */
+export function checkOnLeave(target: EventTarget | null): void {
+  const el = target as Field | null;
+  if (!el || !(el instanceof HTMLElement) || !el.matches?.(FIELD_SELECTOR)) return;
+  if (el instanceof HTMLInputElement && ['checkbox', 'radio', 'file', 'hidden'].includes(el.type))
+    return;
+  if ((el as HTMLInputElement).readOnly || el.disabled || el.closest('[data-novalidate]')) return;
+  const empty = !el.value?.trim() && !(el.validity?.badInput ?? false);
+  if (empty) {
+    if (el.getAttribute('aria-invalid') === 'true' && !el.required) clearProblem(el);
+    return;
+  }
+  const problem = problemWith(el);
+  if (problem) showProblem(el, problem);
+  else if (el.getAttribute('aria-invalid') === 'true') clearProblem(el);
+}

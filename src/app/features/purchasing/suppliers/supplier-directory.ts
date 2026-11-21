@@ -165,7 +165,7 @@ import {
               <ng-template #template let-s>
                 <div class="acts">
                   @if (canOpen360()) {
-                    <a class="act" [routerLink]="['/purchasing/vendor-360', s.id]">Vendor 360</a>
+                    <a class="act" [routerLink]="['/purchasing/vendor-360', s.id]">Supplier overview</a>
                   }
                   @if (canManage()) {
                     <button type="button" class="act" (click)="edit.emit(s.id)">Edit</button>

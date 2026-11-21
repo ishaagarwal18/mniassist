@@ -1,10 +1,10 @@
 <ar-topbar
-  title="Obsolescence radar"
+  title="Discontinued parts"
   [subtitle]="subtitle()"
   help="Every installed component whose part its maker is phasing out, by account and site, ranked by risk. A component gets its stage from the most specific lifecycle rule (its part number, else its make and series); the score adds the machine's age, criticality, your stock of the old part and whether it is under your AMC. Rows are re-scored when a rule or a component is saved, and every night, so a last-buy date passing moves them without anyone editing."
 >
   @if (canEditRules()) {
-    <a ar-button variant="ghost" routerLink="/documents/lifecycle">Lifecycle rules</a>
+    <a ar-button variant="ghost" routerLink="/documents/lifecycle">Discontinuation rules</a>
   }
   @if (canManage()) {
     <a ar-button variant="ghost" routerLink="/obsolescence/settings">Settings</a>

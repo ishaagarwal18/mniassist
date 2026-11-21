@@ -73,7 +73,7 @@ import { PickListStore } from '../../../core/pick-lists/pick-list.store';
   template: `
     <ar-topbar
       help="Record a supplier's tax invoice against its goods receipt, with GST and TDS worked out for you."
-      title="Record vendor bill"
+      title="Record supplier bill"
       [subtitle]="form().supplierName || 'Enter a supplier invoice for 3-way matching and payment'"
     />
 
@@ -276,7 +276,7 @@ import { PickListStore } from '../../../core/pick-lists/pick-list.store';
             <div class="pf__grid">
               <div class="ar-field pf__span2">
                 <label class="ar-field__label" for="vb-grn"
-                  >Goods receipt (GRN) <span class="ar-field__opt">optional</span></label
+                  >Receive goods (GRN) <span class="ar-field__opt">optional</span></label
                 >
                 @if (receipts() !== null) {
                   <select

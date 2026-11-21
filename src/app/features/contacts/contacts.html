@@ -234,6 +234,7 @@
       @if (!loading() && !loadError()) {
         <ejs-grid
           arGrid="contacts"
+          arGridEmpty="No contacts yet. Press “New contact”, or import your customer list from Excel."
           [arGridSearch]="false"
           [dataSource]="rows()"
           aria-label="Contacts in the selected segment"

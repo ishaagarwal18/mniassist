@@ -45,7 +45,7 @@ import { ArGrid } from '../../../ui/grid';
     >
       @if (can().create) {
         <button ar-button variant="primary" icon="plus" (click)="openCreatePage()">
-          Inward gate entry (GRN)
+          Receive goods (GRN)
         </button>
       }
     </ar-topbar>
@@ -128,6 +128,7 @@ import { ArGrid } from '../../../ui/grid';
       <section class="table-card">
         <ejs-grid
           arGrid="goods-receipt-notes"
+          arGridEmpty="Nothing received yet. Press “Receive goods (GRN)” when a delivery reaches you."
           [dataSource]="filteredGrns()"
           aria-label="Goods Receipt Notes"
         >
@@ -713,7 +714,7 @@ export class GoodsReceiptNotesComponent {
     });
   }
 
-  /** Bills this receipt's accepted goods, on the Record vendor bill page. */
+  /** Bills this receipt's accepted goods, on the Record supplier bill page. */
   createVendorBill(g: GoodsReceiptNoteDto) {
     void this.router.navigate(['/purchasing/bills/new'], { queryParams: { grn: g.id } });
   }

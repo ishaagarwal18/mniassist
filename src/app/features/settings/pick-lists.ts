@@ -40,7 +40,7 @@ let nextKey = 1;
   styleUrl: './pick-lists.scss',
   template: `
     <ar-topbar
-      title="Pick lists"
+      title="Dropdown options"
       subtitle="The options your forms offer"
       help="Units, reasons, GST rates and the other drop-down lists, and what fixed options such as ticket statuses are called. Changes are your workspace's own; Reset to defaults brings back the standard list."
     />
@@ -57,7 +57,7 @@ let nextKey = 1;
           </ar-banner>
         }
         <div class="pl__layout">
-          <nav class="pl__lists" aria-label="Pick lists">
+          <nav class="pl__lists" aria-label="Dropdown options">
             @for (g of groups(); track g.area) {
               <h2 class="pl__area">{{ g.area }}</h2>
               @for (l of g.lists; track l.key) {

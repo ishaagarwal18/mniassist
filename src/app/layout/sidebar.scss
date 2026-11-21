@@ -205,36 +205,7 @@
   gap: 6px;
   flex: none;
 }
-.sb__heading-chev {
-  opacity: 0.6;
-  transition:
-    transform var(--ar-ease),
-    opacity var(--ar-ease),
-    color var(--ar-ease);
-}
-.sb__heading:hover .sb__heading-chev {
-  opacity: 0.9;
-}
-.sb__heading--folded .sb__heading-chev {
-  transform: rotate(-90deg);
-}
 
-/* Parent group selected state when a child item is active */
-.sb__heading--active {
-  background: rgba(56, 189, 248, 0.08);
-  color: var(--ar-tenant-accent, var(--ar-blue-400, #38bdf8));
-}
-.sb__heading--active .sb__heading-bar {
-  background: var(--ar-tenant-accent, var(--ar-blue-500));
-}
-.sb__heading--active .sb__heading-text {
-  font-weight: 700;
-  color: var(--ar-tenant-accent, var(--ar-blue-400, #38bdf8));
-}
-.sb__heading--active .sb__heading-chev {
-  color: var(--ar-tenant-accent, var(--ar-blue-400, #38bdf8));
-  opacity: 1;
-}
 .sb__heading-active-dot {
   width: 6px;
   height: 6px;
@@ -242,10 +213,6 @@
   background: var(--ar-tenant-accent, var(--ar-blue-500));
   flex: none;
   opacity: 0.85;
-}
-.sb__heading-active-dot--glow {
-  box-shadow: 0 0 6px var(--ar-tenant-accent, var(--ar-blue-500));
-  opacity: 1;
 }
 
 /* Child items container with hierarchy tree line */
@@ -562,10 +529,6 @@
   color: transparent;
   background: var(--ar-nav-line);
 }
-:host(.sb--collapsed) .sb__heading--active {
-  background: var(--ar-tenant-accent, var(--ar-blue-500));
-  opacity: 0.6;
-}
 :host(.sb--collapsed) .sb__item {
   justify-content: center;
   padding: 0;
@@ -616,4 +579,90 @@
   .sb__collapse {
     display: none;
   }
+}
+
+/* Work areas: choose which departments the menu shows. */
+.sb__areas {
+  padding: 6px 12px 8px;
+  border-top: 1px solid var(--ar-nav-line);
+}
+.sb__areas-open,
+.sb__areas-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 4px;
+  background: none;
+  border: 0;
+  border-radius: var(--ar-radius-control);
+  color: var(--ar-nav-dim);
+  font: 400 12px var(--ar-font-sans);
+  text-align: left;
+  cursor: pointer;
+}
+.sb__areas-open:hover,
+.sb__areas-link:hover {
+  color: var(--sb-strong);
+  background: var(--ar-nav-hi);
+}
+.sb__areas-panel {
+  display: grid;
+  gap: 4px;
+  max-height: 40vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--ar-nav-line);
+  border-radius: var(--ar-radius-control);
+  background: var(--ar-nav-hi);
+}
+.sb__areas-title {
+  padding: 0 2px 4px;
+  color: var(--sb-strong);
+  font: 600 12px var(--ar-font-sans);
+}
+.sb__areas-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ar-nav-text);
+  font: 400 12.5px var(--ar-font-sans);
+  cursor: pointer;
+}
+.sb__areas-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+}
+.sb__areas-actions .sb__areas-link {
+  width: auto;
+}
+.sb__areas-done {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: var(--ar-radius-control);
+  background: var(--ar-tenant-accent, var(--ar-blue-500));
+  color: #fff;
+  font: 600 12px var(--ar-font-sans);
+  cursor: pointer;
+}
+
+/* A group entry: a button drawn like a menu item; its pages show in the bar above the screen. */
+.sb__item--group {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sb__item--group .sb__heading-active-dot {
+  margin-left: auto;
+}
+.sb__heading--static {
+  margin: 10px 0 2px;
+  cursor: default;
 }

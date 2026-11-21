@@ -177,6 +177,7 @@ export function progressPercent(
         } @else {
           <ejs-grid
             arGrid="work-orders"
+          arGridEmpty="No work orders yet. Press “New work order” to start building an item."
             [arGridSearch]="false"
             [dataSource]="filteredWorkOrders()"
             [allowSelection]="true"

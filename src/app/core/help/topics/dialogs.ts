@@ -874,6 +874,33 @@ export const DIALOG_HELP: Readonly<Record<string, readonly HelpDialog[]>> = {
   platform: [
     { name: 'Schedule a rate', opens: 'Schedule a rate.', text: 'A new per-message price from a date: what Meta charges and what workspaces pay.' },
   ],
+  'platform/newsletter': [
+    {
+      name: 'New newsletter / Edit newsletter',
+      opens: 'New newsletter, or Edit on a draft (View on a sent one).',
+      text: 'Write the subject line and the body in simple HTML, with a live preview beside it showing the unsubscribe footer each email gets. Save draft keeps it; Send to … sends it to every confirmed subscriber.',
+      fields: [
+        { name: 'Subject line', text: 'What subscribers see in their inbox.' },
+        { name: 'Body (HTML)', text: 'Headings, paragraphs, lists, links and images, with inline styles.' },
+        { name: 'Send a test', text: 'Sends it to one address only, with [Test] in the subject.' },
+      ],
+    },
+    {
+      name: 'Send a test',
+      opens: 'Send a test in the editor.',
+      text: 'Asks which address to send the test to (yours by default). Nobody on the list gets it.',
+    },
+    {
+      name: 'Send “…”?',
+      opens: 'Send on a draft, or Send to … in the editor.',
+      text: 'Confirms how many confirmed subscribers it goes to. Once sending starts it can’t be changed or stopped.',
+    },
+    {
+      name: 'Erase …?',
+      opens: 'Erase on a subscriber.',
+      text: 'Deletes the address and its consent record for good, as for a data-erasure request.',
+    },
+  ],
   'platform/plans': [
     { name: 'New plan / Edit plan', opens: '+ New plan.', text: 'A plan with monthly fee, limits, selling points and order on Billing.' },
   ],

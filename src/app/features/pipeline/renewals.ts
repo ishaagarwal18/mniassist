@@ -34,7 +34,7 @@ import { initialSearch } from '../../core/util/customer-scope';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
-      title="AMC renewals"
+      title="Contract renewals"
       [subtitle]="subtitle()"
       help="Every AMC ending in the next 90 days. Reminders go out 30 and 7 days before; when a customer taps “Send quotation”, a renewal quote is drafted from last term's value plus your uplift, ready for you to review and issue."
     >
@@ -129,7 +129,7 @@ import { initialSearch } from '../../core/util/customer-scope';
         <p class="rn__empty">
           No AMC ends in this window. Renewals appear here once an installed-base machine has an AMC
           end date within 90 days — add AMC dates and values on
-          <a routerLink="/installed-base">Installed base</a>.
+          <a routerLink="/installed-base">Machines at customers</a>.
         </p>
       } @else {
         <div class="board">

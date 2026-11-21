@@ -643,6 +643,35 @@ export const SETTINGS_TOPICS: Readonly<Record<string, HelpTopic>> = {
       { name: 'Audit Note', text: 'Why the rule exists, kept with it.' },
     ],
   },
+  'platform/newsletter': {
+    summary:
+      'The platform newsletter: write an issue, test it, and send it to everyone who signed up in the website footer and confirmed by email. The Subscribers tab lists who is on it.',
+    benefits: [
+      'Only people who confirmed by email (double opt-in) are sent it, so the list stays clean and consent is on record.',
+      'Every email carries its own unsubscribe link, in the footer and in the mail app’s Unsubscribe button.',
+      'Sending runs in the background in batches; a restarted send never mails anyone twice.',
+    ],
+    steps: [
+      'Click New newsletter, write the subject line and the body, and watch the preview.',
+      'Click Send a test to send it to yourself only; check it on your phone too.',
+      'Click Send to …, then confirm. Progress shows on the list until it is done.',
+      'Use the Subscribers tab to search the list, export it as CSV, or erase an address on request.',
+    ],
+    tips: [
+      'Once sending starts an issue can’t be changed or stopped. Send a test first.',
+      'Erase is for data-erasure requests. Someone who just wants no more emails unsubscribes, so their opt-out is remembered.',
+      'Emails go out through the platform’s mail settings; if tests don’t arrive, check those first.',
+    ],
+    fields: [
+      { name: 'Confirmed', text: 'Subscribers who clicked the confirmation link. Only they are sent issues.' },
+      { name: 'Waiting to confirm', text: 'Signed up but haven’t clicked the emailed link yet. The link works for 7 days.' },
+      { name: 'Unsubscribed', text: 'Used an unsubscribe link. Kept so the opt-out is remembered.' },
+      { name: 'Newsletters', text: 'Every issue: drafts, one sending (with progress), and sent ones with delivered and failed counts.' },
+      { name: 'Subscribers', text: 'The list, with search, a status filter and paging. Notice is the consent wording version they agreed to.' },
+      { name: 'Export CSV', text: 'Downloads the whole list with dates and status, for a spreadsheet or another mailing tool.' },
+      { name: 'Erase', text: 'Deletes the address and its consent record for good.' },
+    ],
+  },
   'platform/plans': {
     summary:
       'The plans workspaces subscribe to: price, limits, the modules each switches on and the selling points shown on Billing. Public plans appear on every workspace’s Billing page; private ones are assigned by the platform team.',

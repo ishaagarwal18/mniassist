@@ -597,3 +597,37 @@ input[type='radio']:not(.e-control) {
   border-color: var(--ar-ink-400);
   outline: none;
 }
+
+/* An empty list: what the page is for and what to press, instead of "No records to display". */
+.ar-grid-empty {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 20px 12px;
+  text-align: center;
+  white-space: normal;
+}
+.ar-grid-empty__lead {
+  margin: 0;
+  font: 500 13.5px var(--ar-font-sans);
+  color: var(--ar-ink-800);
+}
+.ar-grid-empty__more {
+  margin: 0;
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+
+/*
+ * Required fields are marked wherever the control says `required`, so a first-time user sees
+ * what must be filled before pressing Save. Labels that already draw their own * (any class
+ * with "req" in it) are left alone.
+ */
+label:has(> :is(input, select, textarea):required):not(:has([class*='req']))
+  > :is(.ar-field__label, .fld__k)::after,
+.ar-field:has(:is(input, select, textarea):required):not(:has([class*='req']))
+  > .ar-field__label::after {
+  content: ' *';
+  color: var(--ar-bad-600, #b42318);
+  font-weight: 600;
+}

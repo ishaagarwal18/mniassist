@@ -75,6 +75,24 @@ export class ArContactForm implements OnInit {
 
   protected readonly editingId = signal<string | null>(null);
   protected readonly isEdit = computed(() => !!this.editingId());
+
+  /** What the person chose for the More details fold; null until they open or close it. */
+  private readonly moreChoice = signal<boolean | null>(null);
+  /** Open when editing, or once any of its fields has a value (typed, or filled from a card). */
+  protected readonly moreOpen = computed(() => {
+    const choice = this.moreChoice();
+    if (choice !== null) return choice;
+    const d = this.draft();
+    return (
+      this.isEdit() ||
+      [d.companyName, d.accountId, d.website, d.city, d.state].some((v) => !!v?.trim())
+    );
+  });
+
+  protected onMoreToggle(e: Event): void {
+    const open = (e.target as HTMLDetailsElement).open;
+    if (open !== this.moreOpen()) this.moreChoice.set(open);
+  }
   protected readonly draft = signal<ContactDraft>({ ...BLANK_CONTACT_DRAFT });
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);

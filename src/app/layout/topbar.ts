@@ -506,7 +506,7 @@ export class ArTopbar {
           group: 'Purchasing & stock',
           groupRoute: '/purchasing',
           groupPage: 'Purchasing',
-          cockpit: 'Vendor 360',
+          cockpit: 'Supplier overview',
           backTitle: 'Back to Vendor 360',
         }
       : {
@@ -515,7 +515,7 @@ export class ArTopbar {
           group: 'Customers',
           groupRoute: '/contacts',
           groupPage: 'Contacts',
-          cockpit: 'Customer 360',
+          cockpit: 'Customer overview',
           backTitle: 'Back to Customer 360',
         };
   });

@@ -139,7 +139,7 @@ export class ArNewVoiceAgentPage implements OnInit {
       this.toasts.success(`Voice agent "${trimmed}" created.`);
       void this.router.navigate(['/calls/ai-agents', agent.id]);
     } catch {
-      this.error.set('Failed to create voice agent. Please try again.');
+      this.error.set('The voice agent was not created. Check the name and phone line, then try again.');
     } finally {
       this.busy.set(false);
     }

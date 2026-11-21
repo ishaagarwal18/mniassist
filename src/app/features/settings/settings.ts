@@ -485,7 +485,7 @@ export class ArSettings {
     },
     {
       id: 'canned-replies',
-      title: 'Canned replies',
+      title: 'Saved replies',
       description: 'Saved answers the team inserts in the inbox with a /shortcut.',
       category: 'Lead capture',
       icon: 'document',
@@ -543,12 +543,21 @@ export class ArSettings {
     },
     {
       id: 'lifecycle-rules',
-      title: 'Lifecycle rules',
+      title: 'Discontinuation rules',
       description: 'When a product counts as ageing, end-of-sale or obsolete.',
       category: 'Sales & products',
       icon: 'refresh',
       route: '/documents/lifecycle',
       keywords: ['lifecycle', 'obsolete', 'end of life', 'eol', 'product', 'radar'],
+    },
+    {
+      id: 'duplicates',
+      title: 'Duplicates',
+      description: 'Customers entered twice, and merging them into one record.',
+      category: 'Sales & products',
+      icon: 'copy',
+      route: '/contacts/duplicates',
+      keywords: ['duplicate', 'merge', 'same customer', 'contacts', 'accounts', 'clean up'],
     },
 
     // Integrations & Ops

@@ -57,7 +57,7 @@ const FIELDS: {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
-      title="DPDP readiness"
+      title="Data privacy (DPDP)"
       subtitle="Digital Personal Data Protection Act, 2023"
       help="A working checklist, not legal advice. Most checks read what MNI Assist already records (consent evidence, opt-outs, retention, requests, breaches); the rest need the details below. The notice draft is a starting point for your lawyer."
     >

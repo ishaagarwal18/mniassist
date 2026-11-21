@@ -173,174 +173,183 @@
         </div>
       </ar-card>
 
-      <!-- Section 2: Corporate Account & Commercial Role -->
-      <ar-card heading="Corporate Account &amp; Role">
-        <div class="form-section-body">
-          <div class="form-grid">
-            <!-- Associated Account -->
-            <div class="ar-field form-grid--col2">
-              <label for="contact-account" class="ar-field__label">
-                Company Account <span class="ar-field__opt">optional</span>
-              </label>
-              <span class="ar-field__hint">
-                Link this contact to an existing company or plant to sync activity with corporate
-                CRM.
-              </span>
-              <select
-                id="contact-account"
-                name="accountId"
-                class="ar-field__input"
-                [value]="draft().accountId"
-                (change)="patch('accountId', $any($event.target).value)"
-              >
-                <option value="">None — Standalone / Unlinked Contact</option>
-                @for (acc of availableAccounts(); track acc.id) {
-                  <option [value]="acc.id" [selected]="acc.id === draft().accountId">
-                    {{ acc.name }} {{ acc.city ? '· ' + acc.city : '' }}
-                  </option>
-                }
-              </select>
-            </div>
-
-            <!-- Company Name (Auto-synced or custom) -->
-            <div class="ar-field">
-              <label for="contact-companyName" class="ar-field__label"> Company Name </label>
-              <span class="ar-field__hint">
-                {{
-                  selectedAccount()
-                    ? 'Synced from linked Account above'
-                    : 'Custom business or organization name'
-                }}
-              </span>
-              <input
-                id="contact-companyName"
-                name="companyName"
-                type="text"
-                maxlength="256"
-                autocomplete="organization"
-                class="ar-field__input"
-                [class.ar-field__input--readonly]="!!selectedAccount()"
-                [readOnly]="!!selectedAccount()"
-                [value]="selectedAccount()?.name ?? draft().companyName"
-                (input)="patch('companyName', $any($event.target).value)"
-                placeholder="e.g. Meridian Food Industries Pvt. Ltd."
-              />
-            </div>
-
-            <!-- Decision Role -->
-            <div class="ar-field">
-              <label for="contact-role" class="ar-field__label">
-                Decision Role <span class="ar-field__req">*</span>
-              </label>
-              <span class="ar-field__hint"
-                >Their authority category in purchase or operational decisions</span
-              >
-              <select
-                id="contact-role"
-                name="role"
-                class="ar-field__input"
-                required
-                [value]="draft().role"
-                (change)="patchRole($any($event.target).value)"
-              >
-                @for (r of roles; track r.value) {
-                  <option [value]="r.value" [selected]="r.value === draft().role">
-                    {{ r.label }}
-                  </option>
-                }
-              </select>
-            </div>
-
-            <!-- Website -->
-            <div class="ar-field form-grid--col2">
-              <label for="contact-website" class="ar-field__label">
-                Website URL <span class="ar-field__opt">optional</span>
-              </label>
-              <span class="ar-field__hint">Official company or corporate homepage</span>
-              <input
-                id="contact-website"
-                name="website"
-                type="url"
-                maxlength="256"
-                autocomplete="url"
-                class="ar-field__input"
-                placeholder="https://www.meridianfoods.in"
-                [value]="draft().website"
-                (input)="patch('website', $any($event.target).value)"
-              />
-            </div>
-          </div>
-        </div>
-      </ar-card>
-
-      <!-- Section 3: Physical Location & Industrial Cluster -->
-      <ar-card heading="Location &amp; Manufacturing Cluster">
-        <div class="form-section-body">
-          <div class="form-grid">
-            <!-- State Dropdown bound to Master Data -->
-            <div class="ar-field">
-              <label for="contact-state" class="ar-field__label">
-                State / UT <span class="ar-field__opt">optional</span>
-              </label>
-              <span class="ar-field__hint">Primary operating state or regional jurisdiction</span>
-              <select
-                id="contact-state"
-                name="state"
-                class="ar-field__input"
-                [value]="draft().state"
-                (change)="patch('state', $any($event.target).value)"
-              >
-                <option value="">Select state or union territory...</option>
-                @for (st of states(); track st) {
-                  <option [value]="st" [selected]="st === draft().state">
-                    {{ st }}
-                  </option>
-                }
-              </select>
-            </div>
-
-            <!-- City / Cluster Dropdown bound to Master Cities -->
-            <div class="ar-field">
-              <label for="contact-city" class="ar-field__label">
-                City / Industrial Cluster <span class="ar-field__opt">optional</span>
-              </label>
-              <span class="ar-field__hint">
-                {{
-                  draft().state ? 'Select city in ' + draft().state : 'City or manufacturing zone'
-                }}
-              </span>
-              @if (availableCities().length) {
+      <!-- Only the WhatsApp number is needed to start; the rest folds away for a first-time user. -->
+      <details class="contact-more" [open]="moreOpen()" (toggle)="onMoreToggle($event)">
+        <summary class="contact-more__summary">
+          <span class="contact-more__title">More details</span>
+          <span class="contact-more__hint"
+            >Company, role, website and location. Optional, you can add them later.</span
+          >
+        </summary>
+        <!-- Section 2: Corporate Account & Commercial Role -->
+        <ar-card heading="Corporate Account &amp; Role">
+          <div class="form-section-body">
+            <div class="form-grid">
+              <!-- Associated Account -->
+              <div class="ar-field form-grid--col2">
+                <label for="contact-account" class="ar-field__label">
+                  Company Account <span class="ar-field__opt">optional</span>
+                </label>
+                <span class="ar-field__hint">
+                  Link this contact to an existing company or plant to sync activity with corporate
+                  CRM.
+                </span>
                 <select
-                  id="contact-city"
-                  name="city"
+                  id="contact-account"
+                  name="accountId"
                   class="ar-field__input"
-                  [value]="draft().city"
-                  (change)="patch('city', $any($event.target).value)"
+                  [value]="draft().accountId"
+                  (change)="patch('accountId', $any($event.target).value)"
                 >
-                  <option value="">Select city...</option>
-                  @for (ct of availableCities(); track ct) {
-                    <option [value]="ct" [selected]="ct === draft().city">
-                      {{ ct }}
+                  <option value="">None — Standalone / Unlinked Contact</option>
+                  @for (acc of availableAccounts(); track acc.id) {
+                    <option [value]="acc.id" [selected]="acc.id === draft().accountId">
+                      {{ acc.name }} {{ acc.city ? '· ' + acc.city : '' }}
                     </option>
                   }
                 </select>
-              } @else {
+              </div>
+
+              <!-- Company Name (Auto-synced or custom) -->
+              <div class="ar-field">
+                <label for="contact-companyName" class="ar-field__label"> Company Name </label>
+                <span class="ar-field__hint">
+                  {{
+                    selectedAccount()
+                      ? 'Synced from linked Account above'
+                      : 'Custom business or organization name'
+                  }}
+                </span>
                 <input
-                  id="contact-city"
-                  name="city"
+                  id="contact-companyName"
+                  name="companyName"
                   type="text"
-                  maxlength="64"
-                  autocomplete="address-level2"
+                  maxlength="256"
+                  autocomplete="organization"
                   class="ar-field__input"
-                  placeholder="e.g. Pune, Bhosari MIDC, Ahmedabad"
-                  [value]="draft().city"
-                  (input)="patch('city', $any($event.target).value)"
+                  [class.ar-field__input--readonly]="!!selectedAccount()"
+                  [readOnly]="!!selectedAccount()"
+                  [value]="selectedAccount()?.name ?? draft().companyName"
+                  (input)="patch('companyName', $any($event.target).value)"
+                  placeholder="e.g. Meridian Food Industries Pvt. Ltd."
                 />
-              }
+              </div>
+
+              <!-- Decision Role -->
+              <div class="ar-field">
+                <label for="contact-role" class="ar-field__label">
+                  Decision Role <span class="ar-field__req">*</span>
+                </label>
+                <span class="ar-field__hint"
+                  >Their authority category in purchase or operational decisions</span
+                >
+                <select
+                  id="contact-role"
+                  name="role"
+                  class="ar-field__input"
+                  required
+                  [value]="draft().role"
+                  (change)="patchRole($any($event.target).value)"
+                >
+                  @for (r of roles; track r.value) {
+                    <option [value]="r.value" [selected]="r.value === draft().role">
+                      {{ r.label }}
+                    </option>
+                  }
+                </select>
+              </div>
+
+              <!-- Website -->
+              <div class="ar-field form-grid--col2">
+                <label for="contact-website" class="ar-field__label">
+                  Website URL <span class="ar-field__opt">optional</span>
+                </label>
+                <span class="ar-field__hint">Official company or corporate homepage</span>
+                <input
+                  id="contact-website"
+                  name="website"
+                  type="url"
+                  maxlength="256"
+                  autocomplete="url"
+                  class="ar-field__input"
+                  placeholder="https://www.meridianfoods.in"
+                  [value]="draft().website"
+                  (input)="patch('website', $any($event.target).value)"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </ar-card>
+        </ar-card>
+
+        <!-- Section 3: Physical Location & Industrial Cluster -->
+        <ar-card heading="Location &amp; Manufacturing Cluster">
+          <div class="form-section-body">
+            <div class="form-grid">
+              <!-- State Dropdown bound to Master Data -->
+              <div class="ar-field">
+                <label for="contact-state" class="ar-field__label">
+                  State / UT <span class="ar-field__opt">optional</span>
+                </label>
+                <span class="ar-field__hint">Primary operating state or regional jurisdiction</span>
+                <select
+                  id="contact-state"
+                  name="state"
+                  class="ar-field__input"
+                  [value]="draft().state"
+                  (change)="patch('state', $any($event.target).value)"
+                >
+                  <option value="">Select state or union territory...</option>
+                  @for (st of states(); track st) {
+                    <option [value]="st" [selected]="st === draft().state">
+                      {{ st }}
+                    </option>
+                  }
+                </select>
+              </div>
+
+              <!-- City / Cluster Dropdown bound to Master Cities -->
+              <div class="ar-field">
+                <label for="contact-city" class="ar-field__label">
+                  City / Industrial Cluster <span class="ar-field__opt">optional</span>
+                </label>
+                <span class="ar-field__hint">
+                  {{
+                    draft().state ? 'Select city in ' + draft().state : 'City or manufacturing zone'
+                  }}
+                </span>
+                @if (availableCities().length) {
+                  <select
+                    id="contact-city"
+                    name="city"
+                    class="ar-field__input"
+                    [value]="draft().city"
+                    (change)="patch('city', $any($event.target).value)"
+                  >
+                    <option value="">Select city...</option>
+                    @for (ct of availableCities(); track ct) {
+                      <option [value]="ct" [selected]="ct === draft().city">
+                        {{ ct }}
+                      </option>
+                    }
+                  </select>
+                } @else {
+                  <input
+                    id="contact-city"
+                    name="city"
+                    type="text"
+                    maxlength="64"
+                    autocomplete="address-level2"
+                    class="ar-field__input"
+                    placeholder="e.g. Pune, Bhosari MIDC, Ahmedabad"
+                    [value]="draft().city"
+                    (input)="patch('city', $any($event.target).value)"
+                  />
+                }
+              </div>
+            </div>
+          </div>
+        </ar-card>
+      </details>
 
       <!-- Section 4: the workspace's own custom fields (Settings → Custom fields) -->
       @if (customFields().length) {

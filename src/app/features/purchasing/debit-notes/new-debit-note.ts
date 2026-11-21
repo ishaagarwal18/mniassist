@@ -143,7 +143,7 @@ import { PickListStore } from '../../../core/pick-lists/pick-list.store';
               </div>
               <div class="ar-field pf__span2">
                 <label class="ar-field__label" for="dn-grn"
-                  >Goods receipt (GRN) <span class="ar-field__opt">optional</span></label
+                  >Receive goods (GRN) <span class="ar-field__opt">optional</span></label
                 >
                 @if (receipts() !== null) {
                   <select

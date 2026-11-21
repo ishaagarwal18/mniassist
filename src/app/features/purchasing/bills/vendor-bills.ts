@@ -55,7 +55,7 @@ import { ArGrid } from '../../../ui/grid';
           Upload bill
         </button>
         <button ar-button variant="primary" icon="plus" (click)="openCreatePage()">
-          Record vendor bill
+          Record supplier bill
         </button>
       }
     </ar-topbar>
@@ -148,7 +148,8 @@ import { ArGrid } from '../../../ui/grid';
 
       <!-- Bills Table -->
       <section class="table-card">
-        <ejs-grid arGrid="vendor-bills" [dataSource]="filteredBills()" aria-label="Vendor Bills">
+        <ejs-grid arGrid="vendor-bills"
+          arGridEmpty="No supplier bills yet. Press “Record supplier bill” when a supplier’s invoice arrives." [dataSource]="filteredBills()" aria-label="Vendor Bills">
           <e-columns>
             <e-column field="billNumber" headerText="Bill & Invoice #" width="180">
               <ng-template #template let-b>
@@ -756,7 +757,7 @@ export class VendorBillsComponent {
       });
   }
 
-  /** Older links (`?new=1`, `?grnId=`) open the Record vendor bill page. */
+  /** Older links (`?new=1`, `?grnId=`) open the Record supplier bill page. */
   private checkQueryParams() {
     const q = this.route.snapshot.queryParamMap;
     const grn = q.get('grnId');

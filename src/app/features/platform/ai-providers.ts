@@ -432,7 +432,7 @@ export class ArAiProviders implements OnInit {
     } catch {
       const msg = 'The rates could not be saved.';
       this.ratesError.set(msg);
-      this.toasts.error(msg, 'Error');
+      this.toasts.error(msg, 'Not saved');
     } finally {
       this.busy.set(false);
     }
@@ -450,7 +450,7 @@ export class ArAiProviders implements OnInit {
     } catch {
       const msg = 'The choice could not be saved.';
       this.error.set(msg);
-      this.toasts.error(msg, 'Error');
+      this.toasts.error(msg, 'Not saved');
     } finally {
       this.busy.set(false);
     }

@@ -66,7 +66,8 @@ describe('errorFor', () => {
       }),
     );
     expect(e.title).toBe('Please check the details');
-    expect(e.content).toBe('Your request is not valid!\n• The Name field is required.');
+    // ABP's stock headline adds nothing above the field messages, so it is dropped.
+    expect(e.content).toBe('• The Name field is required.');
   });
 
   it('titles a broken business rule apart from a missing permission', () => {
@@ -83,9 +84,9 @@ describe('errorFor', () => {
   it('explains statuses that come without a message', () => {
     expect(errorFor(new HttpErrorResponse({ status: 0 })).title).toBe('Cannot reach the server');
     expect(errorFor(new HttpErrorResponse({ status: 403 })).content).toContain(
-      'Ask an administrator',
+      'Ask your workspace administrator',
     );
-    expect(errorFor(new HttpErrorResponse({ status: 500 })).title).toBe('Server error');
+    expect(errorFor(new HttpErrorResponse({ status: 500 })).title).toBe('Server problem');
   });
 });
 

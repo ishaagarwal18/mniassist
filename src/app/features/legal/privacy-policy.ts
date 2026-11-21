@@ -101,6 +101,15 @@ import { ArBrand } from '../../layout/brand';
               </td>
               <td>Automatically, as part of operating the service</td>
             </tr>
+            <tr>
+              <td>Newsletter subscribers</td>
+              <td>
+                Email address; when you signed up, confirmed and unsubscribed; the consent notice you
+                agreed to; the IP address the sign-up came from. Used only to send the MNI Assist
+                newsletter, until you unsubscribe or ask us to erase it
+              </td>
+              <td>You, through the sign-up box on our website and the confirmation email</td>
+            </tr>
           </tbody>
         </table>
 

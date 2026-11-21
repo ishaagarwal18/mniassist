@@ -143,6 +143,7 @@ import { ArSalesExport } from '../sales-export';
       <div class="table-card">
         <ejs-grid
           arGrid="sales-invoices"
+          arGridEmpty="No invoices yet. Press “New sales invoice”, or generate one from a sales order."
           [dataSource]="filteredInvoices()"
           (recordClick)="onInvoiceClick($event)"
           aria-label="Sales invoices"

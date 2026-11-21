@@ -2149,7 +2149,7 @@ const BASE_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Delivery challans and tax invoices are created straight from the order.',
     ],
     steps: [
-      'Click + New Sales order, choose the customer and add line items.',
+      'Click + New sales order, choose the customer and add line items.',
       'Click an order to open its page; Confirm sales order once the customer PO is in hand.',
       'Use Create delivery challan to ship, or Generate sales invoice to bill.',
       'Export PDF or Export Excel saves every order the search, status and customer show (not only the rows loaded); Excel adds a sheet of their lines.',
@@ -2221,7 +2221,7 @@ const BASE_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Quality inspection decides what goes into stock and what is sent back.',
     ],
     steps: [
-      'Click Inward gate entry (GRN) and enter the items received.',
+      'Click Receive goods (GRN) and enter the items received.',
       'Click Save & send to QC.',
       'Record accepted and rejected quantities, then Confirm & Approve Put-Away.',
     ],

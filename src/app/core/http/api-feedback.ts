@@ -4,6 +4,7 @@
  * the interceptor that applies them (api-feedback.interceptor.ts).
  */
 import { HttpErrorResponse } from '@angular/common/http';
+import { isStackLike, plainServerMessage, statusExplanation } from './plain-errors';
 
 /** API calls that change nothing, or that a screen already reports in its own way. */
 const QUIET_ACTIONS = new Set([
@@ -281,13 +282,7 @@ export function isQuietFailure(method: string, err: HttpErrorResponse, url = '')
 
 /** The error toast for a failed call: what the server said, in the user's words where it gave them. */
 export function errorFor(err: HttpErrorResponse): { title: string; content: string } {
-  if (err.status === 0) {
-    return {
-      title: 'Cannot reach the server',
-      content:
-        'Check your connection and try again. If it keeps happening, the service may be down.',
-    };
-  }
+  if (err.status === 0) return statusExplanation(0);
   const body = (err.error ?? {}) as Record<string, unknown>;
   const e = (body['error'] ?? {}) as {
     code?: string;
@@ -295,43 +290,27 @@ export function errorFor(err: HttpErrorResponse): { title: string; content: stri
     details?: string;
     validationErrors?: { message?: string; members?: string[] }[];
   };
+  const fallback = statusExplanation(err.status);
   const lines: string[] = [];
-  if (e.message) lines.push(e.message);
-  if (e.details && e.details !== e.message) lines.push(e.details);
-  for (const v of e.validationErrors ?? []) if (v.message) lines.push(`• ${v.message}`);
+  // With field-by-field messages, ABP's "Your request is not valid!" headline adds nothing.
+  const fieldMessages = (e.validationErrors ?? []).filter((v) => v.message);
+  if (e.message && !(fieldMessages.length && /^Your request is not valid/i.test(e.message))) {
+    lines.push(plainServerMessage(e.message));
+  }
+  if (e.details && e.details !== e.message && !isStackLike(e.details)) lines.push(e.details);
+  for (const v of fieldMessages) lines.push(`• ${v.message}`);
   if (lines.length === 0 && typeof body['error_description'] === 'string') {
-    lines.push(body['error_description'] as string);
+    lines.push(plainServerMessage(body['error_description'] as string));
+  }
+
+  if (e.code === 'AutoReach:PlanFeatureNotIncluded') {
+    lines.push('Open Billing to compare plans, or ask your workspace owner to upgrade.');
+    return { title: 'Not in your plan', content: lines.join('\n').slice(0, 600) };
   }
 
   // ABP answers a broken business rule with 403 too; it carries a code, a
   // missing permission does not.
-  const title = e.code
-    ? 'Couldn’t complete that'
-    : err.status === 400 || err.status === 422
-      ? 'Please check the details'
-      : err.status === 401
-        ? 'Signed out'
-        : err.status === 403
-          ? 'Not allowed'
-          : err.status === 404
-            ? 'Not found'
-            : err.status === 409
-              ? 'Already changed'
-              : err.status >= 500
-                ? 'Server error'
-                : 'Request failed';
-  if (lines.length === 0) {
-    lines.push(
-      err.status === 401
-        ? 'Your session has ended. Sign in again to continue.'
-        : err.status === 403
-          ? 'Your role does not allow this. Ask an administrator for access.'
-          : err.status === 404
-            ? 'It may have been deleted or moved.'
-            : err.status >= 500
-              ? 'The server hit a problem. Try again in a moment.'
-              : `The request failed (${err.status}).`,
-    );
-  }
+  const title = e.code ? 'Couldn’t complete that' : fallback.title;
+  if (lines.length === 0) lines.push(fallback.content);
   return { title, content: lines.join('\n').slice(0, 600) };
 }

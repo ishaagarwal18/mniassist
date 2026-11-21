@@ -24,12 +24,17 @@ import { CurrentUserService } from '../core/services/current-user.service';
 import { readApiError } from '../core/util/api-error';
 import { ToastService } from '../core/ui/toast.service';
 import { ConfirmService } from '../core/ui/confirm.service';
+import { checkOnLeave } from '../ui/form-validation';
+import { ArScreenTip } from './screen-tip';
+import { ArSubNav } from './sub-nav';
 
 @Component({
   selector: 'ar-app-shell',
   imports: [
     RouterOutlet,
+    ArScreenTip,
     ArSidebar,
+    ArSubNav,
     ArRightSidebar,
     ArSoftphoneBar,
     ArWhatsAppCallBar,
@@ -85,7 +90,11 @@ import { ConfirmService } from '../core/ui/confirm.service';
           <button type="button" (click)="exit()">Exit client view</button>
         </div>
       }
+      <ar-sub-nav />
       <div class="shell__content"><router-outlet /></div>
+      @defer (on idle) {
+        <ar-screen-tip />
+      }
     </main>
     <ar-right-sidebar />
     @if (pageContext.drawerOpen()) {
@@ -129,6 +138,7 @@ import { ConfirmService } from '../core/ui/confirm.service';
       }
     }
     .shell__main {
+      position: relative;
       flex: 1;
       min-width: 0;
       display: flex;
@@ -213,6 +223,12 @@ export class ArAppShell {
   protected closeDrawer(): void {
     this.drawer.close();
     this.pageContext.closeDrawer();
+  }
+
+  /** Every form, page or popup: a field is checked as the person leaves it. */
+  @HostListener('document:focusout', ['$event'])
+  protected checkField(e: FocusEvent): void {
+    checkOnLeave(e.target);
   }
 
   protected readonly acting = inject(AgencyActingStore);

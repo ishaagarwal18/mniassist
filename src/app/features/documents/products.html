@@ -77,7 +77,8 @@
         }
       </p>
     } @else {
-      <ejs-grid arGrid="products-catalog" [dataSource]="products()" aria-label="Products Catalogue">
+      <ejs-grid arGrid="products-catalog"
+          arGridEmpty="No products yet. Press “New product” to add the items you sell." [dataSource]="products()" aria-label="Products Catalogue">
         <e-columns>
           <e-column field="partNumber" headerText="Part number" width="160">
             <ng-template #template let-p>

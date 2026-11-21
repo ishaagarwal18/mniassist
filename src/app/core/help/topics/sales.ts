@@ -458,13 +458,13 @@ export const SALES_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Delivery challans and tax invoices are created straight from the order.',
     ],
     steps: [
-      'Click + New Sales order, choose the customer and add line items.',
+      'Click + New sales order, choose the customer and add line items.',
       'Click an order to open its page; Confirm sales order once the customer PO is in hand.',
       'Use Challan to ship, or Invoice to bill.',
       'Export PDF or Export Excel saves every order the search, status and customer show (not only the rows loaded); Excel adds a sheet of their lines.',
     ],
     fields: [
-      { name: '+ New Sales order', text: 'Opens the new order page.' },
+      { name: '+ New sales order', text: 'Opens the new order page.' },
       { name: 'Export', text: 'PDF or Excel of every order matching the search, status and customer.' },
       { name: 'Search', text: 'Finds by order number, PO number or customer.' },
       { name: 'Status tabs', text: 'All, Draft, Confirmed, Partially dispatched, Dispatched or Completed.' },

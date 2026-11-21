@@ -10,7 +10,7 @@ describe('resolveNavTrail breadcrumb logic', () => {
     expect(trail.activeItem?.label).toBe('Contacts');
     expect(trail.siblingItems.map((i) => i.label)).toContain('Contacts');
     expect(trail.siblingItems.map((i) => i.label)).toContain('Accounts');
-    expect(trail.siblingItems.map((i) => i.label)).toContain('Customer 360');
+    expect(trail.siblingItems.map((i) => i.label)).toContain('Customer overview');
   });
 
   it('resolves Marketing -> Audiences for /contacts/segments (audiences are for campaigns)', () => {
@@ -18,12 +18,12 @@ describe('resolveNavTrail breadcrumb logic', () => {
     expect(trail.groupHeading).toBe('Marketing');
     expect(trail.groupPrimaryRoute).toBe('/contacts/segments');
     expect(trail.parentItem).toBeNull();
-    expect(trail.activeItem?.label).toBe('Audiences');
+    expect(trail.activeItem?.label).toBe('Contact lists');
   });
 
   it('resolves Customers for /contacts/accounts and /contacts/360', () => {
     expect(resolveNavTrail('/contacts/accounts', 'Accounts').groupHeading).toBe('Customers');
-    expect(resolveNavTrail('/contacts/360', 'Customer 360').groupHeading).toBe('Customers');
+    expect(resolveNavTrail('/contacts/360', 'Customer overview').groupHeading).toBe('Customers');
   });
 
   it('resolves Marketing -> Campaigns for /campaigns', () => {
@@ -46,8 +46,8 @@ describe('resolveNavTrail breadcrumb logic', () => {
   });
 
   it('resolves Calls for /calls and for the IVR set-up', () => {
-    expect(resolveNavTrail('/calls', 'Calls').groupHeading).toBe('Call channels');
-    expect(resolveNavTrail('/channels/voice-ivr', 'Voice / IVR').groupHeading).toBe('Call channels');
+    expect(resolveNavTrail('/calls', 'Calls').groupHeading).toBe('Phone & calls');
+    expect(resolveNavTrail('/channels/voice-ivr', 'Voice / IVR').groupHeading).toBe('Phone & calls');
   });
 
   it('resolves Orders & invoices for sales orders, invoices, re-orders and collections', () => {
@@ -100,7 +100,7 @@ describe('resolveNavTrail breadcrumb logic', () => {
     const leadForms = resolveNavTrail('/channels/lead-forms', 'Lead forms');
     expect(leadForms.groupHeading).toBe('Marketing');
     expect(leadForms.activeItem?.menu).toBe('settings');
-    expect(resolveNavTrail('/calls/ai-impact', '').groupHeading).toBe('Call channels');
+    expect(resolveNavTrail('/calls/ai-impact', '').groupHeading).toBe('Phone & calls');
     expect(resolveNavTrail('/calls/ai-impact', '').activeItem?.menu).toBe('reports');
   });
 

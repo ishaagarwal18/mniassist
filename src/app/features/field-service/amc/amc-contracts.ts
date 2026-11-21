@@ -139,7 +139,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
             [selectionSettings]="{ mode: 'Row', type: 'Single' }"
             (rowSelected)="onContractSelected($event)"
             (recordClick)="onContractClick($event)"
-            aria-label="AMC contracts"
+            aria-label="Service contracts (AMC)"
           >
             <e-columns>
               <e-column field="contractNumber" headerText="Contract #" width="135">

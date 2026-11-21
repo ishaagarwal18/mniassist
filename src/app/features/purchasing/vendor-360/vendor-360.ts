@@ -59,7 +59,7 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
   template: `
     <ar-topbar
       help="Everything about one supplier: orders, receipts, bills, debit notes, what you owe and how reliably they deliver."
-      title="Vendor 360"
+      title="Supplier overview"
       subtitle="One supplier: orders, receipts, bills, quality and MSME payment dues"
     >
       <div class="v3-top">

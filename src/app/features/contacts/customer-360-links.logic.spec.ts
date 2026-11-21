@@ -39,7 +39,7 @@ describe('customerLinkGroups', () => {
       'Invoices',
       'Collections',
       'Documents',
-      'Installed base',
+      'Machines at customers',
       'Helpdesk tickets',
       'Re-orders',
       'Renewals',

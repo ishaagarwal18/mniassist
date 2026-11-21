@@ -1,3 +1,4 @@
+import { readApiError } from '../../../core/util/api-error';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -177,7 +178,7 @@ export class ArRecordAmcVisitPage implements OnInit {
         },
         error: (err: any) => {
           this.busy.set(false);
-          this.error.set(err?.message || 'Failed to record visit.');
+          this.error.set(readApiError(err, 'The visit was not saved. Check the date and engineer, then try again.'));
         },
       });
     } else {

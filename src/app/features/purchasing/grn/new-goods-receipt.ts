@@ -41,7 +41,7 @@ import {
 import { PickListStore } from '../../../core/pick-lists/pick-list.store';
 
 /**
- * Inward gate entry (GRN) as its own page (/purchasing/grn/new), opened from Vendor 360 and the Goods receipt list. `?supplier=<id>
+ * Receive goods (GRN) as its own page (/purchasing/grn/new), opened from Vendor 360 and the Goods receipt list. `?supplier=<id>
  * &name=` picks the supplier (from Vendor 360). Picking one of the supplier's open purchase orders fills the items with what is
  * still to come. Saved, the GRN waits for QC inspection; the page returns to the Vendor 360 it was opened from, otherwise to the
  * list with the new GRN open.

@@ -223,7 +223,7 @@ export class ArIvrPromptPage implements OnInit {
           this.toasts.success(`Prompt "${nameVal}" updated.`);
           void this.router.navigateByUrl('/channels/voice-ivr');
         } else {
-          this.error.set('Failed to update prompt.');
+          this.error.set('The prompt was not updated. Check the name and the recording, then try again.');
         }
       } else {
         const ok = await this.store.createPrompt({
@@ -237,11 +237,11 @@ export class ArIvrPromptPage implements OnInit {
           this.toasts.success(`Prompt "${nameVal}" created.`);
           void this.router.navigateByUrl('/channels/voice-ivr');
         } else {
-          this.error.set('Failed to create prompt.');
+          this.error.set('The prompt was not created. Check the name and the recording, then try again.');
         }
       }
     } catch {
-      this.error.set('Error saving prompt.');
+      this.error.set('The prompt was not saved. Check the name and the recording, then try again.');
     } finally {
       this.busy.set(false);
     }

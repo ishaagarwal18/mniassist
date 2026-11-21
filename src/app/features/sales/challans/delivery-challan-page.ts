@@ -1,3 +1,5 @@
+import { ArSalesChain } from '../sales-chain';
+import { challanChain } from '../sales-chain.logic';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
@@ -37,7 +39,18 @@ import { ArSalesExport } from '../sales-export';
  */
 @Component({
   selector: 'ar-delivery-challan-page',
-  imports: [RouterLink, ArTopbar, ArButton, ArChip, ArIcon, ArSalesExport, DatePipe, ArGrid, GridModule],
+  imports: [
+    ArSalesChain,
+    RouterLink,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArIcon,
+    ArSalesExport,
+    DatePipe,
+    ArGrid,
+    GridModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -59,6 +72,9 @@ import { ArSalesExport } from '../sales-export';
         </section>
       } @else if (record(); as dc) {
         <div class="pf__form">
+          @if (chain(); as ch) {
+            <ar-sales-chain [chain]="ch" />
+          }
           <section class="pf__card">
             <div class="sr-head">
               <div>
@@ -259,7 +275,7 @@ import { ArSalesExport } from '../sales-export';
             <span class="pf__summary"></span>
             <button ar-button variant="ghost" type="button" (click)="back()">Back</button>
             <button ar-button variant="ghost" type="button" (click)="customer360(dc.customerId)">
-              Customer 360
+              Customer overview
             </button>
             <ar-sales-export [fetch]="download" [fileName]="dc.challanNumber" hint="This challan" />
             @if (mayCancel() && canCancel(dc)) {
@@ -324,6 +340,12 @@ import { ArSalesExport } from '../sales-export';
   styles: SALES_RECORD_STYLES,
 })
 export class ArDeliveryChallanPage extends SalesRecordPage<DeliveryChallanDto> {
+  /** Where this document sits in the sale, with what to do next. */
+  protected readonly chain = computed(() => {
+    const r = this.record();
+    return r ? challanChain(r) : null;
+  });
+
   private readonly permissionGate = inject(PermissionService);
   protected readonly mayEdit = grantedPolicy(
     'AutoReach.DeliveryChallans.Update',

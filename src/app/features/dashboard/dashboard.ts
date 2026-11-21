@@ -1,6 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { of, switchMap } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { PermissionService } from '@abp/ng.core';
+import { canAccessNavItem } from '../../core/auth/permission';
+import { PlanService } from '../../core/services/plan.service';
+import { NAV, NavItem } from '../../layout/nav.model';
+import { CrmTaskService } from '../../proxy/activities/activity.service';
+import { InventoryService } from '../../proxy/inventory/inventory.service';
+import { SalesInvoiceStatus } from '../../proxy/sales/sales-enums';
+import { SalesInvoiceService } from '../../proxy/sales/sales-invoice.service';
+import { overdueInvoices, workItems } from './work-today.logic';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { RouterLink } from '@angular/router';
 import { CustomDashboardService, DashboardRenderDto } from '../../proxy/analytics';
@@ -56,7 +65,84 @@ export class ArDashboard {
   protected readonly pipeline = this.dashboard.pipeline;
   protected readonly spend = this.dashboard.spend;
   protected readonly mix = this.dashboard.mix;
-  protected readonly todo = this.dashboard.actionItems;
+  private readonly account = inject(CurrentUserService);
+  private readonly permissions = inject(PermissionService);
+  private readonly plan = inject(PlanService);
+  private readonly tasksApi = inject(CrmTaskService);
+  private readonly invoicesApi = inject(SalesInvoiceService);
+  private readonly stockApi = inject(InventoryService);
+
+  /** Whether this person may open a page: the sidebar's own check (role, plan, feature). */
+  private may(route: string): boolean {
+    this.account.permissionState();
+    this.plan.plan();
+    this.plan.features();
+    const item = NAV.flatMap((g) => g.items).find((i: NavItem) => i.route === route);
+    return !!item && canAccessNavItem(item, this.permissions, this.plan, this.account);
+  }
+
+  private readonly taskFacts = rxResource({
+    params: () => ({ ok: this.may('/tasks'), me: this.account.id() }),
+    stream: ({ params }) =>
+      !params.ok || !params.me
+        ? of(null)
+        : this.tasksApi
+            .getSummary(-new Date().getTimezoneOffset(), params.me)
+            .pipe(catchError(() => of(null))),
+    defaultValue: null,
+  });
+
+  private readonly invoiceFacts = rxResource({
+    params: () => ({ ok: this.may('/sales/invoices') }),
+    stream: ({ params }) => {
+      if (!params.ok) return of(null);
+      const page = (status: SalesInvoiceStatus) =>
+        this.invoicesApi.getList({ status, maxResultCount: 200, skipCount: 0 });
+      return forkJoin([
+        page(SalesInvoiceStatus.Issued),
+        page(SalesInvoiceStatus.PartiallyPaid),
+        page(SalesInvoiceStatus.Draft),
+      ]).pipe(
+        map(([issued, part, draft]) => ({
+          ...overdueInvoices([...(issued.items ?? []), ...(part.items ?? [])], new Date()),
+          drafts: draft.totalCount ?? (draft.items ?? []).length,
+        })),
+        catchError(() => of(null)),
+      );
+    },
+    defaultValue: null,
+  });
+
+  private readonly stockFacts = rxResource({
+    params: () => ({ ok: this.may('/stock/planning') }),
+    stream: ({ params }) =>
+      !params.ok
+        ? of(null)
+        : this.stockApi.getLevels(null, true).pipe(
+            map((rows) => rows.length),
+            catchError(() => of(null)),
+          ),
+    defaultValue: null,
+  });
+
+  /** Business work first (overdue before due), then the messaging items, most urgent first. */
+  protected readonly todo = computed(() => {
+    const tasks = this.taskFacts.value();
+    const inv = this.invoiceFacts.value();
+    const work = workItems(
+      {
+        tasksOverdue: tasks?.overdue ?? null,
+        tasksDueToday: tasks?.dueToday ?? null,
+        invoicesOverdue: inv?.count ?? null,
+        overdueInPaise: inv?.paise ?? 0,
+        draftInvoices: inv?.drafts ?? null,
+        lowStock: this.stockFacts.value(),
+      },
+      inr,
+    );
+    const rank = { bad: 0, amber: 1, teal: 2, good: 3 } as const;
+    return [...work, ...this.dashboard.actionItems()].sort((a, b) => rank[a.tone] - rank[b.tone]);
+  });
 
   protected readonly walletLabel = computed(() => inr(this.spend().walletBalanceInPaise));
 
