@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map, startWith } from 'rxjs';
 
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { ArBrand, PUBLIC_HOME_PATH } from '../../layout/brand';
@@ -25,9 +27,19 @@ export const INDUSTRY_LINKS = [
       <div class="pf-wrap pf-nav__row">
         <ar-brand onDark />
         <nav class="pf-nav__links" aria-label="Pages">
-          <a routerLink="/roi" routerLinkActive="is-active">ROI calculator</a>
+          <a
+            routerLink="/roi"
+            [class.is-active]="isLinkActive('/roi')"
+            routerLinkActive="is-active"
+            [routerLinkActiveOptions]="{ exact: false }"
+          >ROI calculator</a>
           @for (i of industries; track i.slug) {
-            <a [routerLink]="['/industries', i.slug]" routerLinkActive="is-active">{{ i.label }}</a>
+            <a
+              [routerLink]="['/industries', i.slug]"
+              [class.is-active]="isLinkActive('/industries/' + i.slug)"
+              routerLinkActive="is-active"
+              [routerLinkActiveOptions]="{ exact: false }"
+            >{{ i.label }}</a>
           }
         </nav>
         <div class="pf-nav__cta">
@@ -54,14 +66,18 @@ export const INDUSTRY_LINKS = [
           <nav class="pf-nav__mobile-links" aria-label="Mobile pages" (click)="$event.stopPropagation()">
             <a
               routerLink="/roi"
+              [class.is-active]="isLinkActive('/roi')"
               routerLinkActive="is-active"
+              [routerLinkActiveOptions]="{ exact: false }"
               class="pf-nav__mobile-item"
               (click)="closeMobileMenu()"
             >ROI calculator</a>
             @for (i of industries; track i.slug) {
               <a
                 [routerLink]="['/industries', i.slug]"
+                [class.is-active]="isLinkActive('/industries/' + i.slug)"
                 routerLinkActive="is-active"
+                [routerLinkActiveOptions]="{ exact: false }"
                 class="pf-nav__mobile-item"
                 (click)="closeMobileMenu()"
               >{{ i.label }}</a>
@@ -111,58 +127,67 @@ export const INDUSTRY_LINKS = [
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(6, 11, 28, 0.88);
+      background: rgba(6, 11, 28, 0.85);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border-bottom: 1px solid rgba(59, 130, 246, 0.16);
+      border-bottom: 1px solid rgba(59, 130, 246, 0.14);
     }
     .pf-nav__row {
       display: flex;
       align-items: center;
-      gap: 20px;
-      height: 62px;
+      gap: 24px;
+      height: 60px;
     }
 
     /* Links with landing page hover effect & trace box */
     .pf-nav__links {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       flex: 1;
     }
     .pf-nav__links a {
       position: relative;
       display: inline-flex;
       align-items: center;
-      padding: 6px 13px;
+      padding: 6px 12px;
       border-radius: var(--ar-radius-control, 6px);
       font: 500 13px/1.4 var(--ar-font-sans);
-      color: var(--ar-nav-text, #94A3B8);
+      color: var(--ar-nav-text, #cbd5e1);
       text-decoration: none;
       border: 1px solid transparent;
+      white-space: nowrap;
+      cursor: pointer;
       transition:
-        color 220ms ease,
-        background-color 220ms ease,
-        border-color 220ms ease,
-        box-shadow 220ms ease,
-        transform 180ms ease;
+        color 240ms ease,
+        background-color 240ms ease,
+        border-color 240ms ease,
+        box-shadow 240ms ease,
+        transform 200ms ease;
     }
     .pf-nav__links a:hover {
-      color: #FFFFFF;
-      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      background: var(--ar-nav-hi, rgba(255, 255, 255, 0.08));
       border-color: rgba(255, 255, 255, 0.14);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
       transform: translateY(-1px);
     }
     .pf-nav__links a.is-active {
-      color: #FFFFFF;
-      background: linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%);
+      color: #ffffff;
+      background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
       border-color: rgba(96, 165, 250, 0.4);
       box-shadow:
-        0 1px 3px rgba(15, 23, 42, 0.2),
-        0 0 12px rgba(37, 99, 235, 0.35);
+        0 1px 2px rgba(15, 23, 42, 0.12),
+        0 0 14px rgba(37, 99, 235, 0.45);
       font-weight: 600;
       transform: none;
+    }
+
+    /* Focus visible */
+    .pf-btn:focus-visible,
+    .pf-nav__links a:focus-visible {
+      outline: 2px solid var(--ar-blue-500, #2563eb);
+      outline-offset: 2px;
     }
 
     /* Nav CTA & Buttons */
@@ -182,30 +207,36 @@ export const INDUSTRY_LINKS = [
       font: 600 13px var(--ar-font-sans);
       border: 1px solid transparent;
       box-sizing: border-box;
+      white-space: nowrap;
+      cursor: pointer;
       transition:
-        background-color 220ms ease,
-        border-color 220ms ease,
-        color 220ms ease,
-        transform 180ms ease,
-        box-shadow 220ms ease;
+        transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        box-shadow 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        background 240ms ease,
+        border-color 240ms ease,
+        color 200ms ease;
     }
     .pf-btn--primary {
-      background: linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%);
-      color: #FFFFFF;
-      border-color: rgba(255, 255, 255, 0.15);
-      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+      background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
     .pf-btn--primary:hover {
-      background: linear-gradient(180deg, #1D4ED8 0%, #1E40AF 100%);
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+      background: linear-gradient(180deg, #3b82f6 0%, #1e40af 100%);
+      box-shadow:
+        0 6px 20px -4px rgba(37, 99, 235, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
       transform: translateY(-1px);
     }
     .pf-btn--ghost {
-      color: var(--ar-nav-text, #94A3B8);
+      color: var(--ar-nav-text, #cbd5e1);
       background: transparent;
     }
     .pf-btn--ghost:hover {
-      color: #FFFFFF;
+      color: #ffffff;
       background: rgba(255, 255, 255, 0.08);
       border-color: rgba(255, 255, 255, 0.12);
     }
@@ -334,6 +365,32 @@ export class ArPublicFrame {
   protected readonly signedIn = inject(CurrentUserService).isAuthenticated;
   protected readonly industries = INDUSTRY_LINKS;
   protected readonly year = new Date().getFullYear();
+
+  private readonly router = inject(Router, { optional: true });
+
+  private getInitialPath(): string {
+    if (typeof window !== 'undefined' && window.location?.pathname) {
+      return window.location.pathname.replace(/\/+$/, '') || '/';
+    }
+    return (this.router?.url || '').split('?')[0].split('#')[0].replace(/\/+$/, '') || '/';
+  }
+
+  protected readonly currentPath = this.router
+    ? toSignal(
+        this.router.events.pipe(
+          filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+          map((e) => e.urlAfterRedirects.split('?')[0].split('#')[0].replace(/\/+$/, '') || '/'),
+          startWith(this.getInitialPath()),
+        ),
+        { initialValue: this.getInitialPath() },
+      )
+    : signal(this.getInitialPath());
+
+  protected isLinkActive(path: string): boolean {
+    const current = (this.currentPath ? this.currentPath() : '').replace(/\/+$/, '') || '/';
+    const target = path.split('?')[0].split('#')[0].replace(/\/+$/, '') || '/';
+    return current === target;
+  }
 
   protected toggleMobileMenu(): void {
     this.mobileMenuOpen.update((v) => !v);
