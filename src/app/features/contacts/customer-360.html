@@ -385,7 +385,7 @@
           [class.active]="activeTab() === 'overview'"
           (click)="activeTab.set('overview')"
         >
-          <ar-icon name="analytics-overview" [size]="15" />
+          <ar-icon name="analytics-overview" [size]="14" />
           <span>Overview & Activity</span>
         </button>
         @if (!isPersonView()) {
@@ -395,7 +395,7 @@
             [class.active]="activeTab() === 'orders'"
             (click)="activeTab.set('orders')"
           >
-            <ar-icon name="sales-orders" [size]="15" />
+            <ar-icon name="sales-orders" [size]="14" />
             <span>Sales Orders</span>
             <span class="tab-badge">{{ c.totalOrdersCount }}</span>
           </button>
@@ -405,7 +405,7 @@
             [class.active]="activeTab() === 'challans'"
             (click)="activeTab.set('challans')"
           >
-            <ar-icon name="delivery-challans" [size]="15" />
+            <ar-icon name="delivery-challans" [size]="14" />
             <span>Delivery Challans</span>
             <span class="tab-badge">{{ c.totalChallansCount }}</span>
           </button>
@@ -415,7 +415,7 @@
             [class.active]="activeTab() === 'invoices'"
             (click)="activeTab.set('invoices')"
           >
-            <ar-icon name="sales-invoices" [size]="15" />
+            <ar-icon name="sales-invoices" [size]="14" />
             <span>Invoices & Aging</span>
             <span class="tab-badge">{{ c.totalInvoicesCount }}</span>
           </button>
@@ -426,7 +426,7 @@
           [class.active]="activeTab() === 'assets'"
           (click)="activeTab.set('assets')"
         >
-          <ar-icon name="machine" [size]="15" />
+          <ar-icon name="machine" [size]="14" />
           <span>Installed Machinery</span>
           <span class="tab-badge">{{ c.installedAssetsCount }}</span>
         </button>
@@ -436,7 +436,7 @@
           [class.active]="activeTab() === 'tickets'"
           (click)="activeTab.set('tickets')"
         >
-          <ar-icon name="helpdesk" [size]="15" />
+          <ar-icon name="helpdesk" [size]="14" />
           <span>Service Tickets</span>
           <span class="tab-badge">{{ c.openTicketsCount }}</span>
         </button>
@@ -447,7 +447,7 @@
             [class.active]="activeTab() === 'projects'"
             (click)="activeTab.set('projects')"
           >
-            <ar-icon name="projects" [size]="15" />
+            <ar-icon name="projects" [size]="14" />
             <span>Projects</span>
           </button>
         }
