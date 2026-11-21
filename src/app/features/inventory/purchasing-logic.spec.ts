@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { draftTotal, readLines } from './purchasing-logic';
 
 const line = (quantity: string, cost: string) => ({
