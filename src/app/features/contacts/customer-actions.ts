@@ -23,51 +23,149 @@ import { grantedPolicy } from '../../core/auth/permission';
 import { readApiError } from '../../core/util/api-error';
 import { ArButton } from '../../ui/button';
 import { ArDialog } from '../../ui/dialog';
+import { ArIcon } from '../../ui/icon';
 
 @Component({
   selector: 'ar-customer-actions',
-  imports: [FormsModule, RouterLink, ArButton, ArDialog],
+  imports: [FormsModule, RouterLink, ArButton, ArDialog, ArIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: `
+    .customer-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 0.25rem 0;
+    }
+    .ca-btn {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      height: 38px !important;
+      padding: 0 16px !important;
+      font: 500 0.8125rem var(--ar-font-sans) !important;
+      border-radius: 8px !important;
+      transition: all 0.18s ease !important;
+      white-space: nowrap !important;
+    }
+    .ca-btn--primary {
+      background: #2563eb !important;
+      border-color: #2563eb !important;
+      color: #ffffff !important;
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25) !important;
+
+      &:hover {
+        background: #1d4ed8 !important;
+        border-color: #1d4ed8 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px -1px rgba(37, 99, 235, 0.3) !important;
+      }
+    }
+    .ca-btn--ghost {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #334155 !important;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+
+      ar-icon {
+        color: #64748b;
+        transition: color 0.16s ease;
+      }
+
+      &:hover {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+        transform: translateY(-1px);
+
+        ar-icon {
+          color: #0f172a;
+        }
+      }
+    }
+    .ca-notice {
+      margin: 0;
+      font: 500 0.8125rem var(--ar-font-sans);
+      color: #0d9488;
+    }
+  `,
   template: `
     <section class="customer-actions" aria-label="Customer actions">
       @if (contactId()) {
         @if (canReply()) {
           <!-- Its own page (/contacts/:id/message), keeping this cockpit in the breadcrumb -->
-          <a ar-button variant="primary" [routerLink]="['/contacts', contactId(), 'message']"
-            >Message customer</a
+          <a
+            ar-button
+            variant="primary"
+            class="ca-btn ca-btn--primary"
+            [routerLink]="['/contacts', contactId(), 'message']"
           >
+            <ar-icon name="send" [size]="14" />
+            <span>Message customer</span>
+          </a>
         }
         @if (onAccount() && canOrder()) {
           <a
             ar-button
             variant="ghost"
+            class="ca-btn ca-btn--ghost"
             routerLink="/sales/orders/new"
             [queryParams]="{
               customer: contactId(),
               customerName: customer().contactName ?? customer().customerName,
             }"
-            >+ New Order</a
           >
+            <ar-icon name="plus" [size]="14" />
+            <span>New Order</span>
+          </a>
         }
         @if (onAccount() && canChallan()) {
-          <button ar-button variant="ghost" (click)="openAction('challan')">
-            Create delivery challan
+          <button
+            ar-button
+            variant="ghost"
+            class="ca-btn ca-btn--ghost"
+            (click)="openAction('challan')"
+          >
+            <ar-icon name="delivery-challans" [size]="14" />
+            <span>Create delivery challan</span>
           </button>
         }
         @if (onAccount() && canInvoice()) {
-          <button ar-button variant="ghost" (click)="openAction('invoice')">Create invoice</button>
+          <button
+            ar-button
+            variant="ghost"
+            class="ca-btn ca-btn--ghost"
+            (click)="openAction('invoice')"
+          >
+            <ar-icon name="billing" [size]="14" />
+            <span>Create invoice</span>
+          </button>
         }
         @if (onAccount() && canPayment()) {
-          <button ar-button variant="ghost" (click)="openAction('payment')">Record payment</button>
+          <button
+            ar-button
+            variant="ghost"
+            class="ca-btn ca-btn--ghost"
+            (click)="openAction('payment')"
+          >
+            <ar-icon name="billing" [size]="14" />
+            <span>Record payment</span>
+          </button>
         }
       }
       @if (notice()) {
-        <p role="status">{{ notice() }}</p>
+        <p class="ca-notice" role="status">{{ notice() }}</p>
       }
       @if (createdRecord(); as record) {
-        <a ar-button variant="ghost" [routerLink]="[record.path, record.id]"
-          >Review created draft</a
+        <a
+          ar-button
+          variant="ghost"
+          class="ca-btn ca-btn--ghost"
+          [routerLink]="[record.path, record.id]"
         >
+          <ar-icon name="check" [size]="14" />
+          <span>Review created draft</span>
+        </a>
       }
     </section>
     @if (dialog()) {
@@ -152,19 +250,6 @@ import { ArDialog } from '../../ui/dialog';
           </button>
         </div>
       </ar-dialog>
-    }
-  `,
-  styles: `
-    .customer-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      padding: 12px 0;
-    }
-    .customer-actions p {
-      flex-basis: 100%;
-      margin: 0;
     }
   `,
 })

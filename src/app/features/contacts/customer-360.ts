@@ -36,6 +36,7 @@ import { ArCustomerActions } from './customer-actions';
 import { ArAtRiskCard } from '../pipeline/obsolescence/at-risk-card';
 import { ArCustomer360Links } from './customer-360-links';
 import { CockpitOriginService } from '../../layout/cockpit-origin.service';
+import { AccountStore } from '../../core/services/account.store';
 import { scopeParams } from '../../core/util/customer-scope';
 import { ToastService } from '../../core/ui/toast.service';
 import {
@@ -75,7 +76,6 @@ export type Customer360Tab =
     ArButton,
     ArChip,
     ArSearchBox,
-    ArTabs,
     ArIcon,
     ArCustomerActions,
     ArCustomer360Links,
@@ -91,6 +91,7 @@ export class ArCustomer360 {
   private readonly c360Service = inject(Customer360Service);
   private readonly contacts = inject(ContactService);
   private readonly accounts = inject(CustomerAccountService);
+  private readonly accountStore = inject(AccountStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
@@ -184,6 +185,94 @@ export class ArCustomer360 {
   protected readonly pickerBusy = signal(false);
   private pickerSeq = 0;
   private pickerDebounce?: ReturnType<typeof setTimeout>;
+
+  // Dynamic directory summary counts calculated from actual backend data
+  protected readonly totalContactsCount = signal(0);
+
+  protected readonly totalAccountsCount = computed(() => {
+    const storeCount = this.accountStore.all().length;
+    if (storeCount > 0) return storeCount;
+    return this.pickerTab() === 'Accounts' ? this.pickerTotal() : 0;
+  });
+
+  protected readonly citiesCoveredCount = computed(() => {
+    const cities = new Set<string>();
+    for (const a of this.accountStore.all()) {
+      if (a.city?.trim()) cities.add(a.city.trim().toLowerCase());
+    }
+    for (const a of this.pickerAccounts()) {
+      if (a.city?.trim()) cities.add(a.city.trim().toLowerCase());
+    }
+    for (const c of this.pickerResults()) {
+      if (c.city?.trim()) cities.add(c.city.trim().toLowerCase());
+    }
+    return cities.size;
+  });
+
+  // Directory filter options & active filters
+  readonly selectedCity = signal<string>('');
+  readonly selectedIndustry = signal<string>('');
+  readonly minContactCount = signal<number | null>(null);
+
+  readonly availableCities = computed(() => {
+    const cities = new Set<string>();
+    for (const a of this.accountStore.all()) {
+      if (a.city?.trim()) cities.add(a.city.trim());
+    }
+    for (const a of this.pickerAccounts()) {
+      if (a.city?.trim()) cities.add(a.city.trim());
+    }
+    return Array.from(cities).sort((a, b) => a.localeCompare(b));
+  });
+
+  readonly availableIndustries = computed(() => {
+    const industries = new Set<string>();
+    for (const a of this.accountStore.all()) {
+      if (a.industry?.trim()) industries.add(a.industry.trim());
+    }
+    for (const a of this.pickerAccounts()) {
+      if (a.industry?.trim()) industries.add(a.industry.trim());
+    }
+    return Array.from(industries).sort((a, b) => a.localeCompare(b));
+  });
+
+  readonly filteredPickerAccounts = computed(() => {
+    const list = this.pickerAccounts();
+    const city = this.selectedCity().toLowerCase();
+    const ind = this.selectedIndustry().toLowerCase();
+    const minC = this.minContactCount();
+
+    if (!city && !ind && minC === null) return list;
+
+    return list.filter((a) => {
+      if (city && (a.city ?? '').toLowerCase() !== city) return false;
+      if (ind && (a.industry ?? '').toLowerCase() !== ind) return false;
+      if (minC !== null && (a.contactCount ?? 0) < minC) return false;
+      return true;
+    });
+  });
+
+  readonly hasActiveFilters = computed(() => {
+    return !!(
+      this.selectedCity() ||
+      this.selectedIndustry() ||
+      this.minContactCount() !== null ||
+      this.pickerQuery().trim()
+    );
+  });
+
+  protected clearFilters(): void {
+    this.selectedCity.set('');
+    this.selectedIndustry.set('');
+    this.minContactCount.set(null);
+    this.pickerQuery.set('');
+    this.pickerPage.set(0);
+    this.loadPicker();
+  }
+
+  protected clearSearch(): void {
+    this.searchPicker('');
+  }
 
   protected readonly pickerPageLabel = computed(() => {
     const shown =
@@ -286,20 +375,20 @@ export class ArCustomer360 {
     if (!c) return {};
     return c.isAccountView
       ? scopeParams({
-          customerId: null,
-          accountId: c.accountId ?? null,
-          name: c.accountName ?? c.customerName,
-        })
+        customerId: null,
+        accountId: c.accountId ?? null,
+        name: c.accountName ?? c.customerName,
+      })
       : scopeParams({
-          customerId: c.contactId ?? c.id ?? null,
-          accountId: null,
-          name: c.customerName,
-        });
+        customerId: c.contactId ?? c.id ?? null,
+        accountId: null,
+        name: c.customerName,
+      });
   });
 
   readonly subtitle = computed(() => {
     const c = this.data();
-    if (!c) return 'Directory & Customer Search';
+    if (!c) return 'Manage your customer accounts and contacts in one place.';
     if (c.isAccountView) return `${c.customerName} · Corporate Account Dossier`;
     return c.accountName ? `${c.customerName} · ${c.accountName}` : c.customerName;
   });
@@ -427,7 +516,23 @@ export class ArCustomer360 {
     this.loadPicker();
   }
 
+  private loadInitialStats(): void {
+    if (this.totalContactsCount() === 0) {
+      this.contacts
+        .getList({ maxResultCount: 1 }, { skipHandleError: true })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (res) => {
+            if (res?.totalCount != null) {
+              this.totalContactsCount.set(res.totalCount);
+            }
+          },
+        });
+    }
+  }
+
   private loadPicker(): void {
+    this.loadInitialStats();
     const seq = ++this.pickerSeq;
     const input = {
       filter: this.pickerQuery().trim() || undefined,
