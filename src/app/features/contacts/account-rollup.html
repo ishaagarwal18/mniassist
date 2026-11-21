@@ -1,148 +1,442 @@
 <ar-topbar
   title="Account roll-up"
   [subtitle]="name()"
-  help="Everything an account adds up to: its contacts, open and won enquiries, pipeline value, the stages its deals are in and its ERP ledger. Tick Include subsidiaries to add every company and plant beneath it."
+  help="Comprehensive Account Intelligence Dashboard aggregating contacts, open and won enquiries, pipeline value, deal stage breakdowns, key decision makers, ERP ledger, and activity tracking. Toggle Include subsidiaries to roll up every company and plant beneath it."
 >
   @if (canView360() && accountId()) {
     <a
       ar-button
-      variant="ghost"
-      icon="contacts"
+      variant="primary"
+      class="roll-topbar-btn"
+      title="Open Customer 360 profile"
       [routerLink]="['/contacts/accounts', accountId(), '360']"
-      >Account 360</a
     >
+      <ar-icon name="contacts" [size]="14" />
+      <span>Account 360</span>
+    </a>
   }
-  <a ar-button variant="ghost" routerLink="/contacts/accounts">Back to Accounts</a>
+  <a
+    ar-button
+    variant="ghost"
+    class="roll-topbar-btn"
+    title="Return to Accounts directory"
+    routerLink="/contacts/accounts"
+  >
+    <ar-icon name="chevron" [size]="14" class="roll-rotate-180" />
+    <span>Back to Accounts</span>
+  </a>
 </ar-topbar>
 
 <div class="rollup-page ar-scroll">
   @if (error(); as e) {
-    <p class="rollup-page__empty" role="alert">{{ e }}</p>
+    <div class="roll-error-alert" role="alert">
+      <ar-icon name="alert" [size]="18" />
+      <span>{{ e }}</span>
+    </div>
   }
-  <section class="rollup-page__card">
-    @if (rollup(); as r) {
-      <div class="roll">
-        @if ((r.subsidiaryCount ?? 0) > 0) {
-          <div class="roll-banner">
-            <label class="roll-toggle">
-              <input
-                type="checkbox"
-                class="roll-toggle__input"
-                [checked]="includeSubsidiaries()"
-                (change)="toggleSubsidiaries($any($event.target).checked)"
-              />
-              <div class="roll-toggle__label">
-                <strong>Include subsidiaries in rollup</strong>
-                <span
-                  >Aggregating metrics across {{ r.subsidiaryCount }} subsidiar{{
-                    r.subsidiaryCount === 1 ? 'y' : 'ies'
-                  }}</span
-                >
-              </div>
-            </label>
-          </div>
-        }
 
-        <div class="roll__grid">
-          <div class="roll__stat">
-            <span class="roll__stat-label">
-              <ar-icon name="contacts" [size]="14" />
-              Contacts
+  <!-- Account Hero Summary Header -->
+  <header class="roll-hero-card">
+    <div class="roll-hero-main">
+      <div
+        class="roll-hero-avatar"
+        [class.roll-hero-avatar--group]="account()?.parentAccountId == null"
+      >
+        <ar-icon
+          [name]="account()?.parentAccountId == null ? 'workspaces' : 'tower'"
+          [size]="26"
+        />
+      </div>
+      <div class="roll-hero-details">
+        <div class="roll-hero-title-row">
+          <h1 class="roll-hero-title">{{ name() || 'Account Intelligence' }}</h1>
+          @if (account(); as acc) {
+            @if (acc.parentAccountId == null) {
+              <span class="roll-type-badge roll-type-badge--group" title="Corporate Group Parent">
+                Group
+              </span>
+            } @else {
+              <span class="roll-type-badge roll-type-badge--plant" title="Plant / Subsidiary">
+                Plant
+              </span>
+            }
+          }
+        </div>
+        <p class="roll-hero-desc">
+          Account performance, commercial relationships, and pipeline intelligence.
+        </p>
+        <div class="roll-hero-meta">
+          @if (account(); as acc) {
+            @if (acc.city || acc.state) {
+              <span class="roll-meta-pill">
+                <ar-icon name="globe" [size]="13" />
+                <span>{{ locationOf(acc) }}</span>
+              </span>
+            }
+            @if (acc.industry) {
+              <span class="roll-meta-pill">
+                <ar-icon name="workspaces" [size]="13" />
+                <span>{{ acc.industry }}</span>
+              </span>
+            }
+            @if (acc.gstin) {
+              <span class="roll-meta-pill ar-mono">
+                <span>GST: {{ acc.gstin }}</span>
+              </span>
+            }
+          }
+          @if (rollup(); as r) {
+            <span class="roll-meta-pill roll-meta-pill--activity">
+              <ar-icon name="clock" [size]="13" />
+              <span>Last active: <strong>{{ when(r.lastActivityUtc) }}</strong></span>
             </span>
-            <b>{{ r.contactCount }}</b>
+          }
+        </div>
+      </div>
+    </div>
+  </header>
+
+  @if (rollup(); as r) {
+    <!-- Subsidiary Aggregation Interactive Card -->
+    @if ((r.subsidiaryCount ?? 0) > 0) {
+      <div class="roll-subs-card" [class.roll-subs-card--active]="includeSubsidiaries()">
+        <div class="roll-subs-info">
+          <div class="roll-subs-icon">
+            <ar-icon name="flow" [size]="20" />
           </div>
-          <div class="roll__stat">
-            <span class="roll__stat-label">
-              <ar-icon name="enquiry" [size]="14" />
-              Open Enquiries
-            </span>
-            <b>{{ r.openEnquiryCount }}</b>
-          </div>
-          <div class="roll__stat">
-            <span class="roll__stat-label">
-              <ar-icon name="check" [size]="14" />
-              Won Deals
-            </span>
-            <b>{{ r.wonEnquiryCount }}</b>
-          </div>
-          <div class="roll__stat roll__stat--highlight">
-            <span class="roll__stat-label">
-              <ar-icon name="billing" [size]="14" />
-              Pipeline Value
-            </span>
-            <b>{{ inr(r.pipelineValueInPaise) }}</b>
+          <div class="roll-subs-text">
+            <div class="roll-subs-header">
+              <strong class="roll-subs-title">Include subsidiaries in roll-up</strong>
+              <span class="roll-subs-pill">
+                {{ r.subsidiaryCount }} plant{{ r.subsidiaryCount === 1 ? '' : 's' }} /
+                subsidiar{{ r.subsidiaryCount === 1 ? 'y' : 'ies' }}
+              </span>
+            </div>
+            <p class="roll-subs-desc">
+              Aggregate contacts, open enquiries, won deals, and pipeline revenue from every
+              affiliated plant and subsidiary beneath this group account.
+            </p>
           </div>
         </div>
+        <div class="roll-subs-toggle">
+          <label class="roll-switch">
+            <input
+              type="checkbox"
+              [checked]="includeSubsidiaries()"
+              [disabled]="loadingRollup()"
+              (change)="toggleSubsidiaries($any($event.target).checked)"
+            />
+            <span class="roll-switch__track"></span>
+          </label>
+        </div>
+      </div>
+    }
 
-        <div class="roll-act-badge">
-          <ar-icon name="clock" [size]="13" />
-          <span
-            >Last activity: <strong>{{ when(r.lastActivityUtc) }}</strong></span
-          >
+    <!-- 4 Dynamic KPI Metric Cards -->
+    <section class="roll-kpi-grid">
+      <!-- 1. Contacts -->
+      <div class="roll-kpi-card roll-kpi-card--blue">
+        <div class="roll-kpi-icon roll-kpi-icon--blue">
+          <ar-icon name="contacts" [size]="22" />
+        </div>
+        <div class="roll-kpi-content">
+          <span class="roll-kpi-label">Total Contacts</span>
+          <b class="roll-kpi-value">{{ r.contactCount }}</b>
+          <span class="roll-kpi-desc">Assigned decision makers</span>
+        </div>
+      </div>
+
+      <!-- 2. Open Enquiries -->
+      <div class="roll-kpi-card roll-kpi-card--amber">
+        <div class="roll-kpi-icon roll-kpi-icon--amber">
+          <ar-icon name="enquiry" [size]="22" />
+        </div>
+        <div class="roll-kpi-content">
+          <span class="roll-kpi-label">Open Enquiries</span>
+          <b class="roll-kpi-value">{{ r.openEnquiryCount }}</b>
+          <span class="roll-kpi-desc">Active pipeline opportunities</span>
+        </div>
+      </div>
+
+      <!-- 3. Won Deals -->
+      <div class="roll-kpi-card roll-kpi-card--teal">
+        <div class="roll-kpi-icon roll-kpi-icon--teal">
+          <ar-icon name="check" [size]="22" />
+        </div>
+        <div class="roll-kpi-content">
+          <span class="roll-kpi-label">Won Deals</span>
+          <b class="roll-kpi-value">{{ r.wonEnquiryCount }}</b>
+          <span class="roll-kpi-desc">Successfully converted</span>
+        </div>
+      </div>
+
+      <!-- 4. Pipeline Value -->
+      <div class="roll-kpi-card roll-kpi-card--purple">
+        <div class="roll-kpi-icon roll-kpi-icon--purple">
+          <ar-icon name="billing" [size]="22" />
+        </div>
+        <div class="roll-kpi-content">
+          <span class="roll-kpi-label">Pipeline Value</span>
+          <b class="roll-kpi-value">{{ inr(r.pipelineValueInPaise) }}</b>
+          <span class="roll-kpi-desc">Total commercial volume</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Balanced 2-Column Section: Deal Pipeline Breakdown & Key Contacts -->
+    <div class="roll-main-grid">
+      <!-- Left Column: Deal Stages Pipeline Analytics -->
+      <section class="roll-card">
+        <div class="roll-card-head">
+          <div class="roll-card-title-group">
+            <div class="roll-card-icon">
+              <ar-icon name="analytics" [size]="16" />
+            </div>
+            <div>
+              <h2 class="roll-card-title">Deal Pipeline Breakdown</h2>
+              <p class="roll-card-sub">Active deals distributed across pipeline lifecycle stages</p>
+            </div>
+          </div>
+          <span class="roll-count-badge">
+            {{ totalDeals(r) }} deal{{ totalDeals(r) === 1 ? '' : 's' }}
+          </span>
         </div>
 
         @if (breakdownRows(r).length > 0) {
-          <div class="roll-section">
-            <span class="roll-section-title">Deal Stages Breakdown</span>
-            <div class="roll__bd">
-              @for (row of breakdownRows(r); track row.stage) {
-                <span class="roll__chip">
-                  <strong>{{ row.stage }}</strong> · {{ row.count }}
-                </span>
-              }
-            </div>
+          <div class="roll-pipeline-list">
+            @for (row of breakdownRows(r); track row.stage) {
+              <div class="roll-stage-item">
+                <div class="roll-stage-meta">
+                  <div class="roll-stage-left">
+                    <span
+                      class="roll-stage-dot"
+                      [style.background-color]="stageColor(row.stage)"
+                    ></span>
+                    <strong class="roll-stage-name">{{ row.stage }}</strong>
+                  </div>
+                  <div class="roll-stage-right">
+                    <span class="roll-stage-count"
+                      >{{ row.count }} deal{{ row.count === 1 ? '' : 's' }}</span
+                    >
+                    <span class="roll-stage-pct"
+                      >{{ stagePercentage(row.count, totalDeals(r)) }}%</span
+                    >
+                  </div>
+                </div>
+                <div class="roll-progress-track">
+                  <div
+                    class="roll-progress-fill"
+                    [style.width.%]="stagePercentage(row.count, totalDeals(r))"
+                    [style.background-color]="stageColor(row.stage)"
+                  ></div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="roll-empty-state">
+            <ar-icon name="enquiry" [size]="32" />
+            <p class="roll-empty-title">No deals in pipeline stages</p>
+            <p class="roll-empty-desc">
+              Active enquiries and commercial deals will appear here as they move through your
+              pipeline.
+            </p>
           </div>
         }
+      </section>
+
+      <!-- Right Column: Key Contacts Directory -->
+      <section class="roll-card">
+        <div class="roll-card-head">
+          <div class="roll-card-title-group">
+            <div class="roll-card-icon">
+              <ar-icon name="contacts" [size]="16" />
+            </div>
+            <div>
+              <h2 class="roll-card-title">Key Decision Makers</h2>
+              <p class="roll-card-sub">Primary contacts associated with this customer account</p>
+            </div>
+          </div>
+          <span class="roll-count-badge">
+            {{ r.contacts?.length ?? 0 }} contact{{ r.contacts?.length === 1 ? '' : 's' }}
+          </span>
+        </div>
 
         @if (r.contacts && r.contacts.length > 0) {
-          <div class="roll-section">
-            <div class="roll-section-head">
-              <span class="roll-section-title">Key Contacts</span>
-              <span class="roll-section-count">({{ r.contacts.length }})</span>
-            </div>
-            <ul class="roll-contact-list">
-              @for (c of r.contacts; track c.id) {
-                <li class="roll-contact-item">
+          <div class="roll-contacts-grid">
+            @for (c of r.contacts; track c.id) {
+              <div class="roll-contact-card">
+                <div class="roll-contact-head">
                   <ar-avatar
                     [name]="c.displayName || c.waId || 'Contact'"
-                    [size]="32"
+                    [size]="38"
                     tone="teal"
                   />
-                  <div class="roll-contact-info">
-                    @if (canView360()) {
+                  <div class="roll-contact-who">
+                    @if (canView360() && c.id) {
                       <a
                         class="roll-contact-name roll-contact-name--link"
                         [routerLink]="['/contacts', c.id, '360']"
+                        title="View Customer 360 profile"
                       >
                         {{ c.displayName || c.waId }}
                       </a>
                     } @else {
                       <span class="roll-contact-name">{{ c.displayName || c.waId }}</span>
                     }
-                    <div class="roll-contact-meta">
-                      @if (r.includesSubsidiaries && c.accountName) {
-                        <span class="roll-contact-tag">{{ c.accountName }}</span>
-                      }
-                      @if (c.designation) {
-                        <span>{{ c.designation }}</span>
-                      }
-                    </div>
+                    <span class="roll-contact-role">{{ c.designation || 'Key Decision Maker' }}</span>
                   </div>
-                </li>
-              }
-            </ul>
+                </div>
+
+                <div class="roll-contact-tags">
+                  @if (r.includesSubsidiaries && c.accountName) {
+                    <span class="roll-contact-pill" title="Affiliated Plant">
+                      <ar-icon name="tower" [size]="11" />
+                      <span>{{ c.accountName }}</span>
+                    </span>
+                  }
+                  @if (c.waId) {
+                    <a
+                      class="roll-contact-pill roll-contact-pill--wa ar-mono"
+                      [href]="'https://wa.me/' + c.waId"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open WhatsApp chat"
+                    >
+                      <ar-icon name="phone" [size]="11" />
+                      <span>+{{ c.waId }}</span>
+                    </a>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="roll-empty-state">
+            <ar-icon name="contacts" [size]="32" />
+            <p class="roll-empty-title">No key contacts assigned</p>
+            <p class="roll-empty-desc">
+              Assign key personnel, purchasing heads, and plant managers from the Accounts or
+              Contacts directory.
+            </p>
           </div>
         }
+      </section>
+    </div>
 
-        @if (accountId(); as id) {
-          <div class="roll-section">
-            <span class="roll-section-title">ERP Ledger &amp; Transactions</span>
-            <ar-erp-ledger [customerId]="id" />
+    <!-- Account Activity & Engagement Timeline -->
+    <section class="roll-card">
+      <div class="roll-card-head">
+        <div class="roll-card-title-group">
+          <div class="roll-card-icon">
+            <ar-icon name="clock" [size]="16" />
           </div>
+          <div>
+            <h2 class="roll-card-title">Recent Activity &amp; Milestones</h2>
+            <p class="roll-card-sub">
+              Chronological log of customer touchpoints and engagement records
+            </p>
+          </div>
+        </div>
+        @if (r.lastActivityUtc) {
+          <span class="roll-activity-badge">
+            <ar-icon name="check" [size]="12" />
+            <span>Active {{ when(r.lastActivityUtc) }}</span>
+          </span>
         }
       </div>
-    } @else if (!error()) {
-      <p class="rollup-page__empty">Loading roll-up…</p>
+
+      @if (r.lastActivityUtc || activeContacts(r).length > 0) {
+        <div class="roll-timeline">
+          @if (r.lastActivityUtc) {
+            <div class="roll-timeline-item">
+              <div class="roll-timeline-marker roll-timeline-marker--blue">
+                <ar-icon name="clock" [size]="13" />
+              </div>
+              <div class="roll-timeline-content">
+                <div class="roll-timeline-header">
+                  <strong class="roll-timeline-title">Commercial &amp; Account Activity</strong>
+                  <time class="roll-timeline-time">{{ formatDateTime(r.lastActivityUtc) }}</time>
+                </div>
+                <p class="roll-timeline-desc">
+                  Customer engagement, deal progression, or communication recorded on the account.
+                </p>
+              </div>
+            </div>
+          }
+
+          @for (c of activeContacts(r); track c.id) {
+            <div class="roll-timeline-item">
+              <div class="roll-timeline-marker roll-timeline-marker--teal">
+                <ar-icon name="phone" [size]="13" />
+              </div>
+              <div class="roll-timeline-content">
+                <div class="roll-timeline-header">
+                  <strong class="roll-timeline-title">
+                    Inbound Contact from {{ c.displayName || c.waId }}
+                  </strong>
+                  <time class="roll-timeline-time">{{
+                    formatDateTime(c.lastInboundAtUtc)
+                  }}</time>
+                </div>
+                <p class="roll-timeline-desc">
+                  Received interaction from {{ c.designation || 'contact' }}
+                  @if (c.accountName) {
+                    at {{ c.accountName }}
+                  }
+                  via WhatsApp.
+                </p>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="roll-empty-state">
+          <ar-icon name="clock" [size]="32" />
+          <p class="roll-empty-title">No recorded activity</p>
+          <p class="roll-empty-desc">
+            Customer communications, calls, and orders will automatically populate this timeline.
+          </p>
+        </div>
+      }
+    </section>
+
+    <!-- ERP Ledger & Financial Transactions Section -->
+    @if (accountId(); as id) {
+      <section class="roll-card">
+        <div class="roll-card-head">
+          <div class="roll-card-title-group">
+            <div class="roll-card-icon">
+              <ar-icon name="billing" [size]="16" />
+            </div>
+            <div>
+              <h2 class="roll-card-title">ERP Ledger &amp; Financial Transactions</h2>
+              <p class="roll-card-sub">
+                Billed invoices, payment receivables, and outstanding balances from your ERP system
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="roll-erp-wrapper">
+          <ar-erp-ledger [customerId]="id" />
+        </div>
+      </section>
     }
-  </section>
+  } @else if (!error()) {
+    <!-- Clean Skeleton Loader -->
+    <div class="roll-skeleton-wrap" aria-busy="true" aria-label="Loading account roll-up metrics">
+      <div class="roll-skeleton-hero"></div>
+      <div class="roll-skeleton-kpis">
+        <div class="roll-skeleton-card"></div>
+        <div class="roll-skeleton-card"></div>
+        <div class="roll-skeleton-card"></div>
+        <div class="roll-skeleton-card"></div>
+      </div>
+      <div class="roll-skeleton-grid">
+        <div class="roll-skeleton-block"></div>
+        <div class="roll-skeleton-block"></div>
+      </div>
+    </div>
+  }
 </div>

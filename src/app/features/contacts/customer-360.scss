@@ -251,14 +251,20 @@
 .kpi-card {
   background: var(--ar-white);
   border: 1px solid var(--ar-line-200);
-  border-radius: var(--ar-radius-card);
-  box-shadow: var(--ar-shadow-card);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
   padding: 1.15rem 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   position: relative;
   overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  }
 
   &::before {
     content: '';
@@ -272,19 +278,19 @@
 }
 
 .kpi-card--credit::before {
-  background: var(--ar-blue-500);
+  background: #2563eb;
 }
 
 .kpi-card--owed::before {
-  background: var(--ar-warn-500);
+  background: #d97706;
 }
 
 .kpi-card--order::before {
-  background: var(--ar-primary);
+  background: #0d9488;
 }
 
 .kpi-card--ltv::before {
-  background: var(--ar-green-500);
+  background: #8b5cf6;
 }
 
 .kpi-card.on-hold {
@@ -301,6 +307,39 @@
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
+}
+
+.kpi-head-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.kpi-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &--credit {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+  &--owed {
+    background: #fef3c7;
+    color: #d97706;
+  }
+  &--order {
+    background: #f0fdfa;
+    color: #0d9488;
+  }
+  &--ltv {
+    background: #f5f3ff;
+    color: #8b5cf6;
+  }
 }
 
 .kpi-lbl {
@@ -711,9 +750,51 @@
   gap: 0.65rem;
 }
 
+.empty-state__icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: var(--ar-bg-100);
+  color: var(--ar-ink-400);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+
 .empty-state__icon {
   font-size: 2rem;
   color: var(--ar-ink-400);
+}
+
+.overview-head-icon {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.c360-summary-pills {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.c360-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  background: var(--ar-bg-50);
+  border: 1px solid var(--ar-line-200);
+  font-size: 0.82rem;
+  color: var(--ar-ink-700);
+
+  &--danger {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+  }
 }
 
 .empty-state__title {

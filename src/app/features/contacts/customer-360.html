@@ -27,13 +27,19 @@
             [class.c360-avatar--account]="c.isAccountView"
             aria-hidden="true"
           >
-            {{ c.isAccountView ? '🏢' : c.customerName.charAt(0) }}
+            @if (c.isAccountView) {
+              <ar-icon name="accounts" [size]="28" />
+            } @else {
+              {{ c.customerName.charAt(0).toUpperCase() }}
+            }
           </div>
           <div class="c360-info">
             <div class="c360-title-row">
               <h1 class="c360-name">{{ c.customerName }}</h1>
               @if (c.isAccountView) {
-                <span class="c360-view-pill c360-view-pill--account">🏢 Whole Account View</span>
+                <span class="c360-view-pill c360-view-pill--account">
+                  <ar-icon name="accounts" [size]="12" /> Whole Account View
+                </span>
                 @if (c.contactId) {
                   <a
                     class="c360-switch-link"
@@ -44,7 +50,9 @@
                   </a>
                 }
               } @else {
-                <span class="c360-view-pill">👤 Contact View</span>
+                <span class="c360-view-pill">
+                  <ar-icon name="contacts" [size]="12" /> Contact View
+                </span>
                 @if (c.accountId) {
                   <a
                     class="c360-switch-link"
@@ -59,17 +67,23 @@
 
             <div class="c360-meta-strip">
               @if (c.accountName) {
-                <span class="c360-meta-chip">🏢 {{ c.accountName }}</span>
+                <span class="c360-meta-chip">
+                  <ar-icon name="accounts" [size]="13" /> {{ c.accountName }}
+                </span>
               }
               @if (c.industry) {
-                <span class="c360-meta-chip">🏭 {{ c.industry }}</span>
+                <span class="c360-meta-chip">
+                  <ar-icon name="workspaces" [size]="13" /> {{ c.industry }}
+                </span>
               }
               @if (c.city) {
-                <span class="c360-meta-chip">📍 {{ c.city }}, {{ c.state }}</span>
+                <span class="c360-meta-chip">
+                  <ar-icon name="globe" [size]="13" /> {{ c.city }}{{ c.state ? ', ' + c.state : '' }}
+                </span>
               }
               @if (c.gstin) {
                 <span class="c360-meta-chip c360-meta-chip--gst">
-                  GST: {{ c.gstin }}
+                  <ar-icon name="gst-compliance" [size]="13" /> GST: {{ c.gstin }}
                   <button
                     type="button"
                     class="btn-inline-copy"
@@ -200,7 +214,12 @@
         <!-- Credit Limit & Utilization Card -->
         <div class="kpi-card kpi-card--credit" [class.on-hold]="c.credit.onHold">
           <div class="kpi-head">
-            <span class="kpi-lbl">Commercial Credit</span>
+            <div class="kpi-head-left">
+              <div class="kpi-icon-wrap kpi-icon-wrap--credit">
+                <ar-icon name="billing" [size]="16" />
+              </div>
+              <span class="kpi-lbl">Commercial Credit</span>
+            </div>
             <ar-chip [tone]="creditTone()" [title]="creditChipTitle()">
               {{
                 c.credit.onHold ? 'ON HOLD' : creditUtilizationPct() >= 90 ? 'NEAR LIMIT' : 'NORMAL'
@@ -256,7 +275,12 @@
         <!-- Outstanding Receivables Card -->
         <div class="kpi-card kpi-card--owed">
           <div class="kpi-head">
-            <span class="kpi-lbl">Outstanding Owed</span>
+            <div class="kpi-head-left">
+              <div class="kpi-icon-wrap kpi-icon-wrap--owed">
+                <ar-icon name="collections" [size]="16" />
+              </div>
+              <span class="kpi-lbl">Outstanding Owed</span>
+            </div>
             @if (c.credit.totalOverdueInPaise > 0) {
               <ar-chip
                 tone="bad"
@@ -283,7 +307,12 @@
         <!-- Active on Order Card -->
         <div class="kpi-card kpi-card--order">
           <div class="kpi-head">
-            <span class="kpi-lbl">Active on Order</span>
+            <div class="kpi-head-left">
+              <div class="kpi-icon-wrap kpi-icon-wrap--order">
+                <ar-icon name="sales-orders" [size]="16" />
+              </div>
+              <span class="kpi-lbl">Active on Order</span>
+            </div>
             <ar-chip
               tone="teal"
               title="Sales orders confirmed, in production or part-dispatched; the amount is what is still to be invoiced on them."
@@ -304,7 +333,12 @@
         <!-- Lifetime Revenue (LTV) Card -->
         <div class="kpi-card kpi-card--ltv">
           <div class="kpi-head">
-            <span class="kpi-lbl">Lifetime Revenue</span>
+            <div class="kpi-head-left">
+              <div class="kpi-icon-wrap kpi-icon-wrap--ltv">
+                <ar-icon name="analytics-overview" [size]="16" />
+              </div>
+              <span class="kpi-lbl">Lifetime Revenue</span>
+            </div>
             <ar-chip
               tone="good"
               title="Lifetime value: the total of every invoice billed to this customer."
@@ -351,6 +385,7 @@
           [class.active]="activeTab() === 'overview'"
           (click)="activeTab.set('overview')"
         >
+          <ar-icon name="analytics-overview" [size]="15" />
           <span>Overview & Activity</span>
         </button>
         @if (!isPersonView()) {
@@ -360,6 +395,7 @@
             [class.active]="activeTab() === 'orders'"
             (click)="activeTab.set('orders')"
           >
+            <ar-icon name="sales-orders" [size]="15" />
             <span>Sales Orders</span>
             <span class="tab-badge">{{ c.totalOrdersCount }}</span>
           </button>
@@ -369,6 +405,7 @@
             [class.active]="activeTab() === 'challans'"
             (click)="activeTab.set('challans')"
           >
+            <ar-icon name="delivery-challans" [size]="15" />
             <span>Delivery Challans</span>
             <span class="tab-badge">{{ c.totalChallansCount }}</span>
           </button>
@@ -378,6 +415,7 @@
             [class.active]="activeTab() === 'invoices'"
             (click)="activeTab.set('invoices')"
           >
+            <ar-icon name="sales-invoices" [size]="15" />
             <span>Invoices & Aging</span>
             <span class="tab-badge">{{ c.totalInvoicesCount }}</span>
           </button>
@@ -388,6 +426,7 @@
           [class.active]="activeTab() === 'assets'"
           (click)="activeTab.set('assets')"
         >
+          <ar-icon name="machine" [size]="15" />
           <span>Installed Machinery</span>
           <span class="tab-badge">{{ c.installedAssetsCount }}</span>
         </button>
@@ -397,6 +436,7 @@
           [class.active]="activeTab() === 'tickets'"
           (click)="activeTab.set('tickets')"
         >
+          <ar-icon name="helpdesk" [size]="15" />
           <span>Service Tickets</span>
           <span class="tab-badge">{{ c.openTicketsCount }}</span>
         </button>
@@ -407,6 +447,7 @@
             [class.active]="activeTab() === 'projects'"
             (click)="activeTab.set('projects')"
           >
+            <ar-icon name="projects" [size]="15" />
             <span>Projects</span>
           </button>
         }
@@ -421,7 +462,8 @@
           <div class="overview-card">
             <div class="overview-card__head">
               <h2 class="overview-card__title">
-                <span>⚡ Commercial & Operational Snapshot</span>
+                <ar-icon name="bolt" [size]="16" class="overview-head-icon" />
+                <span>Commercial & Operational Snapshot</span>
               </h2>
               <span class="text-xs text-muted">Latest records</span>
             </div>
@@ -502,13 +544,17 @@
             </div>
 
             <!-- Machinery & Service status summary -->
-            <div class="c360-subsidiary-bar">
+            <div class="c360-summary-pills">
+              <span class="c360-summary-pill">
+                <ar-icon name="machine" [size]="14" />
+                <strong>{{ c.installedAssetsCount }}</strong> Installed Machines at facility
+              </span>
               <span
-                >🏭 <strong>{{ c.installedAssetsCount }}</strong> Installed Machines at
-                facility</span
+                class="c360-summary-pill"
+                [class.c360-summary-pill--danger]="c.openTicketsCount > 0"
               >
-              <span [class.text-danger]="c.openTicketsCount > 0">
-                🎫 <strong>{{ c.openTicketsCount }}</strong> Open Service Ticket{{
+                <ar-icon name="helpdesk" [size]="14" />
+                <strong>{{ c.openTicketsCount }}</strong> Open Service Ticket{{
                   c.openTicketsCount === 1 ? '' : 's'
                 }}
               </span>
@@ -520,7 +566,8 @@
         <div class="overview-card">
           <div class="overview-card__head">
             <h2 class="overview-card__title">
-              <span>💬 Communications & Timeline Feed</span>
+              <ar-icon name="inbox" [size]="16" class="overview-head-icon" />
+              <span>Communications & Timeline Feed</span>
             </h2>
             <span class="text-xs text-muted"
               >{{ c.timeline.length }} interaction{{ c.timeline.length === 1 ? '' : 's' }}</span
@@ -563,7 +610,9 @@
               </div>
             } @empty {
               <div class="empty-state">
-                <div class="empty-state__icon">💬</div>
+                <div class="empty-state__icon-wrap">
+                  <ar-icon name="inbox" [size]="32" />
+                </div>
                 <h3 class="empty-state__title">No communications logged yet</h3>
                 <p class="empty-state__hint">
                   Use "Message customer" above to reach out via WhatsApp, Email or SMS.
