@@ -268,7 +268,7 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
     /* Hero */
     .ip-hero {
       position: relative;
-      padding: 32px 0 40px;
+      padding: 32px 0 36px;
       overflow: hidden;
     }
 
@@ -276,7 +276,7 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
       position: absolute;
       top: -40px;
       left: 10%;
-      width: 480px;
+      width: 460px;
       height: 280px;
       background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, rgba(13, 148, 136, 0.08) 50%, transparent 70%);
       filter: blur(50px);
