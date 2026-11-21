@@ -22,7 +22,6 @@ const VOICE_PLANS = LANDING_PLANS.filter((p) => p.name === 'Pro' || p.name === '
   template: `
     <ar-public-frame>
       <div class="roi-container">
-        <!-- Hero Header with Ambient Glow & Badges -->
         <header class="roi-hero">
           <div class="roi-hero__glow" aria-hidden="true"></div>
           <div class="roi-hero__badge">
