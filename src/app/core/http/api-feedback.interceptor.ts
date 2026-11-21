@@ -13,7 +13,7 @@ import { Observable, tap } from 'rxjs';
 
 import { CurrentUserService } from '../services/current-user.service';
 import { ToastService } from '../ui/toast.service';
-import { errorFor, isQuietFailure, successFor } from './api-feedback';
+import { OutageToastGate, errorFor, isOutage, isQuietFailure, successFor } from './api-feedback';
 
 /** What the API's refusal says when an administrator changed the person's roles (SessionRevocationMiddleware). */
 export const ROLE_CHANGED_CODE = 'AutoReach:RoleChanged';
@@ -33,6 +33,7 @@ export class ApiFeedbackInterceptor implements HttpInterceptor {
   private readonly toasts = inject(ToastService);
   // Looked up when needed: the user service sits on HttpClient, which sits on this interceptor.
   private readonly injector = inject(Injector);
+  private readonly outage = new OutageToastGate();
 
   /** A sign-in token is stored, so this browser believes it is signed in. */
   private holdsSignIn(): boolean {
@@ -66,6 +67,13 @@ export class ApiFeedbackInterceptor implements HttpInterceptor {
             this.injector
               .get(CurrentUserService)
               .sessionEnded(code === ROLE_CHANGED_CODE ? 'role-changed' : 'ended');
+            return;
+          }
+          if (
+            err instanceof HttpErrorResponse &&
+            isOutage(err) &&
+            !this.outage.shouldToast(req.method)
+          ) {
             return;
           }
           if (err instanceof HttpErrorResponse && !isQuietFailure(req.method, err, req.url)) {

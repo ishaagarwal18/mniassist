@@ -314,3 +314,26 @@ export function errorFor(err: HttpErrorResponse): { title: string; content: stri
   if (lines.length === 0) lines.push(fallback.content);
   return { title, content: lines.join('\n').slice(0, 600) };
 }
+
+/** The server could not be reached: no answer at all, or the proxy in front had nothing to forward to. */
+export function isOutage(err: HttpErrorResponse): boolean {
+  return err.status === 0 || err.status === 502 || err.status === 503 || err.status === 504;
+}
+
+/**
+ * Keeps an outage (a release restarting the API, Wi-Fi dropping, a laptop waking) from
+ * flooding the screen. Background reads poll every few seconds, so each would toast:
+ * failed reads stay silent, and an action the person took says so at most once per window.
+ */
+export class OutageToastGate {
+  private lastShown = Number.NEGATIVE_INFINITY;
+
+  constructor(private readonly windowMs = 30_000) {}
+
+  shouldToast(method: string, now = Date.now()): boolean {
+    if (method.toUpperCase() === 'GET') return false;
+    if (now - this.lastShown < this.windowMs) return false;
+    this.lastShown = now;
+    return true;
+  }
+}
