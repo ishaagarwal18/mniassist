@@ -1,16 +1,9 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  signal,
-  untracked,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { CurrentUserService } from '../core/services/current-user.service';
 import { ArIcon } from '../ui/icon';
 import { PageContextService } from './page-context.service';
-import { TipState, readTips, tipFor, writeTips } from './screen-tip.logic';
+import { tipFor } from './screen-tip.logic';
+import { ScreenTipStore } from './screen-tip.store';
 
 /**
  * "New to this screen?" — shown once per screen, floating in the corner: what the screen is for,
@@ -56,30 +49,27 @@ import { TipState, readTips, tipFor, writeTips } from './screen-tip.logic';
 export class ArScreenTip {
   private readonly page = inject(PageContextService);
   private readonly account = inject(CurrentUserService);
-  private readonly state = signal<TipState>({ off: false, seen: [] });
-
-  constructor() {
-    // Each person keeps their own seen list; it loads once the user id is known.
-    effect(() => {
-      const id = this.account.id();
-      untracked(() => this.state.set(readTips(id)));
-    });
-  }
+  private readonly tips = inject(ScreenTipStore);
 
   /** Hidden while the help panel is open: the full help is already on screen. */
   protected readonly tip = computed(() =>
     this.page.helpOpen() || !this.account.id()
       ? null
-      : tipFor(this.page.activeRoutePath(), this.page.topic(), this.page.summary(), this.state()),
+      : tipFor(
+          this.page.activeRoutePath(),
+          this.page.topic(),
+          this.page.summary(),
+          this.tips.state(),
+        ),
   );
 
   protected dismiss(id: string): void {
-    const s = this.state();
-    this.save({ ...s, seen: [...s.seen, id] });
+    this.tips.dismiss(id);
   }
 
+  /** Off until turned on again from the help panel (? in the right bar). */
   protected turnOff(): void {
-    this.save({ ...this.state(), off: true });
+    this.tips.turnOff();
   }
 
   protected openHelp(event: Event, id: string): void {
@@ -87,10 +77,5 @@ export class ArScreenTip {
     event.stopPropagation();
     this.dismiss(id);
     if (!this.page.helpOpen()) this.page.toggleHelp();
-  }
-
-  private save(next: TipState): void {
-    this.state.set(next);
-    writeTips(this.account.id(), next);
   }
 }
