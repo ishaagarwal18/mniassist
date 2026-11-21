@@ -19,6 +19,7 @@ import { PlanService } from '../core/services/plan.service';
 import { canAccessNavItem } from '../core/auth/permission';
 import { NAV, NavItem } from './nav.model';
 import { PageContextService } from './page-context.service';
+import { ScreenTipStore } from './screen-tip.store';
 
 @Component({
   selector: 'ar-right-sidebar',
@@ -189,6 +190,15 @@ import { PageContextService } from './page-context.service';
             }}
           </p>
         }
+        <!-- "Don't show tips" on a screen tip is undone here. -->
+        <label class="rsb__help-tips-toggle">
+          <input
+            type="checkbox"
+            [checked]="!screenTips.state().off"
+            (change)="toggleScreenTips($any($event.target).checked)"
+          />
+          {{ i18n.t('Show “New to this screen?” tips') }}
+        </label>
       </div>
     }
 
@@ -296,6 +306,13 @@ import { PageContextService } from './page-context.service';
 })
 export class ArRightSidebar {
   protected readonly pageContext = inject(PageContextService);
+  protected readonly screenTips = inject(ScreenTipStore);
+
+  /** On: tips come back, every screen's once more. Off: as "Don't show tips" on a tip. */
+  protected toggleScreenTips(on: boolean): void {
+    if (on) this.screenTips.turnOn();
+    else this.screenTips.turnOff();
+  }
   protected readonly i18n = inject(LanguageService);
   protected readonly themeService = inject(ThemeService);
   private readonly inbox = inject(InboxService);

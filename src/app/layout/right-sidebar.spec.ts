@@ -17,7 +17,13 @@ describe('ArRightSidebar', () => {
   let pageContext: PageContextService;
   let languageService: { lang: any; set: any; t: any };
   let themeService: { theme: any; set: any };
-  let currentUserService: { logout: any; permissionState: any; isHost: any; isHostAdmin: any };
+  let currentUserService: {
+    id: any;
+    logout: any;
+    permissionState: any;
+    isHost: any;
+    isHostAdmin: any;
+  };
   let inboxService: { unassignedCount: any };
   let opsService: { unreadCount: any };
 
@@ -32,6 +38,7 @@ describe('ArRightSidebar', () => {
       set: vi.fn(),
     };
     currentUserService = {
+      id: signal(null),
       logout: vi.fn(),
       permissionState: signal(0),
       isHost: signal(false),

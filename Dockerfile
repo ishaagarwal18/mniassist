@@ -2,11 +2,11 @@
 FROM node:24-alpine AS build
 WORKDIR /src
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci --prefer-offline --no-audit --no-fund
 COPY . .
 # production (default), staging or development: each points at its own API (src/environments).
 ARG BUILD_CONFIGURATION=production
-RUN npx ng build --configuration "$BUILD_CONFIGURATION"
+RUN --mount=type=cache,target=/src/.angular/cache npx ng build --configuration "$BUILD_CONFIGURATION"
 
 FROM nginx:1.27-alpine AS web
 # A template: the image's entrypoint fills in ${API_UPSTREAM} at start-up. docker-compose's API is "api";
