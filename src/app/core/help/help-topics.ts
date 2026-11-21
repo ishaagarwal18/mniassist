@@ -5,6 +5,7 @@ import { PURCHASING_TOPICS } from './topics/purchasing';
 import { SALES_TOPICS } from './topics/sales';
 import { SETTINGS_TOPICS } from './topics/settings';
 import { VOICE_SERVICE_TOPICS } from './topics/voice-service';
+import { DIALOG_HELP } from './topics/dialogs';
 
 /**
  * The help behind every screen's "?" button. Keyed by the route's path exactly
@@ -25,6 +26,19 @@ export interface HelpTopic {
   readonly steps: readonly string[];
   readonly tips?: readonly string[];
   /** Every field, button and figure on the screen, with what it does — shown as "On this screen". */
+  readonly fields?: readonly HelpField[];
+  /** The popups (dialogs) this screen opens, with what each is for — shown as "Popups on this screen". */
+  readonly dialogs?: readonly HelpDialog[];
+}
+
+/** One popup a screen opens: what it is called, how you open it, what it does, and its fields. */
+export interface HelpDialog {
+  /** The popup's title as it appears at its top. */
+  readonly name: string;
+  /** The button or action that opens it. */
+  readonly opens: string;
+  /** What the popup is for and what happens when you save it. */
+  readonly text: string;
   readonly fields?: readonly HelpField[];
 }
 
@@ -2135,7 +2149,7 @@ const BASE_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Delivery challans and tax invoices are created straight from the order.',
     ],
     steps: [
-      'Click + New Sales order, choose the customer and add line items.',
+      'Click + New sales order, choose the customer and add line items.',
       'Click an order to open its page; Confirm sales order once the customer PO is in hand.',
       'Use Create delivery challan to ship, or Generate sales invoice to bill.',
       'Export PDF or Export Excel saves every order the search, status and customer show (not only the rows loaded); Excel adds a sheet of their lines.',
@@ -2207,7 +2221,7 @@ const BASE_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Quality inspection decides what goes into stock and what is sent back.',
     ],
     steps: [
-      'Click Inward gate entry (GRN) and enter the items received.',
+      'Click Receive goods (GRN) and enter the items received.',
       'Click Save & send to QC.',
       'Record accepted and rejected quantities, then Confirm & Approve Put-Away.',
     ],
@@ -2505,10 +2519,18 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
 
 export function helpTopicFor(routePath: string | null | undefined): HelpTopic | null {
   if (!routePath) return null;
+  const topic = nearest(HELP_TOPICS, routePath);
+  const dialogs = DIALOG_HELP[routePath];
+  if (!dialogs?.length) return topic;
+  return { ...(topic ?? { benefits: [], steps: [] }), dialogs: [...(topic?.dialogs ?? []), ...dialogs] };
+}
+
+/** The entry for a route, else for the nearest route above it that has one. */
+function nearest<T>(map: Readonly<Record<string, T>>, routePath: string): T | null {
   const parts = routePath.split('/');
   while (parts.length) {
-    const topic = HELP_TOPICS[parts.join('/')];
-    if (topic) return topic;
+    const hit = map[parts.join('/')];
+    if (hit) return hit;
     parts.pop();
   }
   return null;

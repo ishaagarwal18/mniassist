@@ -367,7 +367,7 @@ export class ArNewVoiceBatchPage implements OnInit {
           e,
           this.editId
             ? 'The batch could not be saved. Please check the details.'
-            : 'Failed to create call batch. Please verify parameters.',
+            : 'The call batch was not created. Check that a phone line and at least one contact are chosen.',
         ),
       );
     } finally {

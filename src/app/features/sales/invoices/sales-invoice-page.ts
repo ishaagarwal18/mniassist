@@ -1,3 +1,5 @@
+import { ArSalesChain } from '../sales-chain';
+import { invoiceChain } from '../sales-chain.logic';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ArInvoiceSpaPanel } from '../../oem/invoice-spa-panel';
@@ -38,6 +40,7 @@ import { ArSalesExport } from '../sales-export';
 @Component({
   selector: 'ar-sales-invoice-page',
   imports: [
+    ArSalesChain,
     RouterLink,
     ArTopbar,
     ArButton,
@@ -70,6 +73,9 @@ import { ArSalesExport } from '../sales-export';
         </section>
       } @else if (record(); as inv) {
         <div class="pf__form">
+          @if (chain(); as ch) {
+            <ar-sales-chain [chain]="ch" />
+          }
           <section class="pf__card">
             <div class="sr-head">
               <div>
@@ -400,7 +406,7 @@ import { ArSalesExport } from '../sales-export';
             <span class="pf__summary"></span>
             <button ar-button variant="ghost" type="button" (click)="back()">Back</button>
             <button ar-button variant="ghost" type="button" (click)="customer360(inv.customerId)">
-              Customer 360
+              Customer overview
             </button>
             <ar-sales-export
               [fetch]="download"
@@ -449,6 +455,12 @@ import { ArSalesExport } from '../sales-export';
   styles: SALES_RECORD_STYLES,
 })
 export class ArSalesInvoicePage extends SalesRecordPage<SalesInvoiceDto> {
+  /** Where this document sits in the sale, with what to do next. */
+  protected readonly chain = computed(() => {
+    const r = this.record();
+    return r ? invoiceChain(r) : null;
+  });
+
   private readonly permissionGate = inject(PermissionService);
   protected readonly mayIssue = grantedPolicy('AutoReach.SalesInvoices.Issue', this.permissionGate);
   private readonly api = inject(SalesInvoiceService);

@@ -1,5 +1,5 @@
 <ar-topbar
-  title="Lifecycle rules"
+  title="Discontinuation rules"
   [subtitle]="
     total() + ' rules' + (problems() ? ' · ' + problems() + ' without a current replacement' : '')
   "
@@ -298,7 +298,7 @@
       rule for a series such as Siemens S7-300.
     </p>
   } @else {
-    <ejs-grid arGrid="lifecycle-rules" [dataSource]="rows()" aria-label="Lifecycle rules">
+    <ejs-grid arGrid="lifecycle-rules" [dataSource]="rows()" aria-label="Discontinuation rules">
       <e-columns>
         <e-column field="make" headerText="Make · part or series" width="240">
           <ng-template #template let-r>

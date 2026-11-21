@@ -1,7 +1,9 @@
+import { ArSalesChain } from '../sales-chain';
+import { orderChain } from '../sales-chain.logic';
 import { PermissionService } from '@abp/ng.core';
 import { grantedPolicy } from '../../../core/auth/permission';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
 
 import { inr } from '../../../core/util/format';
 import { ArTopbar } from '../../../layout/topbar';
@@ -35,6 +37,7 @@ import { ArGuaranteesPanel } from '../../project-billing/guarantees-panel';
 @Component({
   selector: 'ar-sales-order-page',
   imports: [
+    ArSalesChain,
     ArTopbar,
     ArButton,
     ArChip,
@@ -68,6 +71,9 @@ import { ArGuaranteesPanel } from '../../project-billing/guarantees-panel';
         </section>
       } @else if (record(); as o) {
         <div class="pf__form">
+          @if (chain(); as ch) {
+            <ar-sales-chain [chain]="ch" />
+          }
           <section class="pf__card">
             <div class="sr-head">
               <div>
@@ -234,7 +240,7 @@ import { ArGuaranteesPanel } from '../../project-billing/guarantees-panel';
             <span class="pf__summary"></span>
             <button ar-button variant="ghost" type="button" (click)="back()">Back</button>
             <button ar-button variant="ghost" type="button" (click)="customer360(o.customerId)">
-              Customer 360
+              Customer overview
             </button>
             <ar-sales-export
               [fetch]="download"
@@ -314,6 +320,12 @@ import { ArGuaranteesPanel } from '../../project-billing/guarantees-panel';
   styles: SALES_RECORD_STYLES,
 })
 export class ArSalesOrderPage extends SalesRecordPage<SalesOrderDto> {
+  /** Where this document sits in the sale, with what to do next. */
+  protected readonly chain = computed(() => {
+    const r = this.record();
+    return r ? orderChain(r) : null;
+  });
+
   private readonly api = inject(SalesOrderService);
 
   /** The record as its printed PDF or an Excel workbook. */

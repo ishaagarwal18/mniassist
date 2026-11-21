@@ -583,7 +583,7 @@ const ACRONYMS: Record<string, string> = {
   '360': '360',
 };
 
-/** "SalesOrders" → "sales orders", "AmcContracts" → "AMC contracts". */
+/** "SalesOrders" → "sales orders", "AmcContracts" → "Service contracts (AMC)". */
 function words(segment: string): string {
   return segment
     .replace(/([a-z])([A-Z0-9])/g, '$1 $2')

@@ -166,7 +166,7 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
               @for (problem of p.problems; track problem; let i = $index) {
                 <div class="ip-problem-card" [class]="'ip-problem-card--' + (i % 3)">
                   <div class="ip-problem-card__icon-box">
-                    <ar-icon [name]="getProblemIcon(i)" class="ip-problem-card__icon" />
+                    <ar-icon [name]="getProblemIcon(problem, i)" class="ip-problem-card__icon" />
                   </div>
                   <p class="ip-problem-card__text">{{ problem }}</p>
                 </div>
@@ -755,7 +755,16 @@ export class ArIndustryPage {
     () => INDUSTRY_PAGES.find((p) => p.slug === this.segment()) ?? null,
   );
 
-  protected getProblemIcon(index: number): IconName {
+  protected getProblemIcon(problem: string, index: number): IconName {
+    const text = problem.toLowerCase();
+    if (text.includes('spreadsheet') || text.includes('calendar') || text.includes('dates')) return 'clock';
+    if (text.includes('manual') || text.includes('document')) return 'document';
+    if (text.includes('hold') || text.includes('wait') || text.includes('delay')) return 'clock';
+    if (text.includes('price') || text.includes('invoice') || text.includes('overdue')) return 'billing';
+    if (text.includes('renewal') || text.includes('amc')) return 'amc-renewals';
+    if (text.includes('service') || text.includes('model') || text.includes('serial')) return 'helpdesk';
+    if (text.includes('dealer') || text.includes('stock')) return 'stock';
+    if (text.includes('enquir') || text.includes('quote') || text.includes('lead')) return 'enquiry';
     const icons: IconName[] = ['alert', 'clock', 'amc-renewals'];
     return icons[index % icons.length];
   }

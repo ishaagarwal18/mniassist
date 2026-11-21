@@ -31,7 +31,8 @@
     <p class="q__empty">Loading…</p>
   }
 
-  <ejs-grid arGrid="quotations" [dataSource]="quotes()" aria-label="Quotations">
+  <ejs-grid arGrid="quotations"
+          arGridEmpty="No quotations yet. Press “New quotation” to price your first enquiry." [dataSource]="quotes()" aria-label="Quotations">
     <e-columns>
       <e-column field="reference" headerText="Reference" width="160">
         <ng-template #template let-q>
@@ -83,7 +84,7 @@
           <span [class.due]="followUp(q) === 'due now'">{{ followUp(q) }}</span>
         </ng-template>
       </e-column>
-      <e-column headerText="Actions" width="250" freeze="Right" textAlign="Right">
+      <e-column headerText="Actions" width="300" textAlign="Right">
         <ng-template #template let-q>
           <div class="actions">
             <a

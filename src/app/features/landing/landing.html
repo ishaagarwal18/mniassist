@@ -229,86 +229,153 @@
     </div>
   </section>
 
-  <section class="band" id="faq">
+  <section class="band faq-band" id="faq">
     <div class="wrap">
-      <p class="eyebrow eyebrow--dark">Questions</p>
-      <h2>Before you buy</h2>
       <ar-landing-faq />
     </div>
   </section>
 
-  <section class="final" aria-label="Call to action">
-    <div class="final__divider" aria-hidden="true"></div>
-    <div class="final__mesh" aria-hidden="true"></div>
-    <div class="final__glow" aria-hidden="true"></div>
-    <div class="final__bg-grid" aria-hidden="true"></div>
-    <div class="wrap final__row">
-      <div class="final__content">
-        <h2>Start the conversations your competitors are missing.</h2>
-        <p class="final__sub">Pick a plan, create your workspace and connect your number.</p>
-      </div>
-      <div class="final__cta">
-        @if (signedIn()) {
-        <a class="btn btn--primary btn--lg final__btn-primary" routerLink="/home">
-          <span>Open MNI Assist</span>
-          <ar-icon name="chevron" [size]="14" class="final__arrow" />
-        </a>
-        } @else {
-        <a class="btn btn--white btn--lg final__btn-primary" routerLink="/signup">
-          <span>Create a workspace</span>
-          <ar-icon name="chevron" [size]="14" class="final__arrow" />
-        </a>
-        }
-        <button type="button" class="btn btn--light btn--lg final__btn-secondary" (click)="scrollTo('plans')">
-          <span>Compare plans</span>
-        </button>
+  <section class="cta" aria-labelledby="cta-title">
+    <div class="wrap">
+      <div class="cta__card">
+        <div class="cta__aurora" aria-hidden="true"></div>
+        <div class="cta__grid" aria-hidden="true"></div>
+        <div class="cta__copy">
+          <p class="cta__pill"><span class="cta__pulse" aria-hidden="true"></span> Three steps to your first reply</p>
+          <h2 id="cta-title">Start the conversations your <span>competitors are missing.</span></h2>
+          <p class="cta__sub">Pick a plan, create your workspace and connect your number.</p>
+          <div class="cta__actions">
+            @if (signedIn()) {
+              <a class="cta__btn cta__btn--primary" routerLink="/home">
+                Open MNI Assist <ar-icon name="chevron" [size]="14" class="cta__arrow" />
+              </a>
+            } @else {
+              <a class="cta__btn cta__btn--primary" routerLink="/signup">
+                Create a workspace <ar-icon name="chevron" [size]="14" class="cta__arrow" />
+              </a>
+            }
+            <button type="button" class="cta__btn cta__btn--ghost" (click)="scrollTo('plans')">
+              Compare plans
+            </button>
+          </div>
+          <ul class="cta__trust">
+            <li>GST invoices in the app</li>
+            <li>Prepaid wallet, no surprise bills</li>
+            <li>DPDP Act readiness built in</li>
+          </ul>
+        </div>
+        <ol class="cta__steps" aria-label="How to get started">
+          <li>
+            <span class="cta__step-n">1</span>
+            <div><strong>Pick a plan</strong><span>Sized to your team, numbers and contacts.</span></div>
+          </li>
+          <li>
+            <span class="cta__step-n">2</span>
+            <div><strong>Create your workspace</strong><span>Invite your sales and service team.</span></div>
+          </li>
+          <li>
+            <span class="cta__step-n">3</span>
+            <div><strong>Connect your number</strong><span>Through Meta’s guided sign-up, inside the app.</span></div>
+          </li>
+        </ol>
       </div>
     </div>
   </section>
 </main>
 
-<footer class="foot">
-  <div class="foot__divider" aria-hidden="true"></div>
-  <div class="wrap foot__grid">
-    <div class="foot__brand">
-      <ar-brand tagline (click)="scrollToTop($event)" />
-      <p class="foot__desc">
-        AI business engagement platform for machinery makers, OEMs and their dealer networks on WhatsApp.
-      </p>
+<footer class="sf">
+  <div class="sf__glow" aria-hidden="true"></div>
+  <div class="wrap">
+    <ar-newsletter-signup class="sf__newsletter" />
+    <div class="sf__top">
+      <div class="sf__brand">
+        <ar-brand tagline onDark (click)="scrollToTop($event)" />
+        <p class="sf__desc">
+          AI business engagement platform for machinery makers, OEMs and their dealer networks on WhatsApp.
+        </p>
+        <div class="sf__actions">
+          @if (salesChat; as chat) {
+            <a class="sf__wa" [href]="chat" target="_blank" rel="noopener">
+              <svg class="sf__wa-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2Zm0 18.15c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24 4.54 0 8.24 3.7 8.24 8.24 0 4.55-3.7 8.24-8.24 8.24Zm4.52-6.17c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.13-.16.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.16.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.24 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.16-.48-.29Z"
+                />
+              </svg>
+              Talk to us on WhatsApp
+            </a>
+          }
+          @if (!signedIn()) {
+            <a class="sf__start" routerLink="/signup">
+              Create a workspace <ar-icon name="chevron" [size]="13" />
+            </a>
+          }
+        </div>
+        @if (social.length) {
+          <ul class="sf__social" aria-label="Follow MNI Assist">
+            @for (n of social; track n.key) {
+              <li>
+                <a
+                  [href]="n.url"
+                  target="_blank"
+                  rel="noopener me"
+                  [attr.aria-label]="'MNI Assist on ' + n.label"
+                  [title]="n.label"
+                >
+                  <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+                    <path fill="currentColor" [attr.d]="n.path" />
+                  </svg>
+                </a>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+      <nav class="sf__col" aria-label="Product">
+        <strong>Product</strong>
+        @for (s of sections; track s.id) {
+          <button type="button" (click)="scrollTo(s.id)">{{ s.label }}</button>
+        }
+      </nav>
+      <nav class="sf__col" aria-label="Industries">
+        <strong>Industries</strong>
+        @for (i of industryLinks; track i.slug) {
+          <a [routerLink]="['/industries', i.slug]">{{ i.label }}</a>
+        }
+        <a routerLink="/roi">ROI calculator</a>
+      </nav>
+      <nav class="sf__col" aria-label="Account">
+        <strong>Account</strong>
+        <a routerLink="/signup">Create a workspace</a>
+        <a routerLink="/login">Log in</a>
+        <a routerLink="/forgot-password">Reset password</a>
+        <a routerLink="/status">System status</a>
+      </nav>
     </div>
-    <nav class="foot__col" aria-label="Product">
-      <strong>Product</strong>
-      @for (s of sections; track s.id) {
-      <button type="button" (click)="scrollTo(s.id)">{{ s.label }}</button>
-      }
-    </nav>
-    <nav class="foot__col" aria-label="Account">
-      <strong>Account</strong>
-      <a routerLink="/signup">Create a workspace</a>
-      <a routerLink="/login">Log in</a>
-      <a routerLink="/forgot-password">Reset password</a>
-    </nav>
-    <nav class="foot__col" aria-label="Industries">
-      <strong>Industries</strong>
-      @for (i of industryLinks; track i.slug) {
-      <a [routerLink]="['/industries', i.slug]">{{ i.label }}</a>
-      }
-      <a routerLink="/roi">ROI calculator</a>
-    </nav>
-    <nav class="foot__col" aria-label="Legal">
-      <strong>Legal</strong>
-      <a routerLink="/privacy">Privacy policy</a>
-    </nav>
-  </div>
-  <div class="wrap foot__base">
-    <div class="foot__copy">
-      <span>© {{ year }} Emnisoft Pvt Ltd. MNI Assist is a product of Emnisoft Pvt Ltd.</span>
-      <span class="foot__dot" aria-hidden="true">·</span>
-      <span class="foot__domain">mniassist.com</span>
+
+    <div class="sf__base">
+      <div class="sf__copy">
+        <span>© {{ year }} Emnisoft Pvt Ltd. MNI Assist is a product of Emnisoft Pvt Ltd.</span>
+        @if (companyAddress || companyCin) {
+          <address class="sf__company">
+            @if (companyAddress) {
+              <span><span class="sf__company-k">Registered office</span> {{ companyAddress }}</span>
+            }
+            @if (companyCin) {
+              <span><span class="sf__company-k">CIN</span> <span class="sf__cin" translate="no">{{ companyCin }}</span></span>
+            }
+          </address>
+        }
+      </div>
+      <nav class="sf__legal" aria-label="Legal">
+        <a routerLink="/privacy">Privacy</a>
+        <a routerLink="/terms">Terms</a>
+        <span class="sf__domain">mniassist.com</span>
+      </nav>
+      <button type="button" class="sf__totop" (click)="scrollToTop($event)" aria-label="Scroll back to top">
+        <ar-icon name="chevron" [size]="14" />
+      </button>
     </div>
-    <button type="button" class="foot__totop" (click)="scrollToTop($event)" aria-label="Scroll back to top">
-      <span>Back to top</span>
-      <ar-icon name="chevron" [size]="13" class="foot__totop-icon" />
-    </button>
   </div>
+  <p class="sf__wordmark" aria-hidden="true">MNI Assist</p>
 </footer>

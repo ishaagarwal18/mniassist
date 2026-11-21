@@ -106,3 +106,21 @@
 .oe__part {
   min-width: 200px;
 }
+.oe__icon-del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ar-ink-400);
+  cursor: pointer;
+}
+.oe__icon-del:hover,
+.oe__icon-del:focus-visible {
+  color: var(--ar-red-600);
+  background: var(--ar-red-100);
+}

@@ -257,3 +257,34 @@ select.ar-field__input {
   gap: 12px;
   padding: 16px 0 32px;
 }
+
+.contact-more {
+  display: grid;
+  gap: 16px;
+}
+.contact-more__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 12px 16px;
+  border: 1px dashed var(--ar-line-300);
+  border-radius: var(--ar-radius-card, 10px);
+  cursor: pointer;
+  list-style-position: inside;
+}
+.contact-more__summary:focus-visible {
+  outline: 2px solid var(--ar-blue-500);
+  outline-offset: 2px;
+}
+.contact-more[open] > .contact-more__summary {
+  border-style: solid;
+}
+.contact-more__title {
+  font: 600 13.5px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+}
+.contact-more__hint {
+  font: 400 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}

@@ -116,6 +116,7 @@ interface ReceiveRow {
           } @else {
             <ejs-grid
               arGrid="purchase-orders"
+          arGridEmpty="No purchase orders yet. Press “New order” to buy from a supplier."
               [dataSource]="shownOrders()"
               aria-label="Purchase orders"
             >

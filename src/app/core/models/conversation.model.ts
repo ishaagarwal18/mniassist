@@ -31,6 +31,8 @@ export interface Message {
   readonly direction: 'in' | 'out';
   readonly body: string;
   readonly at: string;
+  /** When it was sent, as an ISO time: the thread groups messages under a day heading by it. */
+  readonly sentAtUtc?: string;
   readonly status?: 'sent' | 'delivered' | 'read';
   /** Email only: how many times the message's tracking pixel loaded. */
   readonly opens?: number;

@@ -157,10 +157,10 @@ export function customerLinkGroups(
       title: 'Service',
       icon: 'machine',
       links: [
-        { label: 'Installed base', route: '/installed-base', count: c.installedAssetsCount },
+        { label: 'Machines at customers', route: '/installed-base', count: c.installedAssetsCount },
         { label: 'Helpdesk tickets', route: '/helpdesk', params: q, count: c.openTicketsCount },
         { label: 'Field service', route: '/field-service/tickets', params: q },
-        { label: 'AMC contracts', route: '/field-service/amc', params: q },
+        { label: 'Service contracts (AMC)', route: '/field-service/amc', params: q },
       ],
     },
   ];

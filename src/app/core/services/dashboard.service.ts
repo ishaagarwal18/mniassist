@@ -6,7 +6,8 @@ import { settled } from '../util/resource';
 
 /** A client-side "needs you today" item derived from the dashboard snapshot. */
 export interface ActionItem {
-  readonly icon: 'quotation' | 'enquiry' | 'inbox' | 'alert' | 'billing' | 'machine';
+  readonly icon:
+    'quotation' | 'enquiry' | 'inbox' | 'alert' | 'billing' | 'machine' | 'check' | 'document';
   readonly tone: 'amber' | 'teal' | 'good' | 'bad';
   readonly title: string;
   readonly meta: string;

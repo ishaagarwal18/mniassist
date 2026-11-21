@@ -1,0 +1,100 @@
+:host {
+  display: block;
+}
+.sc {
+  display: grid;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--ar-line-100);
+  border-radius: var(--ar-radius-card, 10px);
+  background: var(--ar-surface, var(--ar-paper, transparent));
+}
+.sc__steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sc__step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding-right: 28px;
+  position: relative;
+}
+/* The connector to the next step. */
+.sc__step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  width: 16px;
+  border-top: 2px solid var(--ar-line-200);
+}
+.sc__dot {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--ar-line-200);
+  color: #fff;
+}
+.sc__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.sc__name {
+  font: 600 13px var(--ar-font-sans);
+  color: var(--ar-ink-900, inherit);
+}
+a.sc__name {
+  color: var(--ar-blue-600, var(--ar-blue-500));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.sc__state {
+  font: 400 11.5px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+
+.sc__step--done .sc__dot {
+  background: var(--ar-good-600, #067647);
+  border-color: var(--ar-good-600, #067647);
+}
+.sc__step--partly .sc__dot {
+  border-color: var(--ar-amber-500);
+  background: linear-gradient(90deg, var(--ar-amber-500) 50%, transparent 50%);
+}
+.sc__step--current .sc__dot {
+  border-color: var(--ar-blue-500);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ar-blue-500) 25%, transparent);
+}
+.sc__step--current .sc__name {
+  color: var(--ar-blue-600, var(--ar-blue-500));
+}
+.sc__step--skipped {
+  opacity: 0.55;
+}
+.sc__step--skipped .sc__dot {
+  border-style: dashed;
+}
+
+.sc__next {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--ar-radius-inset, 6px);
+  background: color-mix(in srgb, var(--ar-blue-500) 8%, transparent);
+  font: 400 13px var(--ar-font-sans);
+}
+.sc__next--done {
+  background: color-mix(in srgb, var(--ar-good-600, #067647) 10%, transparent);
+}
+.sc__next--stop {
+  background: color-mix(in srgb, var(--ar-ink-500) 10%, transparent);
+}

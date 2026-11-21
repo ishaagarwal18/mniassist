@@ -129,6 +129,7 @@ import { ArSalesExport } from '../sales-export';
       <div class="table-card">
         <ejs-grid
           arGrid="delivery-challans"
+          arGridEmpty="No delivery challans yet. Press “New challan” when goods leave, or create one from a sales order."
           [dataSource]="filteredChallans()"
           (recordClick)="onChallanClick($event)"
           aria-label="Delivery challans"

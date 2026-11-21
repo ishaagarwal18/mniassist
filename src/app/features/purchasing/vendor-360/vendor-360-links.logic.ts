@@ -102,7 +102,7 @@ export function vendorLinkGroups(v: Vendor360Dto): VendorLinkGroup[] {
       icon: 'billing',
       links: [
         {
-          label: 'Vendor bills',
+          label: 'Supplier bills',
           route: '/purchasing/bills',
           params: scope,
           count: v.totalVendorBillsCount ?? v.recentVendorBills.length,

@@ -53,7 +53,7 @@ import { ArSalesExport } from '../sales-export';
           label="Export "
           hint="Every order the filters show"
         />
-        <button ar-button variant="primary" (click)="newOrder()">+ New Sales order</button>
+        <button ar-button variant="primary" (click)="newOrder()">+ New sales order</button>
       </div>
     </ar-topbar>
 
@@ -133,6 +133,7 @@ import { ArSalesExport } from '../sales-export';
       <div class="table-card">
         <ejs-grid
           arGrid="sales-orders"
+          arGridEmpty="No sales orders yet. Press “New sales order” when a customer confirms their purchase."
           [dataSource]="filteredOrders()"
           (recordClick)="onOrderClick($event)"
           aria-label="Sales orders"

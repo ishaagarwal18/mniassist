@@ -10,6 +10,11 @@ import { ArLandingFaq } from './landing-faq';
 import { ArLandingIndustries } from './landing-industries';
 import { ArLandingPlans } from './landing-plans-section';
 import { INDUSTRY_LINKS } from './public-frame';
+import { salesChatUrl } from './sales-chat';
+import { ArNewsletterSignup } from './newsletter-signup';
+import { socialLinks } from './social-links';
+import { cleanAddress, cleanCin } from './company-details';
+import { environment } from '../../../environments/environment';
 
 interface Pillar {
   readonly icon: IconName;
@@ -27,7 +32,7 @@ interface Pillar {
  */
 @Component({
   selector: 'ar-landing',
-  imports: [
+  imports: [ArNewsletterSignup, 
     RouterLink,
     ArIcon,
     ArBrand,
@@ -50,6 +55,13 @@ export class ArLanding {
   protected readonly tagline = BRAND_TAGLINE;
   protected readonly year = new Date().getFullYear();
   protected readonly industryLinks = INDUSTRY_LINKS;
+  /** wa.me link to the sales team, from environment.salesWhatsApp; null hides the footer button. */
+  protected readonly salesChat = salesChatUrl(environment.salesWhatsApp);
+  /** Social profiles from environment.social; networks left blank aren't shown. */
+  protected readonly social = socialLinks(environment.social);
+  /** Registered office and CIN from environment.company; each is hidden while blank or invalid. */
+  protected readonly companyAddress = cleanAddress(environment.company.address);
+  protected readonly companyCin = cleanCin(environment.company.cin);
 
   /** In-page sections, for the header and footer links. */
   protected readonly sections = [

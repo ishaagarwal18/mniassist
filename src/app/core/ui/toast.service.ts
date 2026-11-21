@@ -39,7 +39,7 @@ export class ToastService {
   success(content: string, title = 'Done'): void {
     this.show({ tone: 'success', title, content });
   }
-  error(content: string, title = 'Something went wrong'): void {
+  error(content: string, title = 'Couldn’t complete that'): void {
     this.show({ tone: 'error', title, content });
   }
   warning(content: string, title = 'Check this'): void {

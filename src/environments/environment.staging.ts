@@ -7,6 +7,13 @@ import { Environment } from '@abp/ng.core';
  */
 export const environment = {
   production: true,
+  /** The sales team's WhatsApp number, digits with country code (e.g. 919812345678).
+   *  Shows "Talk to us on WhatsApp" in the public footer; blank hides it. */
+  salesWhatsApp: '',
+  /** Full profile URLs for the public footer's social icons; a blank one is not shown. */
+  social: { linkedin: '', youtube: '', x: '', instagram: '', facebook: '' },
+  /** The registered office and Corporate Identity Number shown in the public footer; blank hides each. */
+  company: { address: '', cin: '' },
 
   /** Set false once the API is running to bind the UI to live data. */
   /** Syncfusion licence key (paste yours here). Empty shows Syncfusion's licence notice. */
@@ -43,4 +50,4 @@ export const environment = {
       rootNamespace: 'Mni.AutoReach',
     },
   },
-} as Environment & { syncfusionLicenseKey: string };
+} as Environment & { syncfusionLicenseKey: string; salesWhatsApp: string; social: Record<string, string>; company: { address: string; cin: string } };

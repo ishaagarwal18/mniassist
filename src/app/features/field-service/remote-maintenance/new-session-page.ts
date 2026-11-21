@@ -1,3 +1,4 @@
+import { readApiError } from '../../../core/util/api-error';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -313,7 +314,7 @@ export class ArNewDiagnosticSessionPage {
       void this.router.navigateByUrl('/field-service/remote-maintenance');
     } catch (err: unknown) {
       this.error.set(
-        (err as { message?: string })?.message || 'Failed to initiate diagnostic session.',
+        readApiError(err, 'The remote session did not start. Check the machine is online, then try again.'),
       );
     } finally {
       this.busy.set(false);

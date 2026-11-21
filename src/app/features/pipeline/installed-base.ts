@@ -244,7 +244,7 @@ export class ArInstalledBase {
   protected async registerMachine(): Promise<void> {
     const v = this.f();
     if (!v.description.trim()) {
-      this.toasts.warning('Describe the machine — e.g. “Line 3 VFD panel”.', 'Installed base');
+      this.toasts.warning('Describe the machine — e.g. “Line 3 VFD panel”.', 'Machines at customers');
       return;
     }
     const amc = amcCommercials(v.amcValue, v.amcTermMonths);

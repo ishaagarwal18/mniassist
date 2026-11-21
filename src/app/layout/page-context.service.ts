@@ -18,7 +18,8 @@ export class PageContextService {
   /** Whether the right-hand utility sidebar is open as a drawer on mobile screens. */
   readonly drawerOpen = signal<boolean>(false);
 
-  private readonly activeRoutePath = toSignal(
+  /** The matched route pattern, e.g. "sales/orders/:id"; null before the first navigation. */
+  readonly activeRoutePath = toSignal(
     this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),
       map(() => {

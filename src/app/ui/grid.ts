@@ -62,6 +62,11 @@ export class ArGrid implements OnInit, DoCheck {
   readonly arGridPageSize = input(20);
   readonly arGridSearch = input(true);
   readonly arGridTools = input(true);
+  /**
+   * What an empty list says, e.g. 'No quotations yet. Press “New quotation” to make your first one.'
+   * A first-time user then knows what the page is for and the one thing to do next.
+   */
+  readonly arGridEmpty = input<string | null>(null);
 
   private readonly grid = inject(GridComponent);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
@@ -82,6 +87,9 @@ export class ArGrid implements OnInit, DoCheck {
     grid.gridLines = 'Horizontal';
     grid.enableHover = true;
     grid.toolbarClick.subscribe((args: ClickEventArgs) => this.onToolbar(args));
+    // Syncfusion's emptyRecordTemplate only takes an Angular template, so the empty row's text is
+    // replaced after each render: what the page is for and what to press, not "No records to display".
+    grid.dataBound.subscribe(() => this.fillEmptyRow());
   }
 
   ngOnInit(): void {
@@ -99,6 +107,12 @@ export class ArGrid implements OnInit, DoCheck {
     }
   }
 
+  private fillEmptyRow(): void {
+    const cell = this.host.querySelector<HTMLElement>('.e-emptyrow td');
+    if (cell && !cell.querySelector('.ar-grid-empty'))
+      cell.innerHTML = emptyListHtml(this.arGridEmpty());
+  }
+
   /**
    * Shows or hides a filter row under the column headers (type in a column to filter it). Hiding it clears
    * every column filter and goes back to the per-column filter menus.
@@ -107,7 +121,12 @@ export class ArGrid implements OnInit, DoCheck {
     const grid = this.grid;
     if (grid.filterSettings?.columns?.length) grid.clearFiltering();
     grid.filterSettings = on
-      ? { type: 'FilterBar', mode: 'Immediate', immediateModeDelay: 400, showFilterBarStatus: false }
+      ? {
+          type: 'FilterBar',
+          mode: 'Immediate',
+          immediateModeDelay: 400,
+          showFilterBarStatus: false,
+        }
       : { type: 'Excel' };
   }
 
@@ -150,4 +169,19 @@ export class ArGrid implements OnInit, DoCheck {
       void this.grid.csvExport({ fileName: `${name}.csv`, columns });
     }
   }
+}
+
+const escapeHtml = (s: string) =>
+  s.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+  );
+
+/** An empty list's message: the page's own hint, then a reminder that a search or filter may hide rows. */
+export function emptyListHtml(hint: string | null): string {
+  const lead = hint?.trim() || 'Nothing here yet.';
+  return (
+    `<div class="ar-grid-empty"><p class="ar-grid-empty__lead">${escapeHtml(lead)}</p>` +
+    `<p class="ar-grid-empty__more">If you searched or filtered, clear it to see everything.</p></div>`
+  );
 }

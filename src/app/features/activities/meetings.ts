@@ -401,7 +401,7 @@ export class ArMeetings {
         this.toasts.error('Could not save the meetings from this iCal file.', 'Import Failed');
       }
     } catch {
-      this.toasts.error('Failed to read or parse iCal file.', 'Import Failed');
+      this.toasts.error('This file could not be read. Choose a calendar file ending in .ics, exported from Google Calendar or Outlook.', 'Not imported');
     } finally {
       this.busy.set(false);
       input.value = '';

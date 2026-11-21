@@ -84,6 +84,13 @@ export const REPORT_GROUPS: readonly ReportGroup[] = [
         permission: 'AutoReach.Inventory || AutoReach.Payments',
       },
       {
+        title: 'Account health',
+        route: '/account-health',
+        icon: 'account-health',
+        description: 'Which customers are buying less, paying late or going quiet.',
+        permission: 'AutoReach.Contacts',
+      },
+      {
         title: 'Stock planning',
         route: '/stock/planning',
         icon: 'machine',
@@ -91,7 +98,7 @@ export const REPORT_GROUPS: readonly ReportGroup[] = [
         permission: 'AutoReach.Inventory',
       },
       {
-        title: 'AMC renewals',
+        title: 'Contract renewals',
         route: '/renewals',
         icon: 'refresh',
         description: 'Contracts coming up for renewal and the revenue at stake.',

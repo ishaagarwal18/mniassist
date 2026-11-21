@@ -1,3 +1,4 @@
+import { readApiError } from '../../../core/util/api-error';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -620,7 +621,7 @@ export class ArNewBomPage {
       },
       error: (err) => {
         this.busy.set(false);
-        this.error.set(err?.message || 'Failed to save BOM.');
+        this.error.set(readApiError(err, 'The bill of materials was not saved. Check that every line has a part and a quantity.'));
       },
     });
   }

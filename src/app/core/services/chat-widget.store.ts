@@ -58,7 +58,7 @@ export const SOURCE_LABEL: Readonly<Record<LeadSource, string>> = optionNames<Le
     [LeadSource.PublicCatalogue]: 'Public catalogue',
     [LeadSource.LeadAd]: 'Facebook / Instagram lead form',
     [LeadSource.VoiceAgent]: 'AI voice agent',
-    [LeadSource.Obsolescence]: 'Obsolescence radar',
+    [LeadSource.Obsolescence]: 'Discontinued parts',
     [LeadSource.Project]: 'Project',
   },
 );

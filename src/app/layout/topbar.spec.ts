@@ -166,7 +166,7 @@ describe('ArTopbar responsive breadcrumbs with sidebar collapsed state', () => {
         i.querySelector('.tb__group-dropdown-label')?.textContent?.trim(),
       );
       expect(itemLabels).toContain('Contacts');
-      expect(itemLabels).toContain('Customer 360');
+      expect(itemLabels).toContain('Customer overview');
       expect(itemLabels).toContain('Accounts');
 
       // Active item has current badge

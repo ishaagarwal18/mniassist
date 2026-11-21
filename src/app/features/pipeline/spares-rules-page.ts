@@ -503,7 +503,7 @@ export class ArSparesRulesPage implements OnInit {
       }
     } catch {
       this.error.set(
-        editId ? 'Failed to update replacement rule.' : 'Failed to add replacement rule.',
+        editId ? 'The rule was not updated. Check the part and the interval, then try again.' : 'The rule was not added. Check the part and the interval, then try again.',
       );
     } finally {
       this.busy.set(false);
@@ -522,7 +522,7 @@ export class ArSparesRulesPage implements OnInit {
       this.rules.update((list) => list.filter((r) => r.id !== rule.id));
       this.toasts.success('Rule deleted.');
     } catch {
-      this.toasts.error('Failed to delete rule.');
+      this.toasts.error('The rule was not deleted. Refresh the page and try again.');
     }
   }
 }

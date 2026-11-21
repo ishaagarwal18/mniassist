@@ -981,7 +981,7 @@ export const VOICE_SERVICE_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'A list not checked for a year is marked as possibly out of date.',
     ],
     fields: [
-      { name: 'Installed base', text: 'Returns to the machine list.' },
+      { name: 'Machines at customers', text: 'Returns to the machine list.' },
       { name: 'Make / model · Site · Commissioned · AMC ends', text: 'The machine’s details.' },
       { name: 'Criticality', text: 'Low (others can cover), Medium or High (stops the plant). Adds to the obsolescence risk score.' },
       { name: 'Component list checked', text: 'When the list was last confirmed. Marked May be out of date after a year.' },

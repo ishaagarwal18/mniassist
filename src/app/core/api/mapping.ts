@@ -222,6 +222,7 @@ export function toMessage(dto: MessageDto, conversationId?: string): Message {
     direction: dto.direction === MessageDirection.Inbound ? 'in' : 'out',
     body: dto.body ?? '',
     at: formatClock(dto.sentAtUtc ?? dto.creationTime),
+    sentAtUtc: dto.sentAtUtc ?? dto.creationTime ?? undefined,
     status: dto.status != null ? toMessageStatus(dto.status) : undefined,
     pending: dto.status === MessageStatus.Queued || undefined,
     failure:

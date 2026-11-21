@@ -192,11 +192,11 @@ export class ArCannedReplies implements OnInit {
       const input = draftToReply(d);
       if (d.id) await firstValueFrom(this.api.update(d.id, input, { skipHandleError: true }));
       else await firstValueFrom(this.api.create(input, { skipHandleError: true }));
-      this.toasts.success(d.id ? 'Reply saved.' : 'Reply added.', 'Canned replies');
+      this.toasts.success(d.id ? 'Reply saved.' : 'Reply added.', 'Saved replies');
       this.draft.set(null);
       await this.load();
     } catch (e: unknown) {
-      this.toasts.error(readApiError(e, 'The reply could not be saved.'), 'Canned replies');
+      this.toasts.error(readApiError(e, 'The reply could not be saved.'), 'Saved replies');
     } finally {
       this.busy.set(false);
     }
@@ -207,10 +207,10 @@ export class ArCannedReplies implements OnInit {
     this.busy.set(true);
     try {
       await firstValueFrom(this.api.delete(r.id!, { skipHandleError: true }));
-      this.toasts.success('Reply deleted.', 'Canned replies');
+      this.toasts.success('Reply deleted.', 'Saved replies');
       await this.load();
     } catch (e: unknown) {
-      this.toasts.error(readApiError(e, 'The reply could not be deleted.'), 'Canned replies');
+      this.toasts.error(readApiError(e, 'The reply could not be deleted.'), 'Saved replies');
     } finally {
       this.busy.set(false);
     }

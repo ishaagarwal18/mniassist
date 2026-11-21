@@ -174,6 +174,21 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/legal/terms-of-service').then((m) => m.ArTermsOfService),
   },
+  // The newsletter's email links: the page posts the token (a GET from a mail scanner changes nothing).
+  {
+    path: 'newsletter/confirm',
+    title: 'Confirm subscription · MNI Assist',
+    data: { mode: 'confirm' },
+    loadComponent: () =>
+      import('./features/newsletter/newsletter-link-page').then((m) => m.ArNewsletterLinkPage),
+  },
+  {
+    path: 'newsletter/unsubscribe',
+    title: 'Unsubscribe · MNI Assist',
+    data: { mode: 'unsubscribe' },
+    loadComponent: () =>
+      import('./features/newsletter/newsletter-link-page').then((m) => m.ArNewsletterLinkPage),
+  },
   {
     // The field engineer's phone app: signed in, but no app shell. Works offline once loaded.
     path: 'field',
@@ -738,7 +753,7 @@ export const routes: Routes = [
       },
       {
         path: 'purchasing/bills/new',
-        title: 'Record vendor bill · MNI Assist',
+        title: 'Record supplier bill · MNI Assist',
         loadComponent: () =>
           import('./features/purchasing/bills/new-vendor-bill').then((m) => m.ArNewVendorBillPage),
       },
@@ -1719,6 +1734,12 @@ export const routes: Routes = [
         path: 'platform/plans',
         title: 'Plans · MNI Assist',
         loadComponent: () => import('./features/platform/plans-page').then((m) => m.ArPlansPage),
+      },
+      {
+        path: 'platform/newsletter',
+        title: 'Newsletter · MNI Assist',
+        loadComponent: () =>
+          import('./features/platform/newsletter-page').then((m) => m.ArNewsletterPage),
       },
       {
         path: 'platform/feature-flags',

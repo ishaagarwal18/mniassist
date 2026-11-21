@@ -339,7 +339,13 @@ export class ArTelecom {
       this.toasts.success(`Number +91 ${nat} added to reseller inventory.`, 'Number added');
       this.close();
     } catch (err: any) {
-      this.toasts.error(err?.message || 'Failed to add number to inventory.', 'Error');
+      this.toasts.error(
+        readApiError(
+          err,
+          'The number could not be added. Check the 10-digit number and try again.',
+        ),
+        'Number not added',
+      );
     }
   }
 
@@ -379,7 +385,13 @@ export class ArTelecom {
       );
       this.close();
     } catch (err: any) {
-      this.toasts.error(err?.message || 'Failed to allocate number.', 'Error');
+      this.toasts.error(
+        readApiError(
+          err,
+          'The number could not be given to this workspace. It may already be in use; refresh the list and try again.',
+        ),
+        'Number not assigned',
+      );
     }
   }
 
@@ -405,7 +417,10 @@ export class ArTelecom {
       );
       this.close();
     } catch (err: any) {
-      this.toasts.error(err?.message || 'Failed to release number.', 'Error');
+      this.toasts.error(
+        readApiError(err, 'The number could not be released. Refresh the list and try again.'),
+        'Number not released',
+      );
     }
   }
 
@@ -460,7 +475,13 @@ export class ArTelecom {
       this.toasts.success('Telecom entity profile updated successfully.', 'Settings Saved');
       this.close();
     } catch (err: any) {
-      this.toasts.error(err?.message || 'Failed to update telecom entity settings.', 'Error');
+      this.toasts.error(
+        readApiError(
+          err,
+          'The telecom registration details were not saved. Check the entity ID and try again.',
+        ),
+        'Not saved',
+      );
     }
   }
 
@@ -473,7 +494,10 @@ export class ArTelecom {
       );
       this.auditDialogOpen.set(true);
     } catch (err: any) {
-      this.toasts.error(err?.message || 'Failed to run telecom compliance audit.', 'Audit Error');
+      this.toasts.error(
+        readApiError(err, 'The compliance check did not run. Try again in a minute.'),
+        'Check not run',
+      );
     }
   }
 

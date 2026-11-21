@@ -54,7 +54,7 @@ const SEARCH_DEBOUNCE_MS = 300;
               <span class="ca__muted" translate="no">· {{ c.accountName || c.company }}</span>
             }
             @if (c.link) {
-              <a class="ca__link" [routerLink]="c.link">Customer 360</a>
+              <a class="ca__link" [routerLink]="c.link">Customer overview</a>
             }
           </div>
           @if (c.openTickets.length || c.recentOrders.length || c.machines.length) {
