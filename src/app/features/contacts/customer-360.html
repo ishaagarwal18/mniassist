@@ -1,14 +1,18 @@
 <ar-topbar
-  title="Customer 360 cockpit"
+  title="Customer overview"
   [subtitle]="subtitle()"
-  help="Customer 360 unifies all CRM, Sales Order, GST Invoicing, Service Ticket and Machinery equipment data in a single enterprise cockpit."
+  help="Customer overview unifies all CRM, Sales Order, GST Invoicing, Service Ticket and Machinery equipment data in a single enterprise cockpit."
 >
   <div actions class="c360-actions-bar">
     @if (data()) {
       <button ar-button variant="ghost" (click)="clearCustomer()">Select another customer</button>
     }
-    <a ar-button variant="ghost" routerLink="/contacts">All Contacts</a>
-    <a ar-button variant="ghost" routerLink="/contacts/accounts">Accounts</a>
+    <a ar-button variant="ghost" routerLink="/contacts">
+      <ar-icon name="contacts" [size]="14" /> All Contacts
+    </a>
+    <a ar-button variant="ghost" routerLink="/contacts/accounts">
+      <ar-icon name="accounts" [size]="14" /> Accounts
+    </a>
   </div>
 </ar-topbar>
 
@@ -1023,119 +1027,331 @@
       <p>Loading enterprise customer dossier…</p>
     </div>
   } @else {
-    <!-- Empty / Directory Picker View -->
-    <div class="picker-container">
+    <!-- CRM Customer 360 Directory View -->
+    <div class="c360-dir-container">
       @if (error(); as e) {
-        <div class="state-box state-box--bad" role="alert">
-          <p>{{ e }}</p>
+        <div class="c360-error-banner" role="alert">
+          <ar-icon name="alert" [size]="18" />
+          <span>{{ e }}</span>
         </div>
       }
 
-      <!-- Directory: accounts and contacts, one list at a time, each searched and paged -->
-      <section class="picker-column" aria-label="Customer directory">
-        <ar-tabs [tabs]="pickerTabs" [active]="pickerTab()" (activeChange)="setPickerTab($event)" />
-
-        <div class="picker-search-bar">
-          <ar-search-box
-            [placeholder]="
-              pickerTab() === 'Accounts'
-                ? 'Search accounts by name, city, industry or GSTIN…'
-                : 'Search contacts by name, company or phone…'
-            "
-            [query]="pickerQuery()"
-            (queryChange)="searchPicker($event)"
-          />
+      <!-- Dynamic Summary KPI Cards -->
+      <section class="c360-kpis" aria-label="Directory statistics">
+        <!-- Total Accounts Card -->
+        <div class="c360-kpi-card">
+          <div class="c360-kpi-card__icon c360-kpi-card__icon--blue">
+            <ar-icon name="accounts" [size]="20" />
+          </div>
+          <div class="c360-kpi-card__content">
+            <span class="c360-kpi-card__label">Total accounts</span>
+            <span class="c360-kpi-card__value">{{ totalAccountsCount() | number }}</span>
+            <span class="c360-kpi-card__desc">Active corporate accounts</span>
+          </div>
         </div>
 
-        @if (pickerBusy()) {
-          <p class="text-xs text-muted" role="status">Loading…</p>
-        }
+        <!-- Total Contacts Card -->
+        <div class="c360-kpi-card">
+          <div class="c360-kpi-card__icon c360-kpi-card__icon--teal">
+            <ar-icon name="contacts" [size]="20" />
+          </div>
+          <div class="c360-kpi-card__content">
+            <span class="c360-kpi-card__label">Total contacts</span>
+            <span class="c360-kpi-card__value">{{ totalContactsCount() | number }}</span>
+            <span class="c360-kpi-card__desc">Registered people & buyers</span>
+          </div>
+        </div>
 
-        <div class="picker-card-list">
+        <!-- Cities Covered Card -->
+        <div class="c360-kpi-card">
+          <div class="c360-kpi-card__icon c360-kpi-card__icon--lavender">
+            <ar-icon name="globe" [size]="20" />
+          </div>
+          <div class="c360-kpi-card__content">
+            <span class="c360-kpi-card__label">Cities covered</span>
+            <span class="c360-kpi-card__value">{{ citiesCoveredCount() | number }}</span>
+            <span class="c360-kpi-card__desc">Geographic business locations</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Directory Section -->
+      <section class="c360-directory-box" aria-label="Customer directory">
+        <!-- Segmented Tabs Header -->
+        <div class="c360-dir-header">
+          <div class="c360-segmented-tabs" role="tablist" aria-label="Directory views">
+            <button
+              type="button"
+              role="tab"
+              class="c360-seg-tab"
+              [class.is-active]="pickerTab() === 'Accounts'"
+              [attr.aria-selected]="pickerTab() === 'Accounts'"
+              (click)="setPickerTab('Accounts')"
+            >
+              <ar-icon name="accounts" [size]="16" />
+              <span>Accounts</span>
+              @if (totalAccountsCount(); as total) {
+                <span class="c360-seg-tab__badge">{{ total }}</span>
+              }
+            </button>
+            <button
+              type="button"
+              role="tab"
+              class="c360-seg-tab"
+              [class.is-active]="pickerTab() === 'Contacts'"
+              [attr.aria-selected]="pickerTab() === 'Contacts'"
+              (click)="setPickerTab('Contacts')"
+            >
+              <ar-icon name="contacts" [size]="16" />
+              <span>Contacts</span>
+              @if (totalContactsCount(); as total) {
+                <span class="c360-seg-tab__badge">{{ total }}</span>
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="c360-toolbar">
+          <div class="c360-search-wrapper">
+            <ar-icon name="search" [size]="16" class="c360-search-icon" />
+            <input
+              type="text"
+              class="c360-search-input"
+              [placeholder]="
+                pickerTab() === 'Accounts'
+                  ? 'Search accounts by name, city, industry or GSTIN…'
+                  : 'Search contacts by name, company or phone…'
+              "
+              [value]="pickerQuery()"
+              (input)="searchPicker($any($event.target).value)"
+            />
+            @if (pickerBusy()) {
+              <div class="c360-search-spinner" aria-hidden="true"></div>
+            } @else if (pickerQuery()) {
+              <button
+                type="button"
+                class="c360-search-clear"
+                (click)="clearSearch()"
+                aria-label="Clear search query"
+              >
+                <ar-icon name="close" [size]="14" />
+              </button>
+            }
+          </div>
+
           @if (pickerTab() === 'Accounts') {
-            @for (a of pickerAccounts(); track a.id) {
-              <a class="picker-card" [routerLink]="['/contacts/accounts', a.id, '360']">
-                <div class="picker-card__info">
-                  <span class="picker-card__name">{{ a.name }}</span>
-                  <div class="picker-card__meta">
-                    @if (a.city) {
-                      <span>📍 {{ a.city }}</span>
+            <div class="c360-filters">
+              @if (availableCities().length > 0) {
+                <div class="c360-filter-select-wrap">
+                  <select
+                    class="c360-filter-select"
+                    [ngModel]="selectedCity()"
+                    (ngModelChange)="selectedCity.set($event)"
+                    aria-label="Filter by city"
+                  >
+                    <option value="">All Cities</option>
+                    @for (city of availableCities(); track city) {
+                      <option [value]="city">{{ city }}</option>
                     }
-                    @if (a.industry) {
-                      <span>🏭 {{ a.industry }}</span>
-                    }
-                    <span
-                      >👥 {{ a.contactCount }} contact{{ a.contactCount === 1 ? '' : 's' }}</span
-                    >
-                  </div>
-                </div>
-                <span class="picker-card__action">Open 360 →</span>
-              </a>
-            } @empty {
-              @if (!pickerBusy()) {
-                <div class="empty-state">
-                  <p class="empty-state__hint">
-                    @if (pickerQuery().trim()) {
-                      No accounts matched "{{ pickerQuery() }}".
-                    } @else {
-                      No accounts yet.
-                    }
-                  </p>
+                  </select>
                 </div>
               }
-            }
-          } @else {
-            @for (p of pickerResults(); track p.id) {
-              <a class="picker-card" [routerLink]="['/contacts', p.id, '360']">
-                <div class="picker-card__info">
-                  <span class="picker-card__name">{{ p.displayName || p.waId }}</span>
-                  <div class="picker-card__meta">
-                    @if (p.companyName) {
-                      <span>🏢 {{ p.companyName }}</span>
+
+              @if (availableIndustries().length > 0) {
+                <div class="c360-filter-select-wrap">
+                  <select
+                    class="c360-filter-select"
+                    [ngModel]="selectedIndustry()"
+                    (ngModelChange)="selectedIndustry.set($event)"
+                    aria-label="Filter by industry"
+                  >
+                    <option value="">All Industries</option>
+                    @for (ind of availableIndustries(); track ind) {
+                      <option [value]="ind">{{ ind }}</option>
                     }
-                    <span>📞 {{ p.waId }}</span>
-                  </div>
-                </div>
-                <span class="picker-card__action">Open 360 →</span>
-              </a>
-            } @empty {
-              @if (!pickerBusy()) {
-                <div class="empty-state">
-                  <p class="empty-state__hint">
-                    @if (pickerQuery().trim()) {
-                      No contacts matched "{{ pickerQuery() }}".
-                    } @else {
-                      No contacts yet.
-                    }
-                  </p>
+                  </select>
                 </div>
               }
-            }
+
+              @if (hasActiveFilters()) {
+                <button
+                  type="button"
+                  class="c360-filter-reset-btn"
+                  (click)="clearFilters()"
+                  title="Reset all filters"
+                >
+                  <ar-icon name="close" [size]="12" />
+                  <span>Reset</span>
+                </button>
+              }
+            </div>
           }
         </div>
 
-        <div class="picker-pager">
-          <span>{{ pickerPageLabel() }}</span>
-          <span class="picker-pager__buttons">
+        <!-- Directory Cards / Skeletons -->
+        @if (pickerBusy()) {
+          <div class="c360-card-grid" aria-busy="true" aria-label="Loading directory records">
+            @for (s of [1, 2, 3, 4, 5, 6]; track s) {
+              <div class="c360-account-card c360-card-skeleton">
+                <div class="c360-skeleton-avatar"></div>
+                <div class="c360-skeleton-body">
+                  <div class="c360-skeleton-line c360-skeleton-line--title"></div>
+                  <div class="c360-skeleton-line c360-skeleton-line--meta"></div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="c360-card-grid">
+            @if (pickerTab() === 'Accounts') {
+              @for (a of filteredPickerAccounts(); track a.id) {
+                <a
+                  class="c360-account-card"
+                  [routerLink]="['/contacts/accounts', a.id, '360']"
+                  [attr.aria-label]="'Open Customer 360 for ' + a.name"
+                >
+                  <div class="c360-account-card__avatar">
+                    <ar-icon name="accounts" [size]="18" />
+                  </div>
+                  <div class="c360-account-card__main">
+                    <h3 class="c360-account-card__name">{{ a.name }}</h3>
+                    <div class="c360-account-card__chips">
+                      @if (a.city) {
+                        <span class="c360-account-chip">
+                          <ar-icon name="globe" [size]="12" />
+                          <span>{{ a.city }}</span>
+                        </span>
+                      }
+                      @if (a.industry) {
+                        <span class="c360-account-chip">
+                          <ar-icon name="products" [size]="12" />
+                          <span>{{ a.industry }}</span>
+                        </span>
+                      }
+                      <span class="c360-account-chip c360-account-chip--contacts">
+                        <ar-icon name="contacts" [size]="12" />
+                        <span>{{ a.contactCount ?? 0 }} {{ a.contactCount === 1 ? 'contact' : 'contacts' }}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="c360-account-card__action">
+                    <span>Open 360</span>
+                    <ar-icon name="chevron" [size]="14" class="c360-account-card__arrow" />
+                  </div>
+                </a>
+              } @empty {
+                <div class="c360-empty-card">
+                  <div class="c360-empty-card__icon">
+                    <ar-icon name="accounts" [size]="24" />
+                  </div>
+                  <h4 class="c360-empty-card__title">No accounts found</h4>
+                  <p class="c360-empty-card__text">
+                    @if (pickerQuery().trim() || selectedCity() || selectedIndustry()) {
+                      No accounts matched your current search and filter criteria.
+                    } @else {
+                      No accounts registered yet in this workspace.
+                    }
+                  </p>
+                  @if (hasActiveFilters()) {
+                    <button
+                      type="button"
+                      class="c360-btn-clear"
+                      (click)="clearFilters()"
+                    >
+                      Clear filters
+                    </button>
+                  }
+                </div>
+              }
+            } @else {
+              @for (p of pickerResults(); track p.id) {
+                <a
+                  class="c360-account-card"
+                  [routerLink]="['/contacts', p.id, '360']"
+                  [attr.aria-label]="'Open Customer 360 for ' + (p.displayName || p.waId)"
+                >
+                  <div class="c360-account-card__avatar c360-account-card__avatar--person">
+                    <ar-icon name="user" [size]="18" />
+                  </div>
+                  <div class="c360-account-card__main">
+                    <h3 class="c360-account-card__name">{{ p.displayName || p.waId }}</h3>
+                    <div class="c360-account-card__chips">
+                      @if (p.companyName) {
+                        <span class="c360-account-chip">
+                          <ar-icon name="accounts" [size]="12" />
+                          <span>{{ p.companyName }}</span>
+                        </span>
+                      }
+                      <span class="c360-account-chip">
+                        <ar-icon name="phone" [size]="12" />
+                        <span>{{ p.waId }}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="c360-account-card__action">
+                    <span>Open 360</span>
+                    <ar-icon name="chevron" [size]="14" class="c360-account-card__arrow" />
+                  </div>
+                </a>
+              } @empty {
+                <div class="c360-empty-card">
+                  <div class="c360-empty-card__icon">
+                    <ar-icon name="contacts" [size]="24" />
+                  </div>
+                  <h4 class="c360-empty-card__title">No contacts found</h4>
+                  <p class="c360-empty-card__text">
+                    @if (pickerQuery().trim()) {
+                      No contacts matched "{{ pickerQuery() }}".
+                    } @else {
+                      No customer contacts recorded yet.
+                    }
+                  </p>
+                  @if (pickerQuery().trim()) {
+                    <button
+                      type="button"
+                      class="c360-btn-clear"
+                      (click)="clearSearch()"
+                    >
+                      Clear search
+                    </button>
+                  }
+                </div>
+              }
+            }
+          </div>
+        }
+
+        <!-- Pagination Controls -->
+        <div class="c360-pagination">
+          <div class="c360-pagination__info">
+            <span>Showing</span>
+            <strong class="c360-pagination__bold">{{ pickerPageLabel() }}</strong>
+            <span>{{ pickerTab().toLowerCase() }}</span>
+          </div>
+          <div class="c360-pagination__controls">
             <button
-              ar-button
               type="button"
-              variant="ghost"
+              class="c360-page-btn"
               [disabled]="pickerPage() === 0 || pickerBusy()"
               (click)="goPickerPage(pickerPage() - 1)"
+              aria-label="Previous page"
             >
-              ‹ Previous
+              <ar-icon name="chevron" [size]="14" class="c360-rotate-180" />
+              <span>Previous</span>
             </button>
+            <span class="c360-page-indicator">Page {{ pickerPage() + 1 }}</span>
             <button
-              ar-button
               type="button"
-              variant="ghost"
+              class="c360-page-btn"
               [disabled]="!pickerHasNext() || pickerBusy()"
               (click)="goPickerPage(pickerPage() + 1)"
+              aria-label="Next page"
             >
-              Next ›
+              <span>Next</span>
+              <ar-icon name="chevron" [size]="14" />
             </button>
-          </span>
+          </div>
         </div>
       </section>
     </div>

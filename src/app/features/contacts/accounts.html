@@ -1,518 +1,470 @@
-<ar-topbar
-  title="Accounts"
-  subtitle="Corporate groups, companies &amp; manufacturing plants your contacts roll up to"
-  help="Group contacts by the company or plant they belong to. Put a plant under its company, and a company under its group, up to five levels — a parent's rollup includes aggregated pipeline value and contacts across its entire hierarchy."
->
-  @if (canBuyers()) {
-    <a ar-button variant="ghost" icon="contacts" routerLink="/contacts/accounts/credit"
-      >Buyers &amp; credit</a
-    >
-  }
-  @if (canCreate()) {
-    <a ar-button variant="primary" icon="plus" [routerLink]="['/contacts/accounts/new']"
-      >New account</a
-    >
-  }
+<ar-topbar title="Accounts" subtitle="Manage corporate groups, companies and manufacturing facilities in one place."
+  help="Group contacts by the company or plant they belong to. Put a plant under its company, and a company under its group, up to five levels — a parent's rollup includes aggregated pipeline value and contacts across its entire hierarchy.">
+  <div actions class="acc-topbar-actions">
+    @if (canBuyers()) {
+    <a ar-button variant="ghost" routerLink="/contacts/accounts/credit">
+      <ar-icon name="billing" [size]="14" />
+      <span>Buyers &amp; credit</span>
+    </a>
+    }
+    @if (canCreate()) {
+    <a ar-button variant="primary" [routerLink]="['/contacts/accounts/new']">
+      <ar-icon name="plus" [size]="14" />
+      <span>New account</span>
+    </a>
+    }
+  </div>
 </ar-topbar>
 
 <div class="acc-page ar-scroll">
-  <!-- Executive KPI Overview Strip -->
+  <!-- 4 Executive Summary Metric Cards -->
   <section class="acc-stats" aria-label="Account Overview Metrics">
-    <ar-stat-tile
-      label="Total Accounts"
-      [value]="stats().total.toLocaleString()"
-      [note]="stats().groups + ' corporate groups · ' + stats().subsidiaries + ' subsidiaries'"
-      tone="neutral"
-    />
-    <ar-stat-tile
-      label="Corporate Groups"
-      [value]="stats().groups.toLocaleString()"
-      note="Top-level parent entities"
-      tone="teal"
-    />
-    <ar-stat-tile
-      label="Plants &amp; Subsidiaries"
-      [value]="stats().subsidiaries.toLocaleString()"
-      note="Operating plants and facilities"
-      tone="amber"
-    />
-    <ar-stat-tile
-      label="Linked Contacts"
-      [value]="stats().totalContacts.toLocaleString()"
-      note="Across all accounts and plants"
-      tone="good"
-    />
+    <div class="acc-stat-card">
+      <div class="acc-stat-card__icon acc-stat-card__icon--blue">
+        <ar-icon name="accounts" [size]="20" />
+      </div>
+      <div class="acc-stat-card__content">
+        <span class="acc-stat-card__label">Total Accounts</span>
+        <span class="acc-stat-card__value">{{ stats().total.toLocaleString() }}</span>
+        <span class="acc-stat-card__desc">{{ stats().groups }} corporate groups · {{ stats().subsidiaries }}
+          subsidiaries</span>
+      </div>
+    </div>
+
+    <div class="acc-stat-card">
+      <div class="acc-stat-card__icon acc-stat-card__icon--teal">
+        <ar-icon name="workspaces" [size]="20" />
+      </div>
+      <div class="acc-stat-card__content">
+        <span class="acc-stat-card__label">Corporate Groups</span>
+        <span class="acc-stat-card__value">{{ stats().groups.toLocaleString() }}</span>
+        <span class="acc-stat-card__desc">Top-level parent entities</span>
+      </div>
+    </div>
+
+    <div class="acc-stat-card">
+      <div class="acc-stat-card__icon acc-stat-card__icon--amber">
+        <ar-icon name="tower" [size]="20" />
+      </div>
+      <div class="acc-stat-card__content">
+        <span class="acc-stat-card__label">Plants &amp; Subsidiaries</span>
+        <span class="acc-stat-card__value">{{ stats().subsidiaries.toLocaleString() }}</span>
+        <span class="acc-stat-card__desc">Operating plants and facilities</span>
+      </div>
+    </div>
+
+    <div class="acc-stat-card">
+      <div class="acc-stat-card__icon acc-stat-card__icon--purple">
+        <ar-icon name="contacts" [size]="20" />
+      </div>
+      <div class="acc-stat-card__content">
+        <span class="acc-stat-card__label">Linked Contacts</span>
+        <span class="acc-stat-card__value">{{ stats().totalContacts.toLocaleString() }}</span>
+        <span class="acc-stat-card__desc">Across all accounts and plants</span>
+      </div>
+    </div>
   </section>
 
-  <!-- Filter Presets Bar -->
-  <div class="acc-controls">
+  <!-- Filter Presets & Custom CRM Toolbar Card -->
+  <div class="acc-controls-card">
     <div class="acc-presets" role="tablist" aria-label="Account Filters">
-      <button
-        type="button"
-        class="acc-preset-btn"
-        [class.acc-preset-btn--active]="activePreset() === 'all'"
-        (click)="setPreset('all')"
-      >
+      <button type="button" role="tab" class="acc-preset-btn" [class.acc-preset-btn--active]="activePreset() === 'all'"
+        [attr.aria-selected]="activePreset() === 'all'" (click)="setPreset('all')">
         <span>All Accounts</span>
         <span class="acc-preset-badge">{{ presetCounts().all }}</span>
       </button>
-      <button
-        type="button"
-        class="acc-preset-btn"
-        [class.acc-preset-btn--active]="activePreset() === 'groups'"
-        (click)="setPreset('groups')"
-      >
+      <button type="button" role="tab" class="acc-preset-btn"
+        [class.acc-preset-btn--active]="activePreset() === 'groups'" [attr.aria-selected]="activePreset() === 'groups'"
+        (click)="setPreset('groups')">
         <span>Corporate Groups</span>
         <span class="acc-preset-badge">{{ presetCounts().groups }}</span>
       </button>
-      <button
-        type="button"
-        class="acc-preset-btn"
+      <button type="button" role="tab" class="acc-preset-btn"
         [class.acc-preset-btn--active]="activePreset() === 'subsidiaries'"
-        (click)="setPreset('subsidiaries')"
-      >
+        [attr.aria-selected]="activePreset() === 'subsidiaries'" (click)="setPreset('subsidiaries')">
         <span>Plants &amp; Subsidiaries</span>
         <span class="acc-preset-badge">{{ presetCounts().subsidiaries }}</span>
       </button>
-      <button
-        type="button"
-        class="acc-preset-btn"
+      <button type="button" role="tab" class="acc-preset-btn"
         [class.acc-preset-btn--active]="activePreset() === 'with-contacts'"
-        (click)="setPreset('with-contacts')"
-      >
+        [attr.aria-selected]="activePreset() === 'with-contacts'" (click)="setPreset('with-contacts')">
         <span>With Contacts</span>
         <span class="acc-preset-badge">{{ presetCounts().withContacts }}</span>
       </button>
-      <button
-        type="button"
-        class="acc-preset-btn"
+      <button type="button" role="tab" class="acc-preset-btn"
         [class.acc-preset-btn--active]="activePreset() === 'needs-contacts'"
-        (click)="setPreset('needs-contacts')"
-      >
+        [attr.aria-selected]="activePreset() === 'needs-contacts'" (click)="setPreset('needs-contacts')">
         <span>Needs Contacts</span>
         <span class="acc-preset-badge acc-preset-badge--warn">{{
           presetCounts().needsContacts
-        }}</span>
+          }}</span>
       </button>
+    </div>
+
+    <!-- Toolbar: Search + Hierarchy & Export Actions -->
+    <div class="acc-toolbar">
+      <div class="acc-search-box">
+        <ar-icon name="search" [size]="15" class="acc-search-icon" />
+        <input type="search" class="acc-search-input" placeholder="Search accounts by name, industry, city..."
+          [value]="searchQuery()" (input)="onSearch($any($event.target).value)" aria-label="Search accounts" />
+        @if (searchQuery()) {
+        <button type="button" class="acc-search-clear" (click)="clearSearch()" aria-label="Clear search">
+          <ar-icon name="close" [size]="12" />
+        </button>
+        }
+      </div>
+
+      <div class="acc-toolbar-actions">
+        <button type="button" class="acc-tool-btn" title="Expand all account hierarchies" (click)="expandAll()">
+          <ar-icon name="chevdown" [size]="13" />
+          <span>Expand all</span>
+        </button>
+        <button type="button" class="acc-tool-btn" title="Collapse all account hierarchies" (click)="collapseAll()">
+          <ar-icon name="chevron" [size]="13" class="acc-rotate-270" />
+          <span>Collapse all</span>
+        </button>
+        <div class="acc-toolbar-divider" aria-hidden="true"></div>
+        <button type="button" class="acc-tool-btn" title="Export accounts to Excel (.xlsx)" (click)="exportExcel()">
+          <ar-icon name="upload" [size]="13" class="acc-rotate-180" />
+          <span>Excel</span>
+        </button>
+        <button type="button" class="acc-tool-btn" title="Export accounts to CSV (.csv)" (click)="exportCsv()">
+          <ar-icon name="copy" [size]="13" />
+          <span>CSV</span>
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- Syncfusion Hierarchical TreeGrid -->
-  <ejs-treegrid
-    #treegrid
-    id="accounts-treegrid"
-    class="ar-grid acc-treegrid"
-    [dataSource]="treeData()"
-    idMapping="id"
-    parentIdMapping="parentId"
-    [treeColumnIndex]="0"
-    [allowPaging]="true"
-    [pageSettings]="pageSettings"
-    [allowSorting]="true"
-    [allowFiltering]="true"
-    [filterSettings]="filterSettings"
-    [toolbar]="toolbarOptions"
-    [allowExcelExport]="true"
-    (toolbarClick)="onToolbarClick($event)"
-    gridLines="Horizontal"
-    [enableHover]="true"
-    [allowSelection]="false"
-  >
-    <e-columns>
-      <e-column field="name" headerText="Account" minWidth="290">
-        <ng-template #template let-r>
-          <div class="ac-cell-name">
-            <div class="ac-cell-name__header">
-              <span class="ac-cell-name__title">{{ r.name }}</span>
-              @if (r.parentId === null) {
-                <span class="ac-type-pill ac-type-pill--group" title="Top-level Corporate Group">
-                  Group
-                </span>
-              } @else {
-                <span
-                  class="ac-type-pill ac-type-pill--sub"
-                  title="Subsidiary or plant under parent"
-                >
-                  Plant
-                </span>
+  <!-- Syncfusion Hierarchical TreeGrid in Modern Card -->
+  <div class="acc-table-card">
+    <ejs-treegrid #treegrid id="accounts-treegrid" class="ar-grid acc-treegrid" width="100%" [dataSource]="treeData()" idMapping="id"
+      parentIdMapping="parentId" [treeColumnIndex]="0" [allowPaging]="true" [pageSettings]="pageSettings"
+      [allowSorting]="true" [allowFiltering]="true" [filterSettings]="filterSettings" [toolbar]="toolbarOptions"
+      [allowExcelExport]="true" (toolbarClick)="onToolbarClick($event)" gridLines="Horizontal" [enableHover]="true"
+      [allowSelection]="false" [allowResizing]="true">
+      <e-columns>
+        <e-column field="name" headerText="Account" minWidth="260">
+          <ng-template #template let-r>
+            <div class="ac-cell-account">
+              <div class="ac-cell-avatar" [class.ac-cell-avatar--group]="r.parentId === null">
+                <ar-icon [name]="r.parentId === null ? 'workspaces' : 'tower'" [size]="15" />
+              </div>
+              <div class="ac-cell-details">
+                <div class="ac-cell-header">
+                  <span class="ac-account-name" [title]="r.name">{{ r.name }}</span>
+                  @if (r.parentId === null) {
+                  <span class="ac-type-badge ac-type-badge--group" title="Top-level Corporate Group">
+                    Group
+                  </span>
+                  } @else {
+                  <span class="ac-type-badge ac-type-badge--plant" title="Subsidiary or plant under parent">
+                    Plant
+                  </span>
+                  }
+                </div>
+                @if (r.website) {
+                <a class="ac-web-link" [href]="sanitizeUrl(r.website)" target="_blank" rel="noopener noreferrer"
+                  (click)="$event.stopPropagation()" [title]="r.website">
+                  <ar-icon name="globe" [size]="11" />
+                  <span>{{ r.website }}</span>
+                </a>
+                }
+              </div>
+            </div>
+          </ng-template>
+        </e-column>
+
+        <e-column field="industry" headerText="Industry" width="160" minWidth="130">
+          <ng-template #template let-r>
+            @if (r.industry && r.industry !== '—') {
+            <span class="ac-industry-chip">{{ r.industry }}</span>
+            } @else {
+            <span class="ac-cell-muted">—</span>
+            }
+          </ng-template>
+        </e-column>
+
+        <e-column field="location" headerText="Location &amp; Address" width="200" minWidth="170">
+          <ng-template #template let-r>
+            <div class="ac-cell-loc">
+              @if (r.location && r.location !== '—') {
+              <div class="ac-loc-city">
+                <ar-icon name="globe" [size]="12" />
+                <span>{{ r.location }}</span>
+              </div>
+              }
+              @if (r.address) {
+              <span class="ac-loc-address" [title]="r.address">{{ r.address }}</span>
+              } @else if (!r.location || r.location === '—') {
+              <span class="ac-cell-muted">—</span>
               }
             </div>
-            @if (r.website) {
-              <a
-                class="ac-cell-name__web"
-                [href]="sanitizeUrl(r.website)"
-                target="_blank"
-                rel="noopener noreferrer"
-                (click)="$event.stopPropagation()"
-                [title]="r.website"
-              >
-                <ar-icon name="globe" [size]="12" />
-                <span>{{ r.website }}</span>
-              </a>
-            }
-          </div>
-        </ng-template>
-      </e-column>
+          </ng-template>
+        </e-column>
 
-      <e-column field="industry" headerText="Industry" width="160">
-        <ng-template #template let-r>
-          @if (r.industry && r.industry !== '—') {
-            <span class="ac-industry-tag">{{ r.industry }}</span>
-          } @else {
-            <span class="ac-cell-muted">—</span>
-          }
-        </ng-template>
-      </e-column>
-
-      <e-column field="location" headerText="Location &amp; Address" width="220">
-        <ng-template #template let-r>
-          <div class="ac-cell-loc">
-            @if (r.address) {
-              <span class="ac-address-text" [title]="r.address">{{ r.address }}</span>
-            }
-            @if (r.location && r.location !== '—') {
-              <span class="ac-location-tag" [title]="r.location">{{ r.location }}</span>
-            } @else if (!r.address) {
-              <span class="ac-cell-muted">—</span>
-            }
-          </div>
-        </ng-template>
-      </e-column>
-
-      <e-column field="childCount" headerText="Hierarchy" width="160">
-        <ng-template #template let-r>
-          @if (r.childCount > 0) {
-            <ar-chip tone="teal">
+        <e-column field="childCount" headerText="Hierarchy" width="150" minWidth="130">
+          <ng-template #template let-r>
+            @if (r.childCount > 0) {
+            <span class="ac-hier-badge ac-hier-badge--group" title="Corporate group with child subsidiaries">
               <ar-icon name="flow" [size]="12" />
-              {{ r.childCount }} subsidiar{{ r.childCount === 1 ? 'y' : 'ies' }}
-            </ar-chip>
-          } @else if (r.depth > 1) {
-            <span class="ac-level-badge">Level {{ r.depth }}</span>
-          } @else {
-            <span class="ac-cell-muted">Independent</span>
-          }
-        </ng-template>
-      </e-column>
+              <span>{{ r.childCount }} subsidiar{{ r.childCount === 1 ? 'y' : 'ies' }}</span>
+            </span>
+            } @else if (r.depth > 1) {
+            <span class="ac-hier-badge ac-hier-badge--plant" title="Subsidiary plant at hierarchy level {{ r.depth }}">
+              <ar-icon name="tower" [size]="11" />
+              <span>Level {{ r.depth }} Plant</span>
+            </span>
+            } @else {
+            <span class="ac-hier-badge ac-hier-badge--solo" title="Independent account">
+              <span>Independent</span>
+            </span>
+            }
+          </ng-template>
+        </e-column>
 
-      <e-column field="contactCount" headerText="Contacts" width="180">
-        <ng-template #template let-r>
-          <button
-            type="button"
-            class="ac-contacts-btn"
-            [title]="'View all contacts at ' + r.name"
-            (click)="
-              openPeople(r.account, r.subtreeContacts !== r.account.contactCount);
-              $event.stopPropagation()
-            "
-          >
-            <ar-chip [tone]="r.contactCount > 0 ? 'good' : 'neutral'">
-              <ar-icon name="contacts" [size]="13" />
-              {{ r.contactCount }} contact{{ r.contactCount === 1 ? '' : 's' }}
-              @if (r.childCount > 0 && r.subtreeContacts !== r.account.contactCount) {
-                <span class="ac-contacts-subcount">· {{ r.subtreeContacts }} total</span>
-              }
-            </ar-chip>
-          </button>
-        </ng-template>
-      </e-column>
+        <e-column field="contactCount" headerText="Contacts" width="150" minWidth="130">
+          <ng-template #template let-r>
+            <button type="button" class="ac-contacts-btn" [title]="'View all contacts at ' + r.name" (click)="
+                openPeople(r.account, r.subtreeContacts !== r.account.contactCount);
+                $event.stopPropagation()
+              ">
+              <span class="ac-contacts-pill" [class.ac-contacts-pill--has]="r.contactCount > 0"
+                [class.ac-contacts-pill--empty]="r.contactCount === 0">
+                <ar-icon name="contacts" [size]="13" />
+                <span>{{ r.contactCount }} {{ r.contactCount === 1 ? 'contact' : 'contacts' }}</span>
+                @if (r.childCount > 0 && r.subtreeContacts !== r.account.contactCount) {
+                <span class="ac-contacts-total">· {{ r.subtreeContacts }} total</span>
+                }
+              </span>
+            </button>
+          </ng-template>
+        </e-column>
 
-      <e-column headerText="Actions" width="190" textAlign="Right">
-        <ng-template #template let-r>
-          <div class="ac-row-actions" (click)="$event.stopPropagation()">
-            <a
-              ar-button
-              variant="primary"
-              title="Rollup financial &amp; pipeline metrics"
-              [routerLink]="['/contacts/accounts', r.id, 'rollup']"
-            >
-              <ar-icon name="analytics" [size]="13" />
-            </a>
-            @if (canView360()) {
-              <a
-                ar-button
-                variant="ghost"
-                title="Customer 360 overview for {{ r.name }}"
-                [routerLink]="['/contacts/accounts', r.id, '360']"
-              >
+        <e-column headerText="Actions" width="240" minWidth="230" textAlign="Right">
+          <ng-template #template let-r>
+            <div class="ac-row-actions" (click)="$event.stopPropagation()">
+              <a ar-button variant="primary" class="ac-action-btn ac-action-btn--primary"
+                title="Rollup financial &amp; pipeline metrics" [routerLink]="['/contacts/accounts', r.id, 'rollup']">
+                <ar-icon name="analytics" [size]="13" />
+              </a>
+              @if (canView360()) {
+              <a ar-button variant="ghost" class="ac-action-btn" title="Customer overview for {{ r.name }}"
+                [routerLink]="['/contacts/accounts', r.id, '360']">
                 <ar-icon name="contacts" [size]="13" />
               </a>
-            }
-            @if (canBuyers()) {
-              <a
-                ar-button
-                variant="ghost"
-                title="Buyers and credit at {{ r.name }}"
-                routerLink="/contacts/accounts/credit"
-                [queryParams]="{ account: r.id }"
-              >
+              }
+              @if (canBuyers()) {
+              <a ar-button variant="ghost" class="ac-action-btn" title="Buyers and credit at {{ r.name }}"
+                routerLink="/contacts/accounts/credit" [queryParams]="{ account: r.id }">
                 <ar-icon name="billing" [size]="13" />
               </a>
-            }
-            @if (canCreate() && r.depth < maxDepth) {
-              <a
-                ar-button
-                variant="ghost"
-                title="Add plant or subsidiary under {{ r.name }}"
-                [routerLink]="['/contacts/accounts/new']"
-                [queryParams]="{ parentId: r.id }"
-              >
+              }
+              @if (canCreate() && r.depth < maxDepth) { <a ar-button variant="ghost" class="ac-action-btn"
+                title="Add plant or subsidiary under {{ r.name }}" [routerLink]="['/contacts/accounts/new']"
+                [queryParams]="{ parentId: r.id }">
                 <ar-icon name="plus" [size]="13" />
-              </a>
-            }
-            @if (canUpdate()) {
-              <a
-                ar-button
-                variant="ghost"
-                size="sm"
-                title="Edit account details"
-                [routerLink]="['/contacts/accounts', r.id, 'edit']"
-              >
-                <ar-icon name="edit" [size]="13" />
-              </a>
-            }
-            @if (canDelete()) {
-              <button
-                ar-button
-                variant="ghost"
-                size="sm"
-                class="btn--danger"
-                title="Delete account"
-                (click)="remove(r.account)"
-              >
-                <ar-icon name="trash" [size]="13" />
-              </button>
-            }
+                </a>
+                }
+                @if (canUpdate()) {
+                <a ar-button variant="ghost" class="ac-action-btn" title="Edit account details"
+                  [routerLink]="['/contacts/accounts', r.id, 'edit']">
+                  <ar-icon name="edit" [size]="13" />
+                </a>
+                }
+                @if (canDelete()) {
+                <button ar-button variant="ghost" class="ac-action-btn ac-action-btn--danger" title="Delete account"
+                  (click)="remove(r.account)">
+                  <ar-icon name="trash" [size]="13" />
+                </button>
+                }
+            </div>
+          </ng-template>
+        </e-column>
+      </e-columns>
+
+      <ng-template #emptyRecordTemplate>
+        <div class="acc-empty">
+          <div class="acc-empty__icon">
+            <ar-icon name="workspaces" [size]="32" />
           </div>
-        </ng-template>
-      </e-column>
-    </e-columns>
-    <ng-template #emptyRecordTemplate>
-      <div class="acc-empty">
-        <div class="acc-empty__icon">
-          <ar-icon name="flow" [size]="36" />
-        </div>
-        <p class="acc-empty__title">
-          {{ loading() ? 'Loading accounts…' : 'No accounts match the active filter.' }}
-        </p>
-        <p class="acc-empty__desc">
-          {{
+          <p class="acc-empty__title">
+            {{ loading() ? 'Loading accounts…' : 'No accounts match the active filter.' }}
+          </p>
+          <p class="acc-empty__desc">
+            {{
             loading()
-              ? 'Fetching account tree and corporate hierarchy…'
-              : 'Group companies, plants, and manufacturing facilities under your corporate accounts.'
-          }}
-        </p>
-        @if (!loading() && canCreate()) {
-          <a
-            ar-button
-            variant="primary"
-            size="sm"
-            icon="plus"
-            [routerLink]="['/contacts/accounts/new']"
-          >
+            ? 'Fetching account tree and corporate hierarchy…'
+            : 'Group companies, plants, and manufacturing facilities under your corporate accounts.'
+            }}
+          </p>
+          @if (!loading() && canCreate()) {
+          <a ar-button variant="primary" size="sm" icon="plus" [routerLink]="['/contacts/accounts/new']">
             New account
           </a>
-        }
-      </div>
-    </ng-template>
-  </ejs-treegrid>
+          }
+        </div>
+      </ng-template>
+    </ejs-treegrid>
+  </div>
 </div>
 
 <!-- Modal Dialog: Contacts at Account -->
 @if (peopleFor(); as acc) {
-  <ar-dialog
-    [title]="'Contacts at ' + acc.name"
-    width="min(660px, calc(100vw - 32px))"
-    (dismiss)="closePeople()"
-  >
-    @if (contactModalMode() === 'assign') {
-      <div class="pp-subview">
-        <div class="pp-subview__header">
-          <button ar-button variant="ghost" size="sm" (click)="cancelAssign()">← Back</button>
-          <strong class="pp-subview__title">Assign Existing Contact to {{ acc.name }}</strong>
-        </div>
+<ar-dialog [title]="'Contacts at ' + acc.name" cssClass="ar-dialog ar-accounts-people-dialog"
+  width="min(660px, calc(100vw - 32px))" (dismiss)="closePeople()">
+  @if (contactModalMode() === 'assign') {
+  <div class="pp-subview">
+    <div class="pp-subview__header">
+      <button ar-button variant="ghost" size="sm" (click)="cancelAssign()">← Back</button>
+      <strong class="pp-subview__title">Assign Existing Contact to {{ acc.name }}</strong>
+    </div>
 
-        <div class="pp-assign-search">
-          <input
-            class="ar-field__input"
-            type="search"
-            placeholder="Search contacts by name, company, designation or phone…"
-            [value]="assignSearchTerm()"
-            (input)="onAssignSearch($any($event.target).value)"
-          />
-        </div>
+    <div class="pp-assign-search">
+      <input class="ar-field__input" type="search" placeholder="Search contacts by name, company, designation or phone…"
+        [value]="assignSearchTerm()" (input)="onAssignSearch($any($event.target).value)" />
+    </div>
 
-        @if (assignSearching()) {
-          <p class="pp__note">Searching contacts…</p>
-        } @else if (allAssignableCandidates().length === 0) {
-          <div class="pp-candidates-empty">
-            <p>No contacts found matching “{{ assignSearchTerm() }}”.</p>
-            <button ar-button variant="ghost" size="sm" (click)="openCreateContact()">
-              <ar-icon name="plus" [size]="13" /> Create new contact instead
-            </button>
-          </div>
-        } @else {
-          <ul class="pp-candidates-list">
-            @for (c of allAssignableCandidates(); track c.id) {
-              <li class="pp-candidate-row">
-                <ar-avatar
-                  [name]="c.displayName || c.waId || 'Contact'"
-                  [size]="34"
-                  tone="neutral"
-                />
-                <div class="pp-candidate-info">
-                  <span class="pp-candidate-name">{{ c.displayName || c.waId }}</span>
-                  <div class="pp-candidate-meta">
-                    @if (c.companyName) {
-                      <span class="pp-candidate-comp">{{ c.companyName }}</span>
-                    } @else {
-                      <span class="pp-candidate-unassigned">Unassigned</span>
-                    }
-                    @if (c.designation) {
-                      <span>· {{ c.designation }}</span>
-                    }
-                    @if (c.waId) {
-                      <span class="ar-mono">+{{ c.waId }}</span>
-                    }
-                  </div>
-                </div>
-                <button
-                  ar-button
-                  variant="primary"
-                  size="sm"
-                  title="Assign to {{ acc.name }}"
-                  (click)="assignContact(c)"
-                >
-                  Assign
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      </div>
+    @if (assignSearching()) {
+    <p class="pp__note">Searching contacts…</p>
+    } @else if (allAssignableCandidates().length === 0) {
+    <div class="pp-candidates-empty">
+      <p>No contacts found matching “{{ assignSearchTerm() }}”.</p>
+      <button ar-button variant="ghost" size="sm" (click)="openCreateContact()">
+        <ar-icon name="plus" [size]="13" /> Create new contact instead
+      </button>
+    </div>
     } @else {
-      <!-- Default Mode: List of Contacts -->
-      <div class="pp-toolbar">
-        <div class="pp-toolbar__meta">
-          <span class="pp-toolbar__count">
-            {{ peopleTotal() }} contact{{ peopleTotal() === 1 ? '' : 's' }} assigned
-          </span>
-        </div>
-        <div class="pp-toolbar__actions">
-          <button ar-button variant="ghost" size="sm" (click)="openAssignContact()">
-            <ar-icon name="plus" [size]="13" /> Assign existing
-          </button>
-          <button ar-button variant="primary" size="sm" (click)="openCreateContact()">
-            <ar-icon name="plus" [size]="13" /> Add new contact
-          </button>
-        </div>
-      </div>
-
-      @if (hasSubsidiaryPeople()) {
-        <div class="pp-banner">
-          <label class="pp__subs">
-            <input
-              type="checkbox"
-              [checked]="peopleSubs()"
-              (change)="togglePeopleSubs($any($event.target).checked)"
-            />
-            <span>Include contacts at subsidiaries and affiliated plants</span>
-          </label>
-        </div>
-      }
-
-      @if (peopleLoading()) {
-        <p class="pp__note">Loading contacts…</p>
-      } @else if (peopleError(); as e) {
-        <p class="pp__note pp__note--bad" role="alert">{{ e }}</p>
-      } @else if (people().length === 0) {
-        <div class="pp-empty">
-          <ar-icon name="contacts" [size]="36" />
-          <p class="pp-empty__text">Nobody is assigned to this account yet.</p>
-          <p class="pp-empty__sub">
-            Assign an existing contact from your directory or create a new contact for this account.
-          </p>
-          <div class="pp-empty__actions">
-            <button ar-button variant="primary" size="sm" (click)="openAssignContact()">
-              <ar-icon name="plus" [size]="13" /> Assign existing contact
-            </button>
-            <button ar-button variant="ghost" size="sm" (click)="openCreateContact()">
-              <ar-icon name="plus" [size]="13" /> Add new contact
-            </button>
+    <ul class="pp-candidates-list">
+      @for (c of allAssignableCandidates(); track c.id) {
+      <li class="pp-candidate-row">
+        <ar-avatar [name]="c.displayName || c.waId || 'Contact'" [size]="34" tone="neutral" />
+        <div class="pp-candidate-info">
+          <span class="pp-candidate-name">{{ c.displayName || c.waId }}</span>
+          <div class="pp-candidate-meta">
+            @if (c.companyName) {
+            <span class="pp-candidate-comp">{{ c.companyName }}</span>
+            } @else {
+            <span class="pp-candidate-unassigned">Unassigned</span>
+            }
+            @if (c.designation) {
+            <span>· {{ c.designation }}</span>
+            }
+            @if (c.waId) {
+            <span class="ar-mono">+{{ c.waId }}</span>
+            }
           </div>
         </div>
-      } @else {
-        <ul class="pp">
-          @for (p of people(); track p.id) {
-            <li class="pp__row">
-              <ar-avatar [name]="p.displayName || p.waId || 'Contact'" [size]="36" tone="neutral" />
-              <div class="pp__who">
-                <span class="pp__name">{{ p.displayName || p.waId }}</span>
-                <span class="pp__sub">{{ personLine(p) }}</span>
-              </div>
-              <div class="pp__reach">
-                @if (p.waId) {
-                  <a
-                    class="pp-reach-link pp-reach-link--wa ar-mono"
-                    [href]="'https://wa.me/' + p.waId"
-                    target="_blank"
-                  >
-                    <ar-icon name="phone" [size]="12" />
-                    +{{ p.waId }}
-                  </a>
-                }
-                @if (p.emailAddress || p.attributes?.['email']; as mail) {
-                  <a class="pp-reach-link" [href]="'mailto:' + mail">
-                    <ar-icon name="mail" [size]="12" />
-                    {{ mail }}
-                  </a>
-                }
-                @if (p.city) {
-                  <span class="pp-city">{{ p.city }}</span>
-                }
-              </div>
-              <div class="pp__actions">
-                @if (canView360()) {
-                  <a
-                    ar-button
-                    variant="ghost"
-                    size="sm"
-                    title="View contact Customer 360 profile"
-                    [routerLink]="['/contacts', p.id, '360']"
-                    (click)="closePeople()"
-                  >
-                    360
-                  </a>
-                }
-                @if (canUpdate()) {
-                  <button
-                    ar-button
-                    variant="ghost"
-                    size="sm"
-                    class="pp__unlink-btn"
-                    title="Unlink contact from this account"
-                    (click)="unlinkContact(p)"
-                  >
-                    Unlink
-                  </button>
-                }
-              </div>
-            </li>
-          }
-        </ul>
-        @if (peopleTotal() > people().length) {
-          <p class="pp__note">
-            Showing {{ people().length }} of {{ peopleTotal() }}.
-            <a [routerLink]="['/contacts']" (click)="openAllOnContacts(acc)">See all on Contacts</a>
-          </p>
-        }
+        <button ar-button variant="primary" size="sm" title="Assign to {{ acc.name }}" (click)="assignContact(c)">
+          Assign
+        </button>
+      </li>
       }
+    </ul>
     }
-  </ar-dialog>
+  </div>
+  } @else {
+  <!-- Default Mode: List of Contacts -->
+  <div class="pp-toolbar">
+    <div class="pp-toolbar__meta">
+      <span class="pp-toolbar__count">
+        {{ peopleTotal() }} contact{{ peopleTotal() === 1 ? '' : 's' }} assigned
+      </span>
+    </div>
+    <div class="pp-toolbar__actions">
+      <button ar-button variant="ghost" size="sm" (click)="openAssignContact()">
+        <ar-icon name="plus" [size]="13" /> Assign existing
+      </button>
+      <button ar-button variant="primary" size="sm" (click)="openCreateContact()">
+        <ar-icon name="plus" [size]="13" /> Add new contact
+      </button>
+    </div>
+  </div>
 
-  <!-- Reusable Contact Add/Edit Dialog utilising existing Contact functionality -->
-  <ar-contact-dialog
-    [(open)]="contactDialogOpen"
-    [preselectedAccountId]="acc.id"
-    (saved)="onContactCreated()"
-  />
+  @if (hasSubsidiaryPeople()) {
+  <div class="pp-banner">
+    <label class="pp__subs">
+      <input type="checkbox" [checked]="peopleSubs()" (change)="togglePeopleSubs($any($event.target).checked)" />
+      <span>Include contacts at subsidiaries and affiliated plants</span>
+    </label>
+  </div>
+  }
+
+  @if (peopleLoading()) {
+  <p class="pp__note">Loading contacts…</p>
+  } @else if (peopleError(); as e) {
+  <p class="pp__note pp__note--bad" role="alert">{{ e }}</p>
+  } @else if (people().length === 0) {
+  <div class="pp-empty">
+    <ar-icon name="contacts" [size]="36" />
+    <p class="pp-empty__text">Nobody is assigned to this account yet.</p>
+    <p class="pp-empty__sub">
+      Assign an existing contact from your directory or create a new contact for this account.
+    </p>
+    <div class="pp-empty__actions">
+      <button ar-button variant="primary" size="sm" (click)="openAssignContact()">
+        <ar-icon name="plus" [size]="13" /> Assign existing contact
+      </button>
+      <button ar-button variant="ghost" size="sm" (click)="openCreateContact()">
+        <ar-icon name="plus" [size]="13" /> Add new contact
+      </button>
+    </div>
+  </div>
+  } @else {
+  <ul class="pp">
+    @for (p of people(); track p.id) {
+    <li class="pp__row">
+      <ar-avatar [name]="p.displayName || p.waId || 'Contact'" [size]="36" tone="neutral" />
+      <div class="pp__who">
+        <span class="pp__name">{{ p.displayName || p.waId }}</span>
+        <span class="pp__sub">{{ personLine(p) }}</span>
+      </div>
+      <div class="pp__reach">
+        @if (p.waId) {
+        <a class="pp-reach-link pp-reach-link--wa ar-mono" [href]="'https://wa.me/' + p.waId" target="_blank">
+          <ar-icon name="phone" [size]="12" />
+          +{{ p.waId }}
+        </a>
+        }
+        @if (p.emailAddress || p.attributes?.['email']; as mail) {
+        <a class="pp-reach-link" [href]="'mailto:' + mail">
+          <ar-icon name="mail" [size]="12" />
+          {{ mail }}
+        </a>
+        }
+        @if (p.city) {
+        <span class="pp-city">{{ p.city }}</span>
+        }
+      </div>
+      <div class="pp__actions">
+        @if (canView360()) {
+        <a ar-button variant="ghost" size="sm" class="pp__view-btn" title="View contact Customer 360 profile"
+          [routerLink]="['/contacts', p.id, '360']" (click)="closePeople()">
+          <ar-icon name="contacts" [size]="13" />
+          <span>360</span>x
+        </a>
+        }
+        @if (canUpdate()) {
+        <button ar-button variant="ghost" size="sm" class="pp__unlink-btn" title="Unlink contact from this account"
+          (click)="unlinkContact(p)">
+          <ar-icon name="trash" [size]="13" />
+          <span>Unlink</span>
+        </button>
+        }
+      </div>
+    </li>
+    }
+  </ul>
+  @if (peopleTotal() > people().length) {
+  <p class="pp__note">
+    Showing {{ people().length }} of {{ peopleTotal() }}.
+    <a [routerLink]="['/contacts']" (click)="openAllOnContacts(acc)">See all on Contacts</a>
+  </p>
+  }
+  }
+  }
+</ar-dialog>
+
+<!-- Reusable Contact Add/Edit Dialog utilising existing Contact functionality -->
+<ar-contact-dialog [(open)]="contactDialogOpen" [preselectedAccountId]="acc.id" (saved)="onContactCreated()" />
 }

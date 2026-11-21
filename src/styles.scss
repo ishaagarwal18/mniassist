@@ -278,6 +278,321 @@ textarea.ar-field__input {
     border-top: 1px solid var(--ar-line-200);
   }
 }
+
+/* Account Contacts Modal Dialog */
+.e-dialog.ar-accounts-people-dialog {
+  .pp-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .pp-toolbar__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pp-toolbar__count {
+    font: 600 0.875rem var(--ar-font-sans);
+    color: #0f172a;
+  }
+
+  .pp-toolbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pp-banner {
+    padding: 8px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+
+  .pp__subs {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font: 400 0.8125rem var(--ar-font-sans);
+    color: #475569;
+    cursor: pointer;
+  }
+
+  .pp__note {
+    font: 400 0.875rem var(--ar-font-sans);
+    color: #64748b;
+    margin: 12px 0;
+
+    &--bad {
+      color: #dc2626;
+    }
+  }
+
+  /* List of contacts */
+  ul.pp {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 440px;
+    overflow-y: auto;
+  }
+
+  li.pp__row {
+    list-style: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 14px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.16s ease;
+
+    &:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+  }
+
+  .pp__who {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 160px;
+  }
+
+  .pp__name {
+    font: 600 0.875rem/1.3 var(--ar-font-sans);
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pp__sub {
+    font: 400 0.75rem/1.3 var(--ar-font-sans);
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pp__reach {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .pp-reach-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font: 500 0.75rem var(--ar-font-sans);
+    text-decoration: none;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    transition: all 0.15s ease;
+
+    ar-icon {
+      color: #64748b;
+    }
+
+    &:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    &--wa {
+      background: #ecfdf5;
+      color: #047857;
+      border-color: #a7f3d0;
+
+      ar-icon {
+        color: #059669;
+      }
+
+      &:hover {
+        background: #d1fae5;
+      }
+    }
+  }
+
+  .pp-city {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font: 500 0.75rem var(--ar-font-sans);
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+  }
+
+  .pp__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .pp__view-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    height: 30px !important;
+    padding: 0 10px !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    color: #334155 !important;
+    background: #ffffff !important;
+
+    &:hover {
+      background: #eff6ff !important;
+      border-color: #bfdbfe !important;
+      color: #2563eb !important;
+    }
+  }
+
+  .pp__unlink-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    height: 30px !important;
+    padding: 0 10px !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    color: #64748b !important;
+    background: #ffffff !important;
+    transition: all 0.15s ease !important;
+
+    ar-icon {
+      color: #94a3b8 !important;
+      transition: color 0.15s ease !important;
+    }
+
+    &:hover {
+      background: #fef2f2 !important;
+      border-color: #fecaca !important;
+      color: #dc2626 !important;
+
+      ar-icon {
+        color: #dc2626 !important;
+      }
+    }
+  }
+
+  /* Candidate Search & Assignment Subview */
+  .pp-subview {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .pp-subview__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .pp-subview__title {
+    font: 600 0.9375rem var(--ar-font-sans);
+    color: #0f172a;
+  }
+
+  .pp-assign-search {
+    input {
+      width: 100%;
+    }
+  }
+
+  ul.pp-candidates-list {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  li.pp-candidate-row {
+    list-style: none !important;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+  }
+
+  .pp-candidate-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .pp-candidate-name {
+    font: 600 0.875rem var(--ar-font-sans);
+    color: #0f172a;
+  }
+
+  .pp-candidate-meta {
+    font: 400 0.75rem var(--ar-font-sans);
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .pp-candidate-comp {
+    color: #334155;
+    font-weight: 500;
+  }
+
+  .pp-candidate-unassigned {
+    color: #d97706;
+    background: #fffbeb;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+  }
+}
 body .e-dlg-overlay {
   background-color: var(--ar-backdrop);
   opacity: 1;

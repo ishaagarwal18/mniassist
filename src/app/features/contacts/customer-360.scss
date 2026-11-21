@@ -861,6 +861,769 @@
   }
 }
 
+/* Topbar Actions */
+.c360-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  a[ar-button] {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 500;
+    transition: all 0.18s ease;
+
+    &:hover {
+      background: rgba(37, 99, 235, 0.08);
+      color: #2563eb;
+    }
+  }
+}
+
+/* ==========================================================================
+   Customer 360 Directory Modern CRM Redesign
+   ========================================================================== */
+
+.c360-dir-container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: c360FadeIn 0.35s ease-out;
+}
+
+@keyframes c360FadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Error Banner */
+.c360-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  color: #b91c1c;
+  font: 500 0.875rem/1.4 var(--ar-font-sans);
+}
+
+/* 1. Dynamic Summary KPI Cards */
+.c360-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.c360-kpi-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.125rem;
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.04),
+    0 4px 12px -2px rgba(15, 23, 42, 0.03);
+  transition:
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: #cbd5e1;
+    box-shadow:
+      0 4px 6px -1px rgba(15, 23, 42, 0.06),
+      0 12px 24px -4px rgba(15, 23, 42, 0.06);
+  }
+}
+
+.c360-kpi-card__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+
+  .c360-kpi-card:hover & {
+    transform: scale(1.06);
+  }
+
+  &--blue {
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid rgba(37, 99, 235, 0.15);
+  }
+
+  &--teal {
+    background: #f0fdfa;
+    color: #0d9488;
+    border: 1px solid rgba(13, 148, 136, 0.15);
+  }
+
+  &--lavender {
+    background: #eef2ff;
+    color: #6366f1;
+    border: 1px solid rgba(99, 102, 241, 0.15);
+  }
+}
+
+.c360-kpi-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.c360-kpi-card__label {
+  font: 500 0.8125rem/1.3 var(--ar-font-sans);
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.c360-kpi-card__value {
+  font: 700 1.75rem/1.1 var(--ar-font-sans);
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.c360-kpi-card__desc {
+  font: 400 0.75rem/1.3 var(--ar-font-sans);
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 2. Main Directory Card Box */
+.c360-directory-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.04),
+    0 8px 24px -4px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.c360-dir-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Segmented Tabs */
+.c360-segmented-tabs {
+  display: inline-flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 12px;
+  gap: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.c360-seg-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 8px 18px;
+  border-radius: 9px;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font: 600 0.875rem/1.2 var(--ar-font-sans);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+  white-space: nowrap;
+
+  &:hover {
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  &.is-active {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow:
+      0 1px 3px rgba(15, 23, 42, 0.08),
+      0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 1px;
+  }
+}
+
+.c360-seg-tab__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #e2e8f0;
+  color: #475569;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  .is-active & {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+}
+
+/* 3. Search and Filters Toolbar */
+.c360-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  flex-wrap: wrap;
+}
+
+.c360-search-wrapper {
+  position: relative;
+  flex: 1 1 280px;
+  display: flex;
+  align-items: center;
+}
+
+.c360-search-icon {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.c360-search-input {
+  width: 100%;
+  height: 42px;
+  padding: 0 40px 0 42px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font: 400 0.875rem var(--ar-font-sans);
+  color: #0f172a;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+
+  &:hover {
+    background: #ffffff;
+    border-color: #94a3b8;
+  }
+
+  &:focus {
+    outline: none;
+    background: #ffffff;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+}
+
+.c360-search-clear {
+  position: absolute;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 0;
+  background: #e2e8f0;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: #cbd5e1;
+    color: #0f172a;
+  }
+}
+
+.c360-search-spinner {
+  position: absolute;
+  right: 14px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: c360Spin 0.7s linear infinite;
+}
+
+@keyframes c360Spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.c360-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.c360-filter-select-wrap {
+  position: relative;
+}
+
+.c360-filter-select {
+  height: 42px;
+  padding: 0 32px 0 12px;
+  background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font: 500 0.8125rem var(--ar-font-sans);
+  color: #334155;
+  cursor: pointer;
+  appearance: none;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover {
+    background-color: #ffffff;
+    border-color: #94a3b8;
+  }
+
+  &:focus {
+    outline: none;
+    background-color: #ffffff;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+}
+
+.c360-filter-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  font: 500 0.8125rem var(--ar-font-sans);
+  cursor: pointer;
+  transition: all 0.18s ease;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #cbd5e1;
+  }
+}
+
+/* 4. Skeleton Loading Cards */
+.c360-card-skeleton {
+  pointer-events: none;
+}
+
+.c360-skeleton-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: c360Shimmer 1.5s infinite;
+  flex-shrink: 0;
+}
+
+.c360-skeleton-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.c360-skeleton-line {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: c360Shimmer 1.5s infinite;
+
+  &--title {
+    height: 16px;
+    width: 40%;
+  }
+
+  &--meta {
+    height: 12px;
+    width: 65%;
+  }
+}
+
+@keyframes c360Shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* 5. Account & Contact CRM Cards */
+.c360-card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.c360-account-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.125rem 1.35rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: #93c5fd;
+    background: #f8fafc;
+    box-shadow:
+      0 4px 6px -1px rgba(37, 99, 235, 0.06),
+      0 12px 24px -4px rgba(37, 99, 235, 0.08);
+
+    .c360-account-card__name {
+      color: #2563eb;
+    }
+
+    .c360-account-card__action {
+      color: #2563eb;
+    }
+
+    .c360-account-card__arrow {
+      transform: translateX(4px);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+}
+
+.c360-account-card__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #101b30 0%, #1e3a5f 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(16, 27, 48, 0.16);
+
+  &--person {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+  }
+}
+
+.c360-account-card__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.c360-account-card__name {
+  margin: 0;
+  font: 600 0.9375rem/1.3 var(--ar-font-sans);
+  color: #0f172a;
+  transition: color 0.18s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.c360-account-card__chips {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.c360-account-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font: 400 0.78125rem/1.3 var(--ar-font-sans);
+  color: #64748b;
+  white-space: nowrap;
+
+  ar-icon {
+    color: #94a3b8;
+  }
+
+  &--contacts {
+    font-weight: 500;
+    color: #0d9488;
+
+    ar-icon {
+      color: #0d9488;
+    }
+  }
+}
+
+.c360-account-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font: 600 0.8125rem var(--ar-font-sans);
+  color: #64748b;
+  flex-shrink: 0;
+  transition: color 0.18s ease;
+}
+
+.c360-account-card__arrow {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 6. Empty State */
+.c360-empty-card {
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+
+  p {
+    margin: 0;
+  }
+}
+
+.c360-empty-card__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.c360-empty-card__title {
+  font: 600 1rem var(--ar-font-sans);
+  color: #0f172a;
+  margin: 0;
+}
+
+.c360-empty-card__text {
+  font: 400 0.875rem var(--ar-font-sans);
+  color: #64748b;
+  max-width: 380px;
+}
+
+.c360-btn-clear {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #2563eb;
+  font: 600 0.8125rem var(--ar-font-sans);
+  cursor: pointer;
+  transition: all 0.18s ease;
+
+  &:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+  }
+}
+
+/* 7. Pagination */
+.c360-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+
+.c360-pagination__info {
+  font: 400 0.8125rem var(--ar-font-sans);
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.c360-pagination__bold {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.c360-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.c360-page-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font: 500 0.8125rem var(--ar-font-sans);
+  cursor: pointer;
+  transition: all 0.16s ease;
+
+  &:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.c360-rotate-180 {
+  transform: rotate(180deg);
+}
+
+.c360-page-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  font: 500 0.8125rem var(--ar-font-sans);
+  color: #64748b;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .c360-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .c360-dir-container {
+    padding: 1rem 0.75rem 2rem;
+  }
+
+  .c360-kpis {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .c360-kpi-card {
+    padding: 1rem 1.125rem;
+  }
+
+  .c360-directory-box {
+    padding: 1.125rem 1rem;
+    border-radius: 12px;
+  }
+
+  .c360-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .c360-filters {
+    width: 100%;
+    justify-content: stretch;
+
+    .c360-filter-select-wrap {
+      flex: 1;
+    }
+
+    .c360-filter-select {
+      width: 100%;
+    }
+  }
+
+  .c360-account-card {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.875rem;
+  }
+
+  .c360-account-card__action {
+    align-self: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .c360-dir-container,
+  .c360-kpi-card,
+  .c360-account-card,
+  .c360-account-card__arrow,
+  .c360-skeleton-avatar,
+  .c360-skeleton-line {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+
 /* A person's page: where their company's orders and invoices are */
 .c360-account-note {
   display: flex;

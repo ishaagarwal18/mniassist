@@ -1,10 +1,15 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
+  ElementRef,
   inject,
+  OnDestroy,
   signal,
   ViewChild,
+  ViewEncapsulation,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -22,6 +27,7 @@ import {
 } from '@syncfusion/ej2-angular-treegrid';
 import type { ClickEventArgs } from '@syncfusion/ej2-navigations';
 
+import { NavDrawer } from '../../layout/nav-drawer';
 import {
   AccountRow,
   AccountStore,
@@ -37,7 +43,7 @@ import { ContactService } from '../../core/services/contact.service';
 import { ArContactDialog } from './contact-dialog';
 import { readApiError } from '../../core/util/api-error';
 import { ArTopbar } from '../../layout/topbar';
-import { ArAvatar, ArButton, ArChip, ArDialog, ArIcon, ArStatTile } from '../../ui';
+import { ArAvatar, ArButton, ArDialog, ArIcon } from '../../ui';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { grantedPolicy } from '../../core/auth/permission';
@@ -91,10 +97,8 @@ const BLANK: Draft = {
   imports: [
     ArTopbar,
     ArButton,
-    ArChip,
     ArDialog,
     ArIcon,
-    ArStatTile,
     ArAvatar,
     ArContactDialog,
     RouterLink,
@@ -110,16 +114,58 @@ const BLANK: Draft = {
     ResizeService,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   templateUrl: './accounts.html',
   styleUrl: './accounts.scss',
 })
-export class ArAccounts {
+export class ArAccounts implements OnDestroy {
   @ViewChild('treegrid') treegrid?: TreeGridComponent;
 
   private readonly router = inject(Router);
   private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
   private readonly store = inject(AccountStore);
+  private readonly navDrawer = inject(NavDrawer, { optional: true });
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+
+  private resizeObserver?: ResizeObserver;
+
+  constructor() {
+    ensureSyncfusionTheme('grid');
+    afterNextRender(() => {
+      if (typeof ResizeObserver !== 'undefined') {
+        const card = this.host.querySelector('.acc-table-card');
+        if (card) {
+          let timer: any;
+          this.resizeObserver = new ResizeObserver(() => {
+            clearTimeout(timer);
+            timer = setTimeout(() => this.recalcGridWidth(), 50);
+          });
+          this.resizeObserver.observe(card);
+        }
+      }
+    });
+
+    if (this.navDrawer) {
+      effect(() => {
+        this.navDrawer?.collapsed();
+        [50, 150, 300].forEach((delay) => {
+          setTimeout(() => this.recalcGridWidth(), delay);
+        });
+      });
+    }
+  }
+
+  private recalcGridWidth(): void {
+    window.dispatchEvent(new Event('resize'));
+    if (this.treegrid) {
+      (this.treegrid as any).grid?.refreshHeader();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
+  }
 
   protected readonly canCreate = grantedPolicy('AutoReach.Contacts.Create', this.permissions);
   protected readonly canUpdate = grantedPolicy('AutoReach.Contacts.Update', this.permissions);
@@ -154,19 +200,10 @@ export class ArAccounts {
 
   // ---- TreeGrid settings, presets & state ---------------------------------------------
   protected readonly activePreset = signal<AccountFilterPreset>('all');
+  protected readonly searchQuery = signal('');
   protected readonly pageSettings = { pageSize: 20, pageSizes: [10, 20, 50, 100] };
-  protected readonly toolbarOptions = [
-    'Search',
-    'ExpandAll',
-    'CollapseAll',
-    'ExcelExport',
-    'CsvExport',
-  ];
+  protected readonly toolbarOptions: string[] = [];
   protected readonly filterSettings = { type: 'Menu' as const };
-
-  constructor() {
-    ensureSyncfusionTheme('grid');
-  }
 
   /** Full unfiltered hierarchical dataset */
   protected readonly allTreeData = computed<AccountTreeRecord[]>(() =>
@@ -188,6 +225,32 @@ export class ArAccounts {
 
   protected setPreset(preset: AccountFilterPreset): void {
     this.activePreset.set(preset);
+  }
+
+  protected onSearch(query: string): void {
+    this.searchQuery.set(query);
+    this.treegrid?.search(query.trim());
+  }
+
+  protected clearSearch(): void {
+    this.searchQuery.set('');
+    this.treegrid?.search('');
+  }
+
+  protected expandAll(): void {
+    this.treegrid?.expandAll();
+  }
+
+  protected collapseAll(): void {
+    this.treegrid?.collapseAll();
+  }
+
+  protected exportExcel(): void {
+    void this.treegrid?.excelExport({ fileName: 'accounts.xlsx' });
+  }
+
+  protected exportCsv(): void {
+    void this.treegrid?.csvExport({ fileName: 'accounts.csv' });
   }
 
   protected onToolbarClick(args: ClickEventArgs): void {
