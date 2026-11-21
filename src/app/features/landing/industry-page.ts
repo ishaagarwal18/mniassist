@@ -140,6 +140,7 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
         <article class="ip-container">
           <!-- Hero Section with Ambient Glow & Badges -->
           <header class="ip-hero">
+            <div class="ip-hero__bg-grid" aria-hidden="true"></div>
             <div class="ip-hero__glow" aria-hidden="true"></div>
             <div class="ip-hero__badge">
               <ar-icon name="sparkle" class="ip-hero__badge-icon" />
@@ -268,20 +269,56 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
     /* Hero */
     .ip-hero {
       position: relative;
-      padding: 32px 0 40px;
+      padding: 36px 0 44px;
       overflow: hidden;
     }
 
     .ip-hero__glow {
       position: absolute;
-      top: -40px;
-      left: 10%;
-      width: 480px;
-      height: 280px;
-      background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, rgba(13, 148, 136, 0.08) 50%, transparent 70%);
+      inset: -30% -15%;
+      background:
+        radial-gradient(circle at 35% 20%, rgba(37, 99, 235, 0.14) 0%, transparent 55%),
+        radial-gradient(circle at 75% 35%, rgba(13, 148, 136, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse 65% 55% at 50% 30%, rgba(30, 58, 138, 0.08) 0%, transparent 65%);
       filter: blur(50px);
       pointer-events: none;
       z-index: 0;
+      animation: ipHeroGlow 18s ease-in-out infinite alternate;
+    }
+
+    @keyframes ipHeroGlow {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 0.85;
+      }
+      50% {
+        transform: translate3d(20px, -10px, 0) scale(1.05);
+        opacity: 1;
+      }
+      100% {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 0.85;
+      }
+    }
+
+    .ip-hero__bg-grid {
+      position: absolute;
+      inset: -20px;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        linear-gradient(to right, rgba(37, 99, 235, 0.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(37, 99, 235, 0.06) 1px, transparent 1px);
+      background-size: 40px 40px;
+      background-position: center top;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 35%, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0.2) 65%, transparent 90%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 35%, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0.2) 65%, transparent 90%);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ip-hero__glow {
+        animation: none;
+      }
     }
 
     .ip-hero__badge {
