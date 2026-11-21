@@ -104,6 +104,41 @@ describe('Public pages', () => {
     expect(text).toContain('Work out your saving');
   });
 
+  it('shows the machine OEMs page with original content and enhanced visuals', async () => {
+    setUp('oems');
+    const fixture = TestBed.createComponent(ArIndustryPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const text = (fixture.nativeElement as HTMLElement).textContent!;
+
+    expect(text).toContain('Machine OEMs');
+    expect(text).toContain('Keep the customer for the machine’s whole life.');
+    expect(text).toContain('AMC and calibration dates live in spreadsheets.');
+    expect(text).toContain('AMC and calibration campaigns');
+    expect(text).toContain('Support and service desk');
+    expect(text).toContain('Create a workspace');
+    expect(text).toContain('Work out your saving');
+  });
+
+  it('shows the distributors and dealers page with original content and enhanced visuals', async () => {
+    setUp('distributors');
+    const fixture = TestBed.createComponent(ArIndustryPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const text = (fixture.nativeElement as HTMLElement).textContent!;
+
+    expect(text).toContain('Distributors and dealers');
+    expect(text).toContain('Answer faster than the next supplier, and get paid sooner.');
+    expect(text).toContain('Dealers ask for prices and stock, and wait for a reply.');
+    expect(text).toContain('WhatsApp catalogue');
+    expect(text).toContain('Payment collections');
+    expect(text).toContain('Growth (₹4,999 a month, excluding GST)');
+    expect(text).toContain('Create a workspace');
+    expect(text).toContain('Work out your saving');
+  });
+
   it('every industry page says AI voice agents need Pro', () => {
     for (const p of INDUSTRY_PAGES) expect(p.planFit).toContain('Pro');
   });
