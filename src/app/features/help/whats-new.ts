@@ -256,13 +256,27 @@ export const RELEASES: Release[] = [
     </main>
   `,
   styles: `
+    /* The shell is one screen tall; this page scrolls inside it. */
+    :host {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+    }
     .wn {
-      padding: 16px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      box-sizing: border-box;
+      width: 100%;
+      padding: 16px 16px 32px;
       display: grid;
+      align-content: start;
       gap: 20px;
-      max-width: 820px;
     }
     .wn__release {
+      min-width: 0;
+      overflow-wrap: anywhere;
       padding: 16px 18px;
       background: var(--ar-white);
       border: 1px solid var(--ar-line-200);
@@ -283,9 +297,28 @@ export const RELEASES: Release[] = [
       display: grid;
       gap: 6px;
     }
+    li {
+      line-height: 1.5;
+    }
     li a {
       margin-left: 6px;
       font-size: 13px;
+      white-space: nowrap;
+    }
+    @media (max-width: 600px) {
+      .wn {
+        gap: 14px;
+        padding: 12px 12px 24px;
+      }
+      .wn__release {
+        padding: 12px 14px;
+      }
+      h2 {
+        font-size: 15px;
+      }
+      li {
+        font-size: 13.5px;
+      }
     }
   `,
 })
