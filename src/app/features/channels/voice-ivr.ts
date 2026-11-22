@@ -6,9 +6,9 @@ import {
   DestroyRef,
   computed,
   inject,
+  linkedSignal,
   signal,
 } from '@angular/core';
-import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
@@ -29,8 +29,8 @@ import {
   IvrSimulationStepDto,
 } from '../../proxy/voice';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip, ArDialog } from '../../ui';
-import { ArGrid } from '../../ui/grid';
+import { ArButton, ArChip, ArDialog, ArIcon, ArTabs } from '../../ui';
+import { buildMenuTree, setupStatus, VoiceIvrTab } from './voice-ivr.logic';
 import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 import { ConfirmService } from '../../core/ui/confirm.service';
@@ -87,9 +87,9 @@ const STATE_TONE: Record<ChannelState, ChipTone> = {
     ArButton,
     ArChip,
     ArDialog,
+    ArIcon,
+    ArTabs,
     ArSelect,
-    ArGrid,
-    GridModule,
     RouterLink,
     FormsModule,
   ],
@@ -117,6 +117,26 @@ export class ArVoiceIvr {
   protected readonly entryPoint = this.store.entryPoint;
 
   protected readonly busy = signal(false);
+
+  protected readonly tabs: readonly VoiceIvrTab[] = ['Phone menu', 'Exotel setup', 'Other lines'];
+  /** Opens on set-up until the Exotel account exists; on the menu after that. */
+  // Keyed on whether the account exists, not on the channel object, so saving a setting keeps the tab.
+  private readonly hasAccount = computed(() => !!this.channel());
+  protected readonly tab = linkedSignal<boolean, string>({
+    source: this.hasAccount,
+    computation: (has) => (has ? 'Phone menu' : 'Exotel setup'),
+  });
+
+  protected readonly status = computed(() =>
+    setupStatus(
+      this.channel(),
+      this.entryPoint()?.name ?? null,
+      this.issues().filter((i) => i.severity === 2).length,
+    ),
+  );
+  private readonly menu = computed(() => buildMenuTree(this.prompts()));
+  protected readonly tree = computed(() => this.menu().reached);
+  protected readonly unreached = computed(() => this.menu().unreached);
   protected readonly accountEditing = signal(false);
   protected readonly exoPhoneDraft = signal('');
   protected readonly accountSidDraft = signal('');
@@ -217,13 +237,21 @@ export class ArVoiceIvr {
   protected actionLabel(a?: IvrBranchAction): string {
     switch (a) {
       case IvrBranchAction.GoToPrompt:
-        return 'Go to prompt';
+        return 'Plays';
       case IvrBranchAction.TransferToAgent:
-        return 'Transfer to agent';
+        return 'Transfers to';
       case IvrBranchAction.Hangup:
       default:
-        return 'Hang up';
+        return 'Ends the call';
     }
+  }
+
+  protected actionKind(a?: IvrBranchAction): 'menu' | 'transfer' | 'end' {
+    return a === IvrBranchAction.GoToPrompt
+      ? 'menu'
+      : a === IvrBranchAction.TransferToAgent
+        ? 'transfer'
+        : 'end';
   }
 
   protected branchTarget(b: {
@@ -233,7 +261,7 @@ export class ArVoiceIvr {
   }): string {
     if (b.action === IvrBranchAction.GoToPrompt) return this.promptName(b.nextPromptId);
     if (b.action === IvrBranchAction.TransferToAgent) return b.transferToNumber ?? '—';
-    return '—';
+    return '';
   }
 
   protected promptName(id?: string | null): string {
