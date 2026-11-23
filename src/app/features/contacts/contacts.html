@@ -199,66 +199,49 @@
 
   <!-- Main Contacts Table Pane -->
   <section class="table-pane">
-    <!-- Executive Summary Section (4 Metric Cards) -->
-    <div class="contacts-stats" aria-label="Contacts Summary Metrics">
-      <div class="cstat-card">
-        <div class="cstat-card__icon cstat-card__icon--blue">
-          <ar-icon name="contacts" [size]="20" />
-        </div>
-        <div class="cstat-card__content">
-          <span class="cstat-card__label">Total Contacts</span>
-          <span class="cstat-card__value">{{ totalContacts().toLocaleString() }}</span>
-          <span class="cstat-card__desc">Active directory records</span>
+    <!-- 1. Integrated KPI Summary Strip (Linear / HubSpot style) -->
+    <div class="kpi-strip" aria-label="Contacts Summary">
+      <div class="kpi-strip__item">
+        <span class="kpi-strip__label">Total Contacts</span>
+        <span class="kpi-strip__val">{{ totalContacts().toLocaleString() }}</span>
+      </div>
+      <div class="kpi-strip__sep" aria-hidden="true"></div>
+      <div class="kpi-strip__item">
+        <span class="kpi-strip__label">Client Accounts</span>
+        <span class="kpi-strip__val">{{ totalCompanies().toLocaleString() }}</span>
+      </div>
+      <div class="kpi-strip__sep" aria-hidden="true"></div>
+      <div class="kpi-strip__item">
+        <span class="kpi-strip__label">Marketing Consent</span>
+        <div class="kpi-strip__inline">
+          <span class="kpi-strip__val">{{ consentedTotal().toLocaleString() }}</span>
+          <span class="kpi-badge kpi-badge--mint">{{ consentRate() }}% opted-in</span>
         </div>
       </div>
-
-      <div class="cstat-card">
-        <div class="cstat-card__icon cstat-card__icon--teal">
-          <ar-icon name="accounts" [size]="20" />
-        </div>
-        <div class="cstat-card__content">
-          <span class="cstat-card__label">Client Companies</span>
-          <span class="cstat-card__value">{{ totalCompanies().toLocaleString() }}</span>
-          <span class="cstat-card__desc">Accounts & manufacturing plants</span>
-        </div>
-      </div>
-
-      <div class="cstat-card">
-        <div class="cstat-card__icon cstat-card__icon--emerald">
-          <ar-icon name="shield" [size]="20" />
-        </div>
-        <div class="cstat-card__content">
-          <span class="cstat-card__label">Marketing Consent</span>
-          <span class="cstat-card__value">{{ consentedTotal().toLocaleString() }}</span>
-          <span class="cstat-card__desc">Opted-in for communications</span>
-        </div>
-      </div>
-
-      <div class="cstat-card">
-        <div class="cstat-card__icon cstat-card__icon--purple">
-          <ar-icon name="clock" [size]="20" />
-        </div>
-        <div class="cstat-card__content">
-          <span class="cstat-card__label">Recently Active</span>
-          <span class="cstat-card__value">{{ recentlyActiveCount().toLocaleString() }}</span>
-          <span class="cstat-card__desc">Interacted within recent cycle</span>
+      <div class="kpi-strip__sep" aria-hidden="true"></div>
+      <div class="kpi-strip__item">
+        <span class="kpi-strip__label">Recently Active</span>
+        <div class="kpi-strip__inline">
+          <span class="kpi-strip__val">{{ recentlyActiveCount().toLocaleString() }}</span>
+          <span class="kpi-badge kpi-badge--lavender">Active cycle</span>
         </div>
       </div>
     </div>
 
-    <!-- Search & Filter Controls Toolbar -->
-    <div class="table-pane__bar">
-      <div class="table-search-wrap">
+    <!-- 2. Directory Toolbar & Filter Controls -->
+    <div class="directory-toolbar">
+      <div class="directory-search">
         <ar-search-box
-          class="table-pane__search"
-          [(query)]="query"
-          placeholder="Search by name, company, city or phone…"
+          class="contacts-search-input"
+          [query]="query()"
+          (queryChange)="onSearchInput($event)"
+          placeholder="Search by name, company, city, or phone…"
         />
       </div>
 
-      <div class="table-filters-group">
+      <div class="directory-controls">
         <select
-          class="contacts-select table-pane__account"
+          class="contacts-select account-picker"
           aria-label="Filter by company account"
           (change)="chooseAccount($any($event.target).value)"
         >
@@ -271,7 +254,7 @@
         </select>
 
         @if (accountId() && chosenAccountHasChildren()) {
-          <label class="table-pane__subs">
+          <label class="subsidiaries-toggle">
             <input
               type="checkbox"
               [checked]="includeSubsidiaries()"
@@ -285,22 +268,22 @@
           ar-button
           type="button"
           variant="ghost"
-          class="btn-advanced-filter"
-          [class.btn-advanced-filter--active]="activeFilterCount() > 0"
+          class="btn-control-filter"
+          [class.btn-control-filter--active]="activeFilterCount() > 0"
           (click)="filterDrawerOpen.set(true)"
           title="Open advanced filter drawer"
         >
           <ar-icon name="filter" [size]="14" />
           <span>Filter</span>
           @if (activeFilterCount() > 0) {
-            <span class="filter-badge">{{ activeFilterCount() }}</span>
+            <span class="filter-count-badge">{{ activeFilterCount() }}</span>
           }
         </button>
 
         @if (activeFilterCount() > 0) {
           <button
             type="button"
-            class="btn-clear-all-filters"
+            class="btn-clear-filters"
             (click)="clearAdvancedFilters()"
             title="Reset all active filters"
           >
@@ -312,50 +295,46 @@
           ar-button
           type="button"
           variant="ghost"
-          [attr.aria-pressed]="filterRow()"
-          [title]="
-            filterRow()
-              ? 'Hide the filter row and clear column filters'
-              : 'Show a filter box under each column'
-          "
-          (click)="toggleFilterRow()"
+          class="btn-control-columns"
+          title="Customize table columns"
+          (click)="openColumnChooser()"
         >
           <ar-icon name="filter" [size]="14" />
-          <span>{{ filterRow() ? 'Hide columns' : 'Columns' }}</span>
+          <span>Columns</span>
         </button>
       </div>
     </div>
 
-    <!-- Active Filter Chips Bar (When advanced filters are applied) -->
+    <!-- 3. Active Filters Ribbon -->
     @if (activeFilterCount() > 0) {
-      <div class="active-filters-bar">
-        <span class="active-filters-label">Active filters:</span>
+      <div class="active-filter-chips">
+        <span class="active-chips-label">Filters applied:</span>
         @if (roleFilter(); as r) {
-          <span class="filter-tag">
+          <span class="chip-filter">
             Role: <strong>{{ r }}</strong>
             <button type="button" (click)="roleFilter.set('')" aria-label="Remove role filter">×</button>
           </span>
         }
         @if (consentFilter(); as c) {
-          <span class="filter-tag">
+          <span class="chip-filter">
             Consent: <strong>{{ c }}</strong>
             <button type="button" (click)="consentFilter.set('')" aria-label="Remove consent filter">×</button>
           </span>
         }
         @if (amcFilter(); as a) {
-          <span class="filter-tag">
+          <span class="chip-filter">
             AMC: <strong>{{ a === 'active' ? 'Active Contract' : 'No Contract' }}</strong>
             <button type="button" (click)="amcFilter.set('')" aria-label="Remove AMC filter">×</button>
           </span>
         }
         @if (scoreFilter(); as s) {
-          <span class="filter-tag">
-            Score: <strong>{{ s === '60' ? 'High (60+)' : s === '25' ? 'Medium (25-59)' : 'Low (<25)' }}</strong>
+          <span class="chip-filter">
+            Score: <strong>{{ s === '60' ? 'High (60+)' : s === '25' ? 'Medium (25–59)' : 'Low (<25)' }}</strong>
             <button type="button" (click)="scoreFilter.set('')" aria-label="Remove score filter">×</button>
           </span>
         }
         @if (accountId()) {
-          <span class="filter-tag">
+          <span class="chip-filter">
             Account: <strong>Selected</strong>
             <button type="button" (click)="chooseAccount('')" aria-label="Remove account filter">×</button>
           </span>
@@ -363,22 +342,29 @@
       </div>
     }
 
-    <!-- Table Body -->
-    <div class="table-pane__body ar-scroll" [attr.aria-busy]="loading()">
+    <!-- 4. Prominent Contact Directory Table Card -->
+    <div class="directory-table-card ar-scroll" [attr.aria-busy]="loading()">
       @if (loading()) {
-        <div class="contacts-loading" role="status">
-          <span class="contacts-loading__spinner" aria-hidden="true"></span>
-          <span>Loading customer contacts…</span>
+        <div class="table-skeleton-wrap" role="status">
+          <div class="skeleton-header"></div>
+          @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+            <div class="skeleton-row">
+              <div class="skeleton-col skeleton-avatar"></div>
+              <div class="skeleton-col skeleton-name"></div>
+              <div class="skeleton-col skeleton-company"></div>
+              <div class="skeleton-col skeleton-role"></div>
+              <div class="skeleton-col skeleton-score"></div>
+            </div>
+          }
         </div>
       } @else if (loadError()) {
-        <div class="contacts-error-state" role="alert">
+        <div class="directory-error" role="alert">
           <p>Could not load customer contacts from server.</p>
           <button ar-button type="button" variant="ghost" (click)="retry()">Try again</button>
         </div>
-      }
-
-      @if (!loading() && !loadError()) {
+      } @else {
         <ejs-grid
+          #gridComp
           arGrid="contacts"
           arGridEmpty="No contacts yet. Press “New contact”, or import your customer list from Excel."
           [arGridSearch]="false"
@@ -386,88 +372,143 @@
           aria-label="Contacts in the selected segment"
         >
           <e-columns>
-            <!-- Contact column with initials avatar & click to preview -->
-            <e-column field="name" headerText="Contact" width="210">
+            <!-- Checkbox selection column -->
+            <e-column width="46" textAlign="Center" [allowSorting]="false" [allowFiltering]="false">
+              <ng-template #headerTemplate>
+                <input
+                  type="checkbox"
+                  class="contacts-chk"
+                  [checked]="isAllSelected()"
+                  [indeterminate]="isPartiallySelected()"
+                  (change)="toggleSelectAll($any($event.target).checked)"
+                  aria-label="Select all contacts"
+                />
+              </ng-template>
               <ng-template #template let-c>
-                <div class="who-cell" (click)="openPreview(c.id)" title="Click to view contact preview">
-                  <div class="who-avatar" aria-hidden="true">
+                <input
+                  type="checkbox"
+                  class="contacts-chk"
+                  [checked]="isSelected(c.id)"
+                  (click)="$event.stopPropagation()"
+                  (change)="toggleSelect(c.id)"
+                  aria-label="Select contact"
+                />
+              </ng-template>
+            </e-column>
+
+            <!-- Contact column with initials avatar & Name + Phone together! -->
+            <e-column field="name" headerText="Contact" width="220">
+              <ng-template #template let-c>
+                <div class="contact-who" (click)="openPreview(c.id)" title="Click to view contact preview">
+                  <div class="contact-avatar" aria-hidden="true">
                     {{ getInitials(c.name) }}
                   </div>
-                  <div class="who-details">
-                    <span class="who-name">{{ c.name }}</span>
-                    <span class="who-sub">Click for preview</span>
+                  <div class="contact-identity">
+                    <span class="contact-name">{{ c.name }}</span>
+                    @if (c.phone) {
+                      <span class="contact-phone ar-mono">{{ c.phone }}</span>
+                    } @else {
+                      <span class="empty-val">No phone</span>
+                    }
                   </div>
                 </div>
               </ng-template>
             </e-column>
 
-            <!-- Company / Plant Column -->
+            <!-- Company & Plant Column together! -->
             <e-column field="company" headerText="Company / plant" width="180">
               <ng-template #template let-c>
-                <div class="company-cell">
-                  <span class="company-text" translate="no">{{ c.company || '—' }}</span>
+                <div class="company-plant-cell">
+                  @if (c.company) {
+                    <span class="company-name" translate="no">{{ c.company }}</span>
+                  } @else {
+                    <span class="empty-val">Independent</span>
+                  }
+                  @if (c.plantLocation) {
+                    <span class="plant-location">{{ c.plantLocation }}</span>
+                  }
                 </div>
               </ng-template>
             </e-column>
 
             <!-- Decision Role Column -->
-            <e-column field="role" headerText="Role" width="140">
+            <e-column field="role" headerText="Role" width="130">
               <ng-template #template let-c>
-                @if (c.role !== '—') {
-                  <span class="role-badge">{{ c.role }}</span>
+                @if (c.role) {
+                  <span class="role-pill">{{ c.role }}</span>
                 } @else {
-                  <span class="text-muted">—</span>
+                  <span class="empty-val">Unassigned</span>
                 }
               </ng-template>
             </e-column>
 
             <!-- Systems Column -->
-            <e-column field="systems" headerText="Systems" width="160">
+            <e-column field="systems" headerText="Systems" width="150">
               <ng-template #template let-c>
-                <span class="systems-text" [title]="c.systems">{{ c.systems || '—' }}</span>
+                @if (c.systems) {
+                  <span class="systems-text" [title]="c.systems">{{ c.systems }}</span>
+                } @else {
+                  <span class="empty-val">None</span>
+                }
               </ng-template>
             </e-column>
 
             <!-- AMC Expiry Column -->
-            <e-column field="amcExpiry" headerText="AMC expiry" width="130">
+            <e-column field="amcExpiry" headerText="AMC expiry" width="125">
               <ng-template #template let-c>
-                <span [class.text-muted]="c.amcExpiry === '—'">{{ c.amcExpiry }}</span>
+                @if (c.amcExpiry) {
+                  <span class="amc-date">{{ c.amcExpiry }}</span>
+                } @else {
+                  <span class="empty-val">No AMC</span>
+                }
               </ng-template>
             </e-column>
 
             <!-- Consent Column -->
-            <e-column field="consent" headerText="Consent" width="160">
+            <e-column field="consent" headerText="Consent" width="150">
               <ng-template #template let-c>
                 <ar-chip [tone]="c.consentTone">{{ c.consent }}</ar-chip>
               </ng-template>
             </e-column>
 
-            <!-- Score Column with Visual Pill -->
-            <e-column field="score" headerText="Score" type="number" textAlign="Right" width="110">
+            <!-- Score Column with Visual Indicator -->
+            <e-column field="score" headerText="Score" type="number" textAlign="Right" width="105">
               <ng-template #template let-c>
                 @if (c.score != null) {
-                  <span
-                    class="score-pill"
-                    [class.score-pill--high]="c.score >= 60"
-                    [class.score-pill--mid]="c.score >= 25 && c.score < 60"
-                    [class.score-pill--low]="c.score < 25"
+                  <div
+                    class="score-badge"
+                    [class.score-badge--high]="c.score >= 60"
+                    [class.score-badge--mid]="c.score >= 25 && c.score < 60"
+                    [class.score-badge--low]="c.score < 25"
                   >
-                    <span class="score-pill__dot"></span>
-                    {{ c.score }}
-                  </span>
+                    <div class="score-bars" aria-hidden="true">
+                      <span class="score-bar active"></span>
+                      <span class="score-bar" [class.active]="c.score >= 25"></span>
+                      <span class="score-bar" [class.active]="c.score >= 60"></span>
+                    </div>
+                    <span class="score-val">{{ c.score }}</span>
+                  </div>
                 } @else {
-                  <span class="text-muted">—</span>
+                  <span class="empty-val">—</span>
                 }
               </ng-template>
             </e-column>
 
             <!-- Last Activity Column -->
-            <e-column field="lastActivity" headerText="Last activity" width="140" />
+            <e-column field="lastActivity" headerText="Last activity" width="130">
+              <ng-template #template let-c>
+                @if (c.lastActivity) {
+                  <span class="activity-text">{{ c.lastActivity }}</span>
+                } @else {
+                  <span class="empty-val">Never</span>
+                }
+              </ng-template>
+            </e-column>
 
             <!-- Row Actions Column -->
             <e-column
               headerText="Actions"
-              width="200"
+              width="170"
               textAlign="Right"
               [visible]="canView360() || canReorder() || canUpdate() || canDelete()"
               [showInColumnChooser]="false"
@@ -548,9 +589,9 @@
               </h3>
               <p>
                 @if (query() || activeFilterCount() > 0) {
-                  Try clearing your search query or reset your active filters.
+                  Try adjusting your search query or clear your active filters.
                 } @else {
-                  Press “New contact” or import your customer records to get started.
+                  Press “New contact” or import customer records to populate this directory.
                 }
               </p>
             </div>
@@ -566,6 +607,54 @@
     </div>
   </section>
 </div>
+
+<!-- ========================================================================= -->
+<!-- FLOATING BULK ACTIONS BAR -->
+<!-- ========================================================================= -->
+@if (selectedCount() > 0) {
+  <aside class="floating-bulk-bar" role="toolbar" aria-label="Bulk actions">
+    <div class="bulk-counter">
+      <span class="bulk-counter__pill">{{ selectedCount() }}</span>
+      <span>contact{{ selectedCount() > 1 ? 's' : '' }} selected</span>
+    </div>
+    <div class="bulk-actions-btns">
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        class="bulk-btn"
+        (click)="exportSelectedCsv()"
+        title="Download CSV of selected contacts"
+      >
+        <ar-icon name="download" [size]="14" />
+        <span>Export selection</span>
+      </button>
+
+      @if (canDelete()) {
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          class="bulk-btn bulk-btn--danger"
+          (click)="bulkDelete()"
+          title="Delete selected contacts"
+        >
+          <ar-icon name="trash" [size]="14" />
+          <span>Delete selected</span>
+        </button>
+      }
+
+      <button
+        type="button"
+        class="bulk-btn-clear"
+        (click)="clearSelection()"
+        title="Clear selection"
+      >
+        Deselect
+      </button>
+    </div>
+  </aside>
+}
 
 <!-- ========================================================================= -->
 <!-- 5. CONTACT QUICK PREVIEW RIGHT-SIDE DRAWER -->
