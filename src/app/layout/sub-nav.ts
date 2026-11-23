@@ -7,11 +7,12 @@ import {
   effect,
   computed,
   inject,
-  input,
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ArIcon } from '../ui/icon';
+import { ArBrand } from './brand';
+import { BrandingStore } from '../core/services/branding.store';
 import { LanguageService } from '../core/i18n/language.service';
 import { SubNavService } from './sub-nav.service';
 import { NavDrawer } from './nav-drawer';
@@ -20,13 +21,11 @@ import { PageContextService } from './page-context.service';
 /** The pages of the sidebar group in use, as tabs above the screen's top bar. */
 @Component({
   selector: 'ar-sub-nav',
-  imports: [RouterLink, ArIcon],
+  imports: [RouterLink, ArIcon, ArBrand],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:click)': 'closeIfOutside($event)',
     '(document:keydown.escape)': 'open.set(false)',
-    '[class.sn-host--inline]': 'inline()',
-    '[class.sn-host--deferred]': '!inline() && sub.inlineHosts() > 0',
   },
   template: `
     @if (sub.group(); as group) {
@@ -47,6 +46,13 @@ import { PageContextService } from './page-context.service';
           >
             <ar-icon name="menu" [size]="18" />
           </button>
+          <ar-brand
+            class="sn__brand"
+            size="sm"
+            destination="/home"
+            iconOnly
+            [logoSrc]="branding.logoDataUrl()"
+          />
           <!-- On a phone the tabs fold into this one picker showing the current page. -->
           <button
             type="button"
@@ -128,26 +134,6 @@ import { PageContextService } from './page-context.service';
     :host {
       display: block;
       flex: none;
-    }
-    /* On wide screens a screen's top bar carries the tabs in its own row, so the strip above hides. */
-    :host(.sn-host--inline) {
-      display: none;
-      flex: 1 1 0;
-      min-width: 0;
-    }
-    @media (min-width: 1281px) {
-      :host(.sn-host--inline) {
-        display: block;
-      }
-      :host(.sn-host--deferred) {
-        display: none;
-      }
-      :host(.sn-host--inline) .sn {
-        padding: 0;
-        background: none;
-        border: 0;
-      }
-
     }
     /*
      * A segmented control on the page surface: the section's pages sit in one soft track and the
@@ -264,7 +250,8 @@ import { PageContextService } from './page-context.service';
       background: var(--ar-bg-100);
       color: var(--ar-ink-900);
     }
-    .sn__pick {
+    .sn__pick,
+    .sn__brand {
       display: none;
     }
     /* Names show while they all fit; when they don't, the other pages fold to icons (name on hover). */
@@ -291,6 +278,10 @@ import { PageContextService } from './page-context.service';
       }
       .sn__phone {
         display: grid;
+      }
+      .sn__brand {
+        display: block;
+        flex: none;
       }
       .sn__pick {
         flex: 1;
@@ -411,10 +402,9 @@ export class ArSubNav {
   protected readonly i18n = inject(LanguageService);
   protected readonly drawer = inject(NavDrawer);
   protected readonly pageContext = inject(PageContextService);
+  protected readonly branding = inject(BrandingStore);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly destroyRef = inject(DestroyRef);
-  /** Drawn inside a top bar's row rather than as the strip above the screen. */
-  readonly inline = input(false);
 
   /** The phone picker's page list. */
   protected readonly open = signal(false);

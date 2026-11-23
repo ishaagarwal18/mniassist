@@ -15,6 +15,4 @@ export class SubNavService {
   readonly favourites = signal<readonly string[]>([]);
   /** Stars or unstars a page; set by the sidebar, which stores the list. */
   toggleFavourite: (route: string) => void = () => undefined;
-  /** Top bars on screen that carry the tabs in their own row (wide screens); the strip above then hides. */
-  readonly inlineHosts = signal(0);
 }

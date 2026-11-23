@@ -4,48 +4,31 @@
   help="Your full customer list. Consent is shown with both a label and a colour — an imported list is flagged as the weakest evidence you have that someone agreed to be messaged."
 >
   <div actions class="contacts-topbar-actions">
-    <nav class="contacts-nav-pills" aria-label="Customer directory navigation">
-      <a ar-button variant="ghost" class="nav-pill" routerLink="/contacts/360">
-        <ar-icon name="user" [size]="14" />
-        <span>Customer overview</span>
+    @if (canExport()) {
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        [disabled]="exporting()"
+        title="Prepare a file of every contact (matching the search). You are notified when it is ready."
+        (click)="requestExport()"
+      >
+        <ar-icon name="download" [size]="14" />
+        <span>{{ exporting() ? 'Starting…' : 'Export all' }}</span>
+      </button>
+    }
+    @if (canImport()) {
+      <button ar-button type="button" variant="ghost" (click)="importOpen.set(true)">
+        <ar-icon name="upload" [size]="14" />
+        <span>Import</span>
+      </button>
+    }
+    @if (canCreate()) {
+      <a ar-button variant="primary" [routerLink]="['/contacts/new']">
+        <ar-icon name="plus" [size]="14" />
+        <span>New contact</span>
       </a>
-      <a ar-button variant="ghost" class="nav-pill" routerLink="/contacts/accounts">
-        <ar-icon name="accounts" [size]="14" />
-        <span>Accounts</span>
-      </a>
-      <a ar-button variant="primary" class="nav-pill nav-pill--active" routerLink="/contacts">
-        <ar-icon name="contacts" [size]="14" />
-        <span>Contacts</span>
-      </a>
-    </nav>
-
-    <div class="contacts-action-btns">
-      @if (canExport()) {
-        <button
-          ar-button
-          type="button"
-          variant="ghost"
-          [disabled]="exporting()"
-          title="Prepare a file of every contact (matching the search). You are notified when it is ready."
-          (click)="requestExport()"
-        >
-          <ar-icon name="download" [size]="14" />
-          <span>{{ exporting() ? 'Starting…' : 'Export all' }}</span>
-        </button>
-      }
-      @if (canImport()) {
-        <button ar-button type="button" variant="ghost" (click)="importOpen.set(true)">
-          <ar-icon name="upload" [size]="14" />
-          <span>Import</span>
-        </button>
-      }
-      @if (canCreate()) {
-        <a ar-button variant="primary" [routerLink]="['/contacts/new']">
-          <ar-icon name="plus" [size]="14" />
-          <span>New contact</span>
-        </a>
-      }
-    </div>
+    }
   </div>
 </ar-topbar>
 

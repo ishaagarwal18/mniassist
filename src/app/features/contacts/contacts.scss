@@ -374,52 +374,8 @@
   overflow: hidden;
 }
 
-/* 1. Topbar Navigation & Actions */
+/* 1. Topbar Actions */
 .contacts-topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.contacts-nav-pills {
-  display: inline-flex;
-  align-items: center;
-  background: #F1F5F9;
-  padding: 3px;
-  border-radius: 9px;
-  border: 1px solid #E2E8F0;
-  gap: 2px;
-
-  .nav-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #64748B;
-    border-radius: 6px;
-    text-decoration: none;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    border: none;
-    background: transparent;
-
-    &:hover {
-      color: #111C30;
-      background: rgba(255, 255, 255, 0.7);
-    }
-
-    &.nav-pill--active {
-      background: #FFFFFF;
-      color: #315ECA;
-      font-weight: 600;
-      box-shadow: 0 1px 3px rgba(17, 28, 48, 0.06);
-    }
-  }
-}
-
-.contacts-action-btns {
   display: flex;
   align-items: center;
   gap: 8px;

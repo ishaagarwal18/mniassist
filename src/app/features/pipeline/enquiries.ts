@@ -19,12 +19,27 @@ import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
 import { inrCompact } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { LanguageService } from '../../core/i18n/language.service';
-import { ArButton, ArChip, ArDialog, ArIcon } from '../../ui';
+import { ArButton, ArDialog, ArIcon } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ArEnquiryDrawer } from './enquiry-drawer';
 import { ArContactPicker } from './contact-picker';
 import { ToastService } from '../../core/ui/toast.service';
 import { withOptionNames } from '../../core/pick-lists/option-names';
+import { L10n } from '@syncfusion/ej2-base';
+
+// Configure professional CRM terminology for empty pipeline stages
+L10n.load({
+  'en-US': {
+    kanban: {
+      noCard: 'No active opportunities',
+    },
+  },
+  en: {
+    kanban: {
+      noCard: 'No active opportunities',
+    },
+  },
+});
 
 // Syncfusion checks the licence in each component's constructor, before ours runs.
 registerSyncfusionLicense();
@@ -45,7 +60,6 @@ const columnKey = (stageId: string | undefined, stage: string) => stageId ?? sta
     ArTopbar,
     ArButton,
     ArIcon,
-    ArChip,
     ArDialog,
     ArEnquiryDrawer,
     ArContactPicker,
@@ -105,6 +119,36 @@ export class ArEnquiries {
 
   constructor() {
     ensureSyncfusionTheme('kanban');
+  }
+
+  protected getInitials(name?: string): string {
+    if (!name) return 'EN';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  protected colCount(key: string): number {
+    const col = this.board().find((c) => columnKey(c.stageId, c.stage) === key);
+    return col?.count ?? 0;
+  }
+
+  protected colValue(key: string): string {
+    const col = this.board().find((c) => columnKey(c.stageId, c.stage) === key);
+    return col ? this.value(col.valueInPaise) : '—';
+  }
+
+  protected stageTheme(key: string): string {
+    const col = this.board().find((c) => columnKey(c.stageId, c.stage) === key);
+    const s = ((col?.label || col?.stage) ?? '').toLowerCase();
+    if (s.includes('qualif')) return 'qualified';
+    if (s.includes('quote')) return 'quoted';
+    if (s.includes('negot')) return 'negotiation';
+    if (s.includes('site') || s.includes('visit')) return 'site-visit';
+    if (s.includes('new') || s.includes('lead')) return 'new';
+    return 'default';
   }
 
   protected columnMeta(key: string): string {
