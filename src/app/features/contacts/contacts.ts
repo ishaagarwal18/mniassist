@@ -1,5 +1,7 @@
 import { ContactExportService } from '../../proxy/contacts/contact-export.service';
 import { PermissionService } from '@abp/ng.core';
+import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -16,7 +18,6 @@ import { ConsentSource, Contact, Segment } from '../../core/models/contact.model
 import { DecisionRole } from '../../proxy/contacts';
 import { count } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
-import { ArAvatar } from '../../ui/avatar';
 import { ArButton } from '../../ui/button';
 import { ArChip, ChipTone } from '../../ui/chip';
 import { ArDialog } from '../../ui/dialog';
@@ -107,7 +108,6 @@ const EMPTY_FORM: ContactForm = {
     ArTopbar,
     ArSearchBox,
     ArChip,
-    ArAvatar,
     ArButton,
     ArSendReorderLink,
     ArSelect,
@@ -117,6 +117,8 @@ const EMPTY_FORM: ContactForm = {
     ArContactImport,
     ArContactDialog,
     RouterLink,
+    DatePipe,
+    FormsModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './contacts.html',
@@ -199,6 +201,57 @@ export class ArContacts {
   protected readonly activeSegment = signal('amc60');
   protected readonly query = signal('');
 
+  // Advanced Filters
+  protected readonly roleFilter = signal('');
+  protected readonly consentFilter = signal('');
+  protected readonly amcFilter = signal('');
+  protected readonly scoreFilter = signal('');
+  protected readonly filterDrawerOpen = signal(false);
+
+  // Quick Preview Drawer
+  protected readonly previewDrawerOpen = signal(false);
+  protected readonly previewContact = signal<Contact | null>(null);
+
+  protected readonly activeFilterCount = computed(() => {
+    let cnt = 0;
+    if (this.roleFilter()) cnt++;
+    if (this.consentFilter()) cnt++;
+    if (this.amcFilter()) cnt++;
+    if (this.scoreFilter()) cnt++;
+    if (this.accountId()) cnt++;
+    return cnt;
+  });
+
+  protected clearAdvancedFilters(): void {
+    this.roleFilter.set('');
+    this.consentFilter.set('');
+    this.amcFilter.set('');
+    this.scoreFilter.set('');
+    this.chooseAccount('');
+  }
+
+  protected openPreview(contactId: string): void {
+    const found = this.store.contacts().find((c) => c.id === contactId);
+    if (found) {
+      this.previewContact.set(found);
+      this.previewDrawerOpen.set(true);
+    }
+  }
+
+  protected closePreview(): void {
+    this.previewDrawerOpen.set(false);
+    this.previewContact.set(null);
+  }
+
+  protected getInitials(name: string): string {
+    if (!name) return 'C';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
   /** Accounts to filter by, in tree order, so a plant reads as belonging to its company. */
   protected readonly accountRows = this.accountStore.rows;
   /** Every account, by name, for the contact dialog's picker (the Accounts screen's search doesn't narrow it). */
@@ -222,8 +275,21 @@ export class ArContacts {
   }
 
   protected readonly totalContacts = computed(
-    () => this.segments().find((s) => s.id === 'all')?.count ?? 0,
+    () => this.segments().find((s) => s.id === 'all')?.count ?? this.store.contacts().length,
   );
+
+  protected readonly totalCompanies = computed(() => {
+    const set = new Set<string>();
+    for (const c of this.store.contacts()) {
+      if (c.company) set.add(c.company.trim().toLowerCase());
+      else if (c.stored?.companyName) set.add(c.stored.companyName.trim().toLowerCase());
+    }
+    return Math.max(set.size, this.accountStore.all().length);
+  });
+
+  protected readonly recentlyActiveCount = computed(() => {
+    return this.store.contacts().filter((c) => c.lastActivity && c.lastActivity !== '—').length;
+  });
 
   protected readonly suppressedTotal = computed(() =>
     this.suppression().reduce((n, s) => n + s.count, 0),
@@ -239,14 +305,49 @@ export class ArContacts {
 
   protected readonly visible = computed(() => {
     const q = this.query().trim().toLowerCase();
-    const all = this.store.contacts();
-    if (!q) return all;
-    return all.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.company.toLowerCase().includes(q) ||
-        c.phoneE164.includes(q),
-    );
+    const role = this.roleFilter();
+    const consent = this.consentFilter();
+    const amc = this.amcFilter();
+    const scoreVal = this.scoreFilter();
+
+    let list = this.store.contacts();
+
+    if (q) {
+      list = list.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.company.toLowerCase().includes(q) ||
+          c.phoneE164.includes(q) ||
+          (c.stored?.city && c.stored.city.toLowerCase().includes(q)),
+      );
+    }
+
+    if (role) {
+      list = list.filter((c) => c.attributes.decisionRole === role);
+    }
+
+    if (consent) {
+      list = list.filter((c) => c.consent.source === consent);
+    }
+
+    if (amc === 'active') {
+      list = list.filter((c) => !!c.amcExpiry && c.amcExpiry !== '—');
+    } else if (amc === 'none') {
+      list = list.filter((c) => !c.amcExpiry || c.amcExpiry === '—');
+    }
+
+    if (scoreVal) {
+      const sMin = Number(scoreVal);
+      if (sMin === 60) {
+        list = list.filter((c) => (c.score ?? 0) >= 60);
+      } else if (sMin === 25) {
+        list = list.filter((c) => (c.score ?? 0) >= 25 && (c.score ?? 0) < 60);
+      } else if (sMin === 0) {
+        list = list.filter((c) => (c.score ?? 0) < 25);
+      }
+    }
+
+    return list;
   });
 
   /** Grid rows: every column a plain value, so sorting, filtering and export see what is shown. */
