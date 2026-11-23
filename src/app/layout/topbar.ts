@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   HostListener,
   Injector,
   computed,
@@ -14,9 +13,10 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, map, of } from 'rxjs';
 import { ArIcon } from '../ui/icon';
+import { ArBrand } from './brand';
+import { BrandingStore } from '../core/services/branding.store';
 import { NavDrawer } from './nav-drawer';
 import { SubNavService } from './sub-nav.service';
-import { ArSubNav } from './sub-nav';
 import { LanguageService } from '../core/i18n/language.service';
 import { PageContextService } from './page-context.service';
 import { resolveNavTrail } from './nav-trail.logic';
@@ -36,7 +36,7 @@ import { pathOf } from './cockpit-origin.logic';
  */
 @Component({
   selector: 'ar-topbar',
-  imports: [ArIcon, RouterLink, ArSubNav],
+  imports: [ArIcon, RouterLink, ArBrand],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[class.tb--under-strip]': 'underStrip()' },
   template: `
@@ -49,6 +49,13 @@ import { pathOf } from './cockpit-origin.logic';
     >
       <ar-icon name="menu" [size]="18" />
     </button>
+    <ar-brand
+      class="tb__brand"
+      size="sm"
+      destination="/home"
+      iconOnly
+      [logoSrc]="branding.logoDataUrl()"
+    />
     <div class="tb__titles">
       <div class="tb__title-row">
         <nav class="tb__breadcrumb" aria-label="Breadcrumb">
@@ -163,9 +170,6 @@ import { pathOf } from './cockpit-origin.logic';
         <p class="tb__sub">{{ subtitle() }}</p>
       }
     </div>
-    @if (underStrip()) {
-      <ar-sub-nav [inline]="true" />
-    }
     <div class="tb__actions"><ng-content /></div>
     <button
       type="button"
@@ -212,6 +216,10 @@ import { pathOf } from './cockpit-origin.logic';
         margin-right: auto;
       }
     }
+    .tb__brand {
+      display: none;
+      flex: none;
+    }
     .tb__menu {
       display: none;
       flex: none;
@@ -256,6 +264,16 @@ import { pathOf } from './cockpit-origin.logic';
       }
       .tb__menu {
         display: grid;
+      }
+      .tb__brand {
+        display: block;
+        order: -3;
+      }
+      .tb__menu {
+        order: -4;
+      }
+      :host(.tb--under-strip) .tb__brand {
+        display: none;
       }
       .tb__util-btn {
         display: grid;
@@ -481,6 +499,7 @@ export class ArTopbar {
   private readonly subNav = inject(SubNavService);
   protected readonly underStrip = computed(() => (this.subNav.group()?.items.length ?? 0) > 0);
   protected readonly pageContext = inject(PageContextService);
+  protected readonly branding = inject(BrandingStore);
   protected readonly i18n = inject(LanguageService);
   private readonly router = inject(Router, { optional: true });
   private readonly permissions = inject(PermissionService, { optional: true });
@@ -577,8 +596,6 @@ export class ArTopbar {
   protected readonly activeItemRoute = computed(() => this.trail().activeItem?.route ?? null);
 
   constructor() {
-    this.subNav.inlineHosts.update((n) => n + 1);
-    inject(DestroyRef).onDestroy(() => this.subNav.inlineHosts.update((n) => n - 1));
     effect(() => {
       this.pageContext.setContext(this.title(), this.subtitle(), this.help());
     });
