@@ -9,8 +9,9 @@ import {
   inject,
   signal,
   viewChild,
+  ViewChild,
 } from '@angular/core';
-import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { GridComponent, GridModule } from '@syncfusion/ej2-angular-grids';
 import { grantedPolicy } from '../../core/auth/permission';
 import { AccountStore } from '../../core/services/account.store';
 import { ContactService } from '../../core/services/contact.service';
@@ -198,8 +199,129 @@ export class ArContacts {
     // Consent may have changed in Customer 360 while this singleton store remained alive.
     this.store.reload();
   }
+  @ViewChild('gridComp') protected gridComp?: GridComponent;
+
   protected readonly activeSegment = signal('amc60');
   protected readonly query = signal('');
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  protected onSearchInput(val: string): void {
+    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
+    this.searchDebounceTimer = setTimeout(() => {
+      this.query.set(val);
+    }, 250);
+  }
+
+  // Bulk Selection
+  protected readonly selectedIds = signal<Set<string>>(new Set<string>());
+
+  protected readonly isSelected = (id: string): boolean => this.selectedIds().has(id);
+
+  protected readonly isAllSelected = computed(() => {
+    const list = this.rows();
+    return list.length > 0 && list.every((r) => this.selectedIds().has(r.id));
+  });
+
+  protected readonly isPartiallySelected = computed(() => {
+    const count = this.selectedIds().size;
+    const total = this.rows().length;
+    return count > 0 && count < total;
+  });
+
+  protected readonly selectedCount = computed(() => this.selectedIds().size);
+
+  protected toggleSelect(id: string): void {
+    const next = new Set(this.selectedIds());
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    this.selectedIds.set(next);
+  }
+
+  protected toggleSelectAll(checked: boolean): void {
+    if (checked) {
+      this.selectedIds.set(new Set(this.rows().map((r) => r.id)));
+    } else {
+      this.selectedIds.set(new Set<string>());
+    }
+  }
+
+  protected clearSelection(): void {
+    this.selectedIds.set(new Set<string>());
+  }
+
+  protected async bulkDelete(): Promise<void> {
+    const ids = Array.from(this.selectedIds());
+    if (ids.length === 0) return;
+    if (
+      !(await this.dialogs.delete(
+        `${ids.length} contacts`,
+        `${ids.length} selected contacts`,
+        'Their conversation history and any open enquiries will remain.',
+      ))
+    ) {
+      return;
+    }
+    for (const id of ids) {
+      try {
+        await this.store.delete(id);
+      } catch {
+        // continue best-effort
+      }
+    }
+    this.toasts.info(`Removed ${ids.length} contacts.`, 'Contacts');
+    this.clearSelection();
+  }
+
+  protected exportSelectedCsv(): void {
+    const selected = this.rows().filter((r) => this.selectedIds().has(r.id));
+    if (selected.length === 0) return;
+    const headers = [
+      'Name',
+      'Phone',
+      'Company',
+      'Plant Location',
+      'Role',
+      'Systems',
+      'AMC Expiry',
+      'Consent',
+      'Score',
+      'Last Activity',
+    ];
+    const lines = [
+      headers.join(','),
+      ...selected.map((r) =>
+        [
+          `"${(r.name || '').replace(/"/g, '""')}"`,
+          `"${(r.phone || '').replace(/"/g, '""')}"`,
+          `"${(r.company || '').replace(/"/g, '""')}"`,
+          `"${(r.plantLocation || '').replace(/"/g, '""')}"`,
+          `"${(r.role || '').replace(/"/g, '""')}"`,
+          `"${(r.systems || '').replace(/"/g, '""')}"`,
+          `"${(r.amcExpiry || '').replace(/"/g, '""')}"`,
+          `"${(r.consent || '').replace(/"/g, '""')}"`,
+          r.score ?? '',
+          `"${(r.lastActivity || '').replace(/"/g, '""')}"`,
+        ].join(','),
+      ),
+    ];
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `contacts_selection_${selected.length}_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    this.toasts.success(`Exported ${selected.length} selected contacts.`, 'Export');
+  }
+
+  protected openColumnChooser(): void {
+    if (this.gridComp) {
+      this.gridComp.openColumnChooser(160, 120);
+    }
+  }
 
   // Advanced Filters
   protected readonly roleFilter = signal('');
@@ -299,6 +421,12 @@ export class ArContacts {
    *  rows shown beside it. */
   protected readonly consentedTotal = computed(() => this.totalContacts() - this.suppressedTotal());
 
+  protected readonly consentRate = computed(() => {
+    const total = this.totalContacts();
+    if (!total) return 0;
+    return Math.round((this.consentedTotal() / total) * 100);
+  });
+
   protected readonly segmentCount = computed(
     () => this.segments().find((s) => s.id === this.activeSegment())?.count ?? 0,
   );
@@ -355,14 +483,19 @@ export class ArContacts {
     this.visible().map((c) => ({
       id: c.id,
       name: c.name,
-      company: c.company,
-      role: c.attributes.decisionRole ?? '—',
+      phone: c.phoneE164 ? '+' + c.phoneE164 : '',
+      company: c.company || '',
+      plantLocation: c.stored?.city
+        ? c.stored.city + (c.stored.state ? ', ' + c.stored.state : '')
+        : c.attributes.plantLocation || '',
+      role: c.attributes.decisionRole ?? '',
       systems: this.systems(c),
-      amcExpiry: c.amcExpiry ?? '—',
+      amcExpiry: c.amcExpiry && c.amcExpiry !== '—' ? c.amcExpiry : '',
       consent: this.consentLabel(c),
       consentTone: this.consentTone(c),
       score: c.score,
-      lastActivity: c.lastActivity,
+      lastActivity: c.lastActivity && c.lastActivity !== '—' ? c.lastActivity : '',
+      raw: c,
     })),
   );
 
