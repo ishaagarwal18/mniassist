@@ -17,10 +17,14 @@
       </select>
     </div>
     @if (canManage()) {
-      <button ar-button type="button" variant="ghost" (click)="managePipelines()">Pipelines</button>
+      <button ar-button type="button" variant="ghost" class="board__pipes" (click)="managePipelines()">
+        Pipelines
+      </button>
     }
     @if (canCreate()) {
-      <a ar-button variant="primary" icon="plus" [routerLink]="['/enquiries/new']"> New enquiry </a>
+      <a ar-button variant="primary" icon="plus" class="board__new" [routerLink]="['/enquiries/new']">
+        New enquiry
+      </a>
     }
   </div>
 </ar-topbar>
@@ -178,13 +182,15 @@
       </div>
       @if (next(c.card); as n) {
         <button
-          ar-button
           type="button"
-          variant="ghost"
-          class="card__advance-btn"
+          class="card__advance"
+          [attr.aria-label]="i18n.t('Move to {0}', i18n.t(n.label))"
+          [title]="i18n.t('Move to {0}', i18n.t(n.label))"
           (click)="advance(c.card, $event)"
         >
-          Advance → {{ n.label }}
+          <span class="card__advance-k">Move to</span>
+          <span class="card__advance-stage">{{ n.label }}</span>
+          <ar-icon name="chevron" [size]="13" />
         </button>
       }
     </article>

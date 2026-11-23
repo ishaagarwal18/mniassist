@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   HostListener,
   Injector,
   computed,
@@ -14,6 +15,8 @@ import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, map, of } from 'rxjs';
 import { ArIcon } from '../ui/icon';
 import { NavDrawer } from './nav-drawer';
+import { SubNavService } from './sub-nav.service';
+import { ArSubNav } from './sub-nav';
 import { LanguageService } from '../core/i18n/language.service';
 import { PageContextService } from './page-context.service';
 import { resolveNavTrail } from './nav-trail.logic';
@@ -33,8 +36,9 @@ import { pathOf } from './cockpit-origin.logic';
  */
 @Component({
   selector: 'ar-topbar',
-  imports: [ArIcon, RouterLink],
+  imports: [ArIcon, RouterLink, ArSubNav],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[class.tb--under-strip]': 'underStrip()' },
   template: `
     <button
       type="button"
@@ -76,8 +80,8 @@ import { pathOf } from './cockpit-origin.logic';
           } @else if (groupHeading(); as g) {
             @if (g.toLowerCase() !== title().toLowerCase()) {
               <div class="tb__crumb-group-wrap">
-                @if (sidebarCollapsed()) {
-                  <!-- COLLAPSED SIDEBAR: Interactive Dropdown Switcher -->
+                @if (sidebarCollapsed() && !underStrip()) {
+                  <!-- COLLAPSED SIDEBAR, no tab strip: Interactive Dropdown Switcher -->
                   <button
                     type="button"
                     class="tb__crumb-dropdown-btn"
@@ -159,6 +163,9 @@ import { pathOf } from './cockpit-origin.logic';
         <p class="tb__sub">{{ subtitle() }}</p>
       }
     </div>
+    @if (underStrip()) {
+      <ar-sub-nav [inline]="true" />
+    }
     <div class="tb__actions"><ng-content /></div>
     <button
       type="button"
@@ -174,19 +181,36 @@ import { pathOf } from './cockpit-origin.logic';
     :host {
       position: relative;
       z-index: 900;
-      height: 56px;
+      min-height: 56px;
       flex: none;
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 16px;
-      padding: 0 22px;
+      gap: 6px 16px;
+      padding: 8px 22px;
       background: var(--ar-header-bg);
-      backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--ar-line-200);
     }
+    /* The title keeps a readable width; when the actions don't fit beside it they wrap under it. */
     .tb__titles {
-      flex: 1;
+      flex: 0 1 auto;
       min-width: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      column-gap: 14px;
+    }
+    /* Narrower screens: the action buttons join the bar's own rows, so a page can keep its main
+       button on the title's line and put filters on the next one. */
+    @media (max-width: 1280px) {
+      :host .tb__actions {
+        display: contents;
+      }
+      /* Buttons sit at the right of the title's line; anything that wraps starts the next line. */
+      :host .tb__titles {
+        order: -2;
+        margin-right: auto;
+      }
     }
     .tb__menu {
       display: none;
@@ -236,6 +260,11 @@ import { pathOf } from './cockpit-origin.logic';
       .tb__util-btn {
         display: grid;
         order: 2;
+      }
+      /* The section's tab strip above carries these two buttons instead. */
+      :host(.tb--under-strip) .tb__menu,
+      :host(.tb--under-strip) .tb__util-btn {
+        display: none;
       }
       .tb__actions {
         order: 3;
@@ -437,15 +466,20 @@ import { pathOf } from './cockpit-origin.logic';
       text-overflow: ellipsis;
     }
     .tb__actions {
+      margin-left: auto;
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 10px;
       flex-shrink: 0;
+      max-width: 100%;
     }
   `,
 })
 export class ArTopbar {
   protected readonly drawer = inject(NavDrawer);
+  private readonly subNav = inject(SubNavService);
+  protected readonly underStrip = computed(() => (this.subNav.group()?.items.length ?? 0) > 0);
   protected readonly pageContext = inject(PageContextService);
   protected readonly i18n = inject(LanguageService);
   private readonly router = inject(Router, { optional: true });
@@ -543,6 +577,8 @@ export class ArTopbar {
   protected readonly activeItemRoute = computed(() => this.trail().activeItem?.route ?? null);
 
   constructor() {
+    this.subNav.inlineHosts.update((n) => n + 1);
+    inject(DestroyRef).onDestroy(() => this.subNav.inlineHosts.update((n) => n - 1));
     effect(() => {
       this.pageContext.setContext(this.title(), this.subtitle(), this.help());
     });

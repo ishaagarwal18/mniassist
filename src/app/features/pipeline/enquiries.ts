@@ -18,7 +18,8 @@ import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
 import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
 import { inrCompact } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip, ArDialog } from '../../ui';
+import { LanguageService } from '../../core/i18n/language.service';
+import { ArButton, ArChip, ArDialog, ArIcon } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ArEnquiryDrawer } from './enquiry-drawer';
 import { ArContactPicker } from './contact-picker';
@@ -43,6 +44,7 @@ const columnKey = (stageId: string | undefined, stage: string) => stageId ?? sta
   imports: [
     ArTopbar,
     ArButton,
+    ArIcon,
     ArChip,
     ArDialog,
     ArEnquiryDrawer,
@@ -56,6 +58,7 @@ const columnKey = (stageId: string | undefined, stage: string) => stageId ?? sta
   styleUrl: './enquiries.scss',
 })
 export class ArEnquiries {
+  protected readonly i18n = inject(LanguageService);
   private readonly permissions = inject(PermissionService);
   protected readonly canViewAll = grantedPolicy('AutoReach.Pipeline.ViewAll', this.permissions);
   private readonly toasts = inject(ToastService);

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { CurrentUserService } from '../core/services/current-user.service';
+import { ToastService } from '../core/ui/toast.service';
 import { ArIcon } from '../ui/icon';
 import { PageContextService } from './page-context.service';
 import { tipFor } from './screen-tip.logic';
@@ -50,6 +51,7 @@ export class ArScreenTip {
   private readonly page = inject(PageContextService);
   private readonly account = inject(CurrentUserService);
   private readonly tips = inject(ScreenTipStore);
+  private readonly toasts = inject(ToastService);
 
   /** Hidden while the help panel is open: the full help is already on screen. */
   protected readonly tip = computed(() =>
@@ -70,6 +72,11 @@ export class ArScreenTip {
   /** Off until turned on again from the help panel (? in the right bar). */
   protected turnOff(): void {
     this.tips.turnOff();
+    // The card vanishes, so say where the switch to bring it back is.
+    this.toasts.info(
+      'Turn them back on any time from Help (?) in the right-hand bar.',
+      'Tips are off',
+    );
   }
 
   protected openHelp(event: Event, id: string): void {

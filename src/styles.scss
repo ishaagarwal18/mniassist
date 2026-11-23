@@ -946,3 +946,30 @@ label:has(> :is(input, select, textarea):required):not(:has([class*='req']))
   color: var(--ar-bad-600, #b42318);
   font-weight: 600;
 }
+
+/*
+ * Every screen's header below 1280px: buttons stay on the title's line, and pickers and filters
+ * (selects, search boxes, period pickers, toggles) take the line under it. A lone wrapper box
+ * around a screen's actions is unwrapped so its contents follow the same rule.
+ */
+@media (max-width: 1280px) {
+  ar-topbar .tb__actions > div:only-child {
+    display: contents;
+  }
+  /* The screen's main action comes first, straight after the title. */
+  ar-topbar .tb__actions .ar-btn--primary {
+    order: -1;
+  }
+  ar-topbar .tb__actions select,
+  ar-topbar .tb__actions .e-input-group,
+  ar-topbar .tb__actions input,
+  ar-topbar .tb__actions label,
+  ar-topbar .tb__actions ar-period-picker {
+    order: 2;
+  }
+  /* Only the header's own items move; the parts inside a picker keep their places. */
+  ar-topbar .tb__actions .e-input-group > *,
+  ar-topbar .tb__actions label > * {
+    order: 0;
+  }
+}
