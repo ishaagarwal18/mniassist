@@ -114,6 +114,16 @@ import { ScreenTipStore } from './screen-tip.store';
           </button>
         </div>
 
+        <!-- "Don't show tips" on a screen tip is undone here. -->
+        <label class="rsb__help-tips-toggle">
+          <input
+            type="checkbox"
+            [checked]="!screenTips.state().off"
+            (change)="toggleScreenTips($any($event.target).checked)"
+          />
+          {{ i18n.t('Show “New to this screen?” tips') }}
+        </label>
+
         @if (topic(); as t) {
           <p class="rsb__help-label">{{ i18n.t('What it does') }}</p>
           <p class="rsb__help-body">{{ summary() }}</p>
@@ -190,15 +200,6 @@ import { ScreenTipStore } from './screen-tip.store';
             }}
           </p>
         }
-        <!-- "Don't show tips" on a screen tip is undone here. -->
-        <label class="rsb__help-tips-toggle">
-          <input
-            type="checkbox"
-            [checked]="!screenTips.state().off"
-            (change)="toggleScreenTips($any($event.target).checked)"
-          />
-          {{ i18n.t('Show “New to this screen?” tips') }}
-        </label>
       </div>
     }
 

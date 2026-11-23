@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { grantedPolicy } from '../../core/auth/permission';
 import { checkPolicy } from '../../core/auth/permission';
 import { EXTERNAL_LOGIN_CALLBACK } from '../../core/auth/external-login';
@@ -8,7 +9,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SettingsStore } from '../../core/services/settings.service';
 import { SessionStore } from '../../core/services/session.store';
 import { ArTopbar } from '../../layout/topbar';
-import { ArBanner, ArButton, ArCard, ArChip, ArIcon, ArTabs } from '../../ui';
+import { ArBanner, ArButton, ArCard, ArChip, ArIcon } from '../../ui';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { PermissionService } from '@abp/ng.core';
 import { showsInMenu } from '../../core/auth/nav-access.guard';
@@ -74,7 +75,7 @@ export interface SettingDirectoryItem {
     ArBanner,
     ArCard,
     ArChip,
-    ArTabs,
+    NgTemplateOutlet,
     ArIcon,
     ArTwoFactorCard,
     ArSignInHistoryCard,
@@ -792,6 +793,12 @@ export class ArSettings {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
+  }
+
+  /** A category's icon in the left list: the icon of its first setting. */
+  protected categoryIcon(cat: SettingsCategory): IconName {
+    if (cat === 'All') return 'settings';
+    return this.authorizedSettings().find((i) => i.category === cat)?.icon ?? 'settings';
   }
 
   protected setCategory(cat: SettingsCategory): void {

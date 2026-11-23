@@ -1,31 +1,52 @@
 <ar-topbar
   title="Contacts"
-  [subtitle]="
-    count(totalContacts()) + ' contacts · ' + count(consentedTotal()) + ' with marketing consent'
-  "
+  subtitle="Manage individual contacts, roles, marketing consent and customer scores in one place."
   help="Your full customer list. Consent is shown with both a label and a colour — an imported list is flagged as the weakest evidence you have that someone agreed to be messaged."
 >
-  @if (canExport()) {
-    <button
-      ar-button
-      type="button"
-      variant="ghost"
-      icon="download"
-      [disabled]="exporting()"
-      title="Prepare a file of every contact (matching the search). You are notified when it is ready."
-      (click)="requestExport()"
-    >
-      {{ exporting() ? 'Starting…' : 'Export all' }}
-    </button>
-  }
-  @if (canImport()) {
-    <button ar-button type="button" variant="ghost" icon="upload" (click)="importOpen.set(true)">
-      Import
-    </button>
-  }
-  @if (canCreate()) {
-    <a ar-button variant="primary" icon="plus" [routerLink]="['/contacts/new']"> New contact </a>
-  }
+  <div actions class="contacts-topbar-actions">
+    <nav class="contacts-nav-pills" aria-label="Customer directory navigation">
+      <a ar-button variant="ghost" class="nav-pill" routerLink="/contacts/360">
+        <ar-icon name="user" [size]="14" />
+        <span>Customer overview</span>
+      </a>
+      <a ar-button variant="ghost" class="nav-pill" routerLink="/contacts/accounts">
+        <ar-icon name="accounts" [size]="14" />
+        <span>Accounts</span>
+      </a>
+      <a ar-button variant="primary" class="nav-pill nav-pill--active" routerLink="/contacts">
+        <ar-icon name="contacts" [size]="14" />
+        <span>Contacts</span>
+      </a>
+    </nav>
+
+    <div class="contacts-action-btns">
+      @if (canExport()) {
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="exporting()"
+          title="Prepare a file of every contact (matching the search). You are notified when it is ready."
+          (click)="requestExport()"
+        >
+          <ar-icon name="download" [size]="14" />
+          <span>{{ exporting() ? 'Starting…' : 'Export all' }}</span>
+        </button>
+      }
+      @if (canImport()) {
+        <button ar-button type="button" variant="ghost" (click)="importOpen.set(true)">
+          <ar-icon name="upload" [size]="14" />
+          <span>Import</span>
+        </button>
+      }
+      @if (canCreate()) {
+        <a ar-button variant="primary" [routerLink]="['/contacts/new']">
+          <ar-icon name="plus" [size]="14" />
+          <span>New contact</span>
+        </a>
+      }
+    </div>
+  </div>
 </ar-topbar>
 
 @if (importOpen()) {
@@ -39,6 +60,7 @@
 />
 
 <div class="contacts">
+  <!-- Left Side: Segments & Suppression Filter Pane -->
   <nav class="segs" [class.segs--collapsed]="segsCollapsed()" aria-label="Segments">
     <div class="segs__top">
       @if (!segsCollapsed()) {
@@ -90,9 +112,9 @@
       <hr class="segs__rule" />
       <p class="ar-label segs__head">Suppressed</p>
       @if (suppressionLoading()) {
-        <p role="status">Loading…</p>
+        <p role="status" class="segs__loading">Loading…</p>
       } @else if (suppressionError()) {
-        <p role="alert">Could not load suppression counts.</p>
+        <p role="alert" class="segs__err">Could not load suppression counts.</p>
         <button ar-button type="button" variant="ghost" (click)="retry()">Try again</button>
       } @else {
         <div class="segs__list">
@@ -175,62 +197,186 @@
     }
   </nav>
 
+  <!-- Main Contacts Table Pane -->
   <section class="table-pane">
-    <div class="table-pane__bar">
-      <ar-search-box
-        class="table-pane__search"
-        [(query)]="query"
-        placeholder="Search by name, company or phone"
-      />
-      <select
-        class="ar-field__input table-pane__account"
-        aria-label="Filter by company account"
-        (change)="chooseAccount($any($event.target).value)"
-      >
-        <option value="" [selected]="!accountId()">All accounts</option>
-        @for (row of accountRows(); track row.account.id) {
-          <option [value]="row.account.id" [selected]="row.account.id === accountId()">
-            {{ '\u2003'.repeat(row.depth - 1) }}{{ row.account.name }}
-          </option>
-        }
-      </select>
-      @if (accountId() && chosenAccountHasChildren()) {
-        <label class="table-pane__subs">
-          <input
-            type="checkbox"
-            [checked]="includeSubsidiaries()"
-            (change)="includeSubsidiaries.set($any($event.target).checked)"
-          />
-          Include subsidiaries
-        </label>
-      }
-      <button
-        ar-button
-        type="button"
-        variant="ghost"
-        icon="filter"
-        [attr.aria-pressed]="filterRow()"
-        [title]="
-          filterRow()
-            ? 'Hide the filter row and clear column filters'
-            : 'Show a filter box under each column'
-        "
-        (click)="toggleFilterRow()"
-      >
-        {{ filterRow() ? 'Hide filters' : 'Filter' }}
-      </button>
+    <!-- Executive Summary Section (4 Metric Cards) -->
+    <div class="contacts-stats" aria-label="Contacts Summary Metrics">
+      <div class="cstat-card">
+        <div class="cstat-card__icon cstat-card__icon--blue">
+          <ar-icon name="contacts" [size]="20" />
+        </div>
+        <div class="cstat-card__content">
+          <span class="cstat-card__label">Total Contacts</span>
+          <span class="cstat-card__value">{{ totalContacts().toLocaleString() }}</span>
+          <span class="cstat-card__desc">Active directory records</span>
+        </div>
+      </div>
+
+      <div class="cstat-card">
+        <div class="cstat-card__icon cstat-card__icon--teal">
+          <ar-icon name="accounts" [size]="20" />
+        </div>
+        <div class="cstat-card__content">
+          <span class="cstat-card__label">Client Companies</span>
+          <span class="cstat-card__value">{{ totalCompanies().toLocaleString() }}</span>
+          <span class="cstat-card__desc">Accounts & manufacturing plants</span>
+        </div>
+      </div>
+
+      <div class="cstat-card">
+        <div class="cstat-card__icon cstat-card__icon--emerald">
+          <ar-icon name="shield" [size]="20" />
+        </div>
+        <div class="cstat-card__content">
+          <span class="cstat-card__label">Marketing Consent</span>
+          <span class="cstat-card__value">{{ consentedTotal().toLocaleString() }}</span>
+          <span class="cstat-card__desc">Opted-in for communications</span>
+        </div>
+      </div>
+
+      <div class="cstat-card">
+        <div class="cstat-card__icon cstat-card__icon--purple">
+          <ar-icon name="clock" [size]="20" />
+        </div>
+        <div class="cstat-card__content">
+          <span class="cstat-card__label">Recently Active</span>
+          <span class="cstat-card__value">{{ recentlyActiveCount().toLocaleString() }}</span>
+          <span class="cstat-card__desc">Interacted within recent cycle</span>
+        </div>
+      </div>
     </div>
 
+    <!-- Search & Filter Controls Toolbar -->
+    <div class="table-pane__bar">
+      <div class="table-search-wrap">
+        <ar-search-box
+          class="table-pane__search"
+          [(query)]="query"
+          placeholder="Search by name, company, city or phone…"
+        />
+      </div>
+
+      <div class="table-filters-group">
+        <select
+          class="contacts-select table-pane__account"
+          aria-label="Filter by company account"
+          (change)="chooseAccount($any($event.target).value)"
+        >
+          <option value="" [selected]="!accountId()">All accounts</option>
+          @for (row of accountRows(); track row.account.id) {
+            <option [value]="row.account.id" [selected]="row.account.id === accountId()">
+              {{ '\u2003'.repeat(row.depth - 1) }}{{ row.account.name }}
+            </option>
+          }
+        </select>
+
+        @if (accountId() && chosenAccountHasChildren()) {
+          <label class="table-pane__subs">
+            <input
+              type="checkbox"
+              [checked]="includeSubsidiaries()"
+              (change)="includeSubsidiaries.set($any($event.target).checked)"
+            />
+            <span>Include subsidiaries</span>
+          </label>
+        }
+
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          class="btn-advanced-filter"
+          [class.btn-advanced-filter--active]="activeFilterCount() > 0"
+          (click)="filterDrawerOpen.set(true)"
+          title="Open advanced filter drawer"
+        >
+          <ar-icon name="filter" [size]="14" />
+          <span>Filter</span>
+          @if (activeFilterCount() > 0) {
+            <span class="filter-badge">{{ activeFilterCount() }}</span>
+          }
+        </button>
+
+        @if (activeFilterCount() > 0) {
+          <button
+            type="button"
+            class="btn-clear-all-filters"
+            (click)="clearAdvancedFilters()"
+            title="Reset all active filters"
+          >
+            Clear all
+          </button>
+        }
+
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [attr.aria-pressed]="filterRow()"
+          [title]="
+            filterRow()
+              ? 'Hide the filter row and clear column filters'
+              : 'Show a filter box under each column'
+          "
+          (click)="toggleFilterRow()"
+        >
+          <ar-icon name="filter" [size]="14" />
+          <span>{{ filterRow() ? 'Hide columns' : 'Columns' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Filter Chips Bar (When advanced filters are applied) -->
+    @if (activeFilterCount() > 0) {
+      <div class="active-filters-bar">
+        <span class="active-filters-label">Active filters:</span>
+        @if (roleFilter(); as r) {
+          <span class="filter-tag">
+            Role: <strong>{{ r }}</strong>
+            <button type="button" (click)="roleFilter.set('')" aria-label="Remove role filter">×</button>
+          </span>
+        }
+        @if (consentFilter(); as c) {
+          <span class="filter-tag">
+            Consent: <strong>{{ c }}</strong>
+            <button type="button" (click)="consentFilter.set('')" aria-label="Remove consent filter">×</button>
+          </span>
+        }
+        @if (amcFilter(); as a) {
+          <span class="filter-tag">
+            AMC: <strong>{{ a === 'active' ? 'Active Contract' : 'No Contract' }}</strong>
+            <button type="button" (click)="amcFilter.set('')" aria-label="Remove AMC filter">×</button>
+          </span>
+        }
+        @if (scoreFilter(); as s) {
+          <span class="filter-tag">
+            Score: <strong>{{ s === '60' ? 'High (60+)' : s === '25' ? 'Medium (25-59)' : 'Low (<25)' }}</strong>
+            <button type="button" (click)="scoreFilter.set('')" aria-label="Remove score filter">×</button>
+          </span>
+        }
+        @if (accountId()) {
+          <span class="filter-tag">
+            Account: <strong>Selected</strong>
+            <button type="button" (click)="chooseAccount('')" aria-label="Remove account filter">×</button>
+          </span>
+        }
+      </div>
+    }
+
+    <!-- Table Body -->
     <div class="table-pane__body ar-scroll" [attr.aria-busy]="loading()">
       @if (loading()) {
         <div class="contacts-loading" role="status">
           <span class="contacts-loading__spinner" aria-hidden="true"></span>
-          Loading contacts…
+          <span>Loading customer contacts…</span>
         </div>
       } @else if (loadError()) {
-        <p role="alert">Could not load contacts.</p>
-        <button ar-button type="button" variant="ghost" (click)="retry()">Try again</button>
+        <div class="contacts-error-state" role="alert">
+          <p>Could not load customer contacts from server.</p>
+          <button ar-button type="button" variant="ghost" (click)="retry()">Try again</button>
+        </div>
       }
+
       @if (!loading() && !loadError()) {
         <ejs-grid
           arGrid="contacts"
@@ -240,51 +386,88 @@
           aria-label="Contacts in the selected segment"
         >
           <e-columns>
-            <e-column field="name" headerText="Contact" width="170">
+            <!-- Contact column with initials avatar & click to preview -->
+            <e-column field="name" headerText="Contact" width="210">
               <ng-template #template let-c>
-                <span class="who">
-                  <ar-avatar [name]="c.name" [size]="26" />
-                  @if (canView360()) {
-                    <a
-                      class="who__name who__name--link"
-                      [routerLink]="['/contacts', c.id, '360']"
-                      title="Open Customer 360 for {{ c.name }}"
-                      >{{ c.name }}</a
-                    >
-                  } @else {
-                    <span class="who__name">{{ c.name }}</span>
-                  }
-                </span>
+                <div class="who-cell" (click)="openPreview(c.id)" title="Click to view contact preview">
+                  <div class="who-avatar" aria-hidden="true">
+                    {{ getInitials(c.name) }}
+                  </div>
+                  <div class="who-details">
+                    <span class="who-name">{{ c.name }}</span>
+                    <span class="who-sub">Click for preview</span>
+                  </div>
+                </div>
               </ng-template>
             </e-column>
-            <e-column field="company" headerText="Company / plant" />
-            <e-column field="role" headerText="Role" />
-            <e-column field="systems" headerText="Systems" />
-            <e-column field="amcExpiry" headerText="AMC expiry" width="120" />
-            <e-column field="consent" headerText="Consent" width="150">
+
+            <!-- Company / Plant Column -->
+            <e-column field="company" headerText="Company / plant" width="180">
+              <ng-template #template let-c>
+                <div class="company-cell">
+                  <span class="company-text" translate="no">{{ c.company || '—' }}</span>
+                </div>
+              </ng-template>
+            </e-column>
+
+            <!-- Decision Role Column -->
+            <e-column field="role" headerText="Role" width="140">
+              <ng-template #template let-c>
+                @if (c.role !== '—') {
+                  <span class="role-badge">{{ c.role }}</span>
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </ng-template>
+            </e-column>
+
+            <!-- Systems Column -->
+            <e-column field="systems" headerText="Systems" width="160">
+              <ng-template #template let-c>
+                <span class="systems-text" [title]="c.systems">{{ c.systems || '—' }}</span>
+              </ng-template>
+            </e-column>
+
+            <!-- AMC Expiry Column -->
+            <e-column field="amcExpiry" headerText="AMC expiry" width="130">
+              <ng-template #template let-c>
+                <span [class.text-muted]="c.amcExpiry === '—'">{{ c.amcExpiry }}</span>
+              </ng-template>
+            </e-column>
+
+            <!-- Consent Column -->
+            <e-column field="consent" headerText="Consent" width="160">
               <ng-template #template let-c>
                 <ar-chip [tone]="c.consentTone">{{ c.consent }}</ar-chip>
               </ng-template>
             </e-column>
-            <e-column field="score" headerText="Score" type="number" textAlign="Right" width="90">
+
+            <!-- Score Column with Visual Pill -->
+            <e-column field="score" headerText="Score" type="number" textAlign="Right" width="110">
               <ng-template #template let-c>
                 @if (c.score != null) {
                   <span
-                    class="score"
-                    [class.score--warm]="c.score >= 60"
-                    [class.score--cold]="c.score < 25"
+                    class="score-pill"
+                    [class.score-pill--high]="c.score >= 60"
+                    [class.score-pill--mid]="c.score >= 25 && c.score < 60"
+                    [class.score-pill--low]="c.score < 25"
                   >
+                    <span class="score-pill__dot"></span>
                     {{ c.score }}
                   </span>
                 } @else {
-                  —
+                  <span class="text-muted">—</span>
                 }
               </ng-template>
             </e-column>
-            <e-column field="lastActivity" headerText="Last activity" />
+
+            <!-- Last Activity Column -->
+            <e-column field="lastActivity" headerText="Last activity" width="140" />
+
+            <!-- Row Actions Column -->
             <e-column
               headerText="Actions"
-              width="190"
+              width="200"
               textAlign="Right"
               [visible]="canView360() || canReorder() || canUpdate() || canDelete()"
               [showInColumnChooser]="false"
@@ -292,60 +475,90 @@
               [allowFiltering]="false"
             >
               <ng-template #template let-c>
-                @if (canView360()) {
-                  <a
-                    ar-button
-                    variant="ghost"
-                    icon="contacts"
-                    title="Customer 360 for {{ c.name }}"
-                    [routerLink]="['/contacts', c.id, '360']"
-                  ></a>
-                }
-                @if (canUpdate()) {
-                  <a
-                    ar-button
-                    variant="ghost"
-                    icon="edit"
-                    title="Edit {{ c.name }}"
-                    [routerLink]="['/contacts', c.id, 'edit']"
-                  ></a>
-                }
-                @if (canDelete()) {
+                <div class="row-actions-group">
                   <button
                     ar-button
-                    type="button"
                     variant="ghost"
-                    icon="trash"
-                    title="Delete {{ c.name }}"
-                    (click)="deleteContact(c)"
-                  ></button>
-                }
-                @if (canReorder()) {
-                  <button
-                    ar-button
-                    type="button"
-                    variant="ghost"
-                    icon="send"
-                    title="Send {{ c.name }} their spares re-order link"
-                    (click)="reorderFor.set({ id: c.id, name: c.name })"
-                  ></button>
-                }
+                    class="action-icon-btn"
+                    title="Quick preview for {{ c.name }}"
+                    (click)="openPreview(c.id)"
+                  >
+                    <ar-icon name="user" [size]="14" />
+                  </button>
+                  @if (canView360()) {
+                    <a
+                      ar-button
+                      variant="ghost"
+                      class="action-icon-btn"
+                      title="Customer 360 for {{ c.name }}"
+                      [routerLink]="['/contacts', c.id, '360']"
+                    >
+                      <ar-icon name="contacts" [size]="14" />
+                    </a>
+                  }
+                  @if (canUpdate()) {
+                    <a
+                      ar-button
+                      variant="ghost"
+                      class="action-icon-btn"
+                      title="Edit {{ c.name }}"
+                      [routerLink]="['/contacts', c.id, 'edit']"
+                    >
+                      <ar-icon name="edit" [size]="14" />
+                    </a>
+                  }
+                  @if (canDelete()) {
+                    <button
+                      ar-button
+                      type="button"
+                      variant="ghost"
+                      class="action-icon-btn action-icon-btn--danger"
+                      title="Delete {{ c.name }}"
+                      (click)="deleteContact(c)"
+                    >
+                      <ar-icon name="trash" [size]="14" />
+                    </button>
+                  }
+                  @if (canReorder()) {
+                    <button
+                      ar-button
+                      type="button"
+                      variant="ghost"
+                      class="action-icon-btn"
+                      title="Send {{ c.name }} their spares re-order link"
+                      (click)="reorderFor.set({ id: c.id, name: c.name })"
+                    >
+                      <ar-icon name="send" [size]="14" />
+                    </button>
+                  }
+                </div>
               </ng-template>
             </e-column>
           </e-columns>
+
           <ng-template #emptyRecordTemplate>
-            <span class="empty">
-              @if (query()) {
-                No contacts match “{{ query() }}”.
-              } @else {
-                No contacts in this segment yet.
-              }
-            </span>
+            <div class="table-empty-state">
+              <ar-icon name="contacts" [size]="32" class="empty-icon text-muted" />
+              <h3>
+                @if (query() || activeFilterCount() > 0) {
+                  No matching contacts found
+                } @else {
+                  No contacts in this segment yet
+                }
+              </h3>
+              <p>
+                @if (query() || activeFilterCount() > 0) {
+                  Try clearing your search query or reset your active filters.
+                } @else {
+                  Press “New contact” or import your customer records to get started.
+                }
+              </p>
+            </div>
           </ng-template>
         </ejs-grid>
 
         <p class="table-pane__foot">
-          Showing {{ count(visible().length) }} of {{ count(segmentCount()) }} in “{{
+          Showing <strong>{{ count(visible().length) }}</strong> of <strong>{{ count(segmentCount()) }}</strong> contacts in “{{
             activeSegmentName()
           }}”
         </p>
@@ -353,6 +566,338 @@
     </div>
   </section>
 </div>
+
+<!-- ========================================================================= -->
+<!-- 5. CONTACT QUICK PREVIEW RIGHT-SIDE DRAWER -->
+<!-- ========================================================================= -->
+@if (previewDrawerOpen() && previewContact(); as pc) {
+  <div class="drawer-overlay" (click)="closePreview()" aria-hidden="true"></div>
+  <aside class="preview-drawer" role="dialog" aria-label="Contact quick preview">
+    <!-- Drawer Header -->
+    <div class="drawer-header">
+      <div class="drawer-profile">
+        <div class="drawer-avatar" aria-hidden="true">
+          {{ getInitials(pc.name) }}
+        </div>
+        <div class="drawer-profile-info">
+          <h2 class="drawer-name" translate="no">{{ pc.name }}</h2>
+          <span class="drawer-company" translate="no">{{ pc.company || 'Independent Customer' }}</span>
+          @if (pc.attributes.decisionRole) {
+            <span class="drawer-role-badge">{{ pc.attributes.decisionRole }}</span>
+          }
+        </div>
+      </div>
+      <button
+        type="button"
+        class="drawer-close-btn"
+        (click)="closePreview()"
+        aria-label="Close contact preview"
+      >
+        <ar-icon name="plus" [size]="18" class="drawer-close-icon" />
+      </button>
+    </div>
+
+    <!-- Drawer Quick Action Bar -->
+    <div class="drawer-actions">
+      <a
+        ar-button
+        variant="ghost"
+        class="drawer-action-btn"
+        [href]="'tel:' + pc.phoneE164"
+        title="Call contact"
+      >
+        <ar-icon name="phone" [size]="14" />
+        <span>Call</span>
+      </a>
+      @if (canView360()) {
+        <a
+          ar-button
+          variant="primary"
+          class="drawer-action-btn"
+          [routerLink]="['/contacts', pc.id, '360']"
+          title="Open Customer 360 cockpit"
+        >
+          <ar-icon name="contacts" [size]="14" />
+          <span>Customer 360</span>
+        </a>
+      }
+      @if (canUpdate()) {
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          class="drawer-action-btn"
+          (click)="openEdit(pc)"
+          title="Edit contact details"
+        >
+          <ar-icon name="edit" [size]="14" />
+          <span>Edit</span>
+        </button>
+      }
+    </div>
+
+    <!-- Drawer Content Sections -->
+    <div class="drawer-body ar-scroll">
+      <!-- Section 1: Contact Information -->
+      <section class="drawer-card">
+        <h3 class="drawer-card__title">
+          <ar-icon name="contacts" [size]="15" />
+          <span>Contact Information</span>
+        </h3>
+        <div class="drawer-rows">
+          <div class="drawer-row">
+            <span class="drawer-label">Phone</span>
+            <span class="drawer-val ar-mono">+{{ pc.phoneE164 }}</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-label">Email</span>
+            <span class="drawer-val">{{ pc.stored?.emailAddress || '—' }}</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-label">Location</span>
+            <span class="drawer-val">
+              {{
+                pc.stored?.city
+                  ? pc.stored?.city + (pc.stored?.state ? ', ' + pc.stored?.state : '')
+                  : pc.attributes.plantLocation || '—'
+              }}
+            </span>
+          </div>
+          @if (pc.stored?.designation) {
+            <div class="drawer-row">
+              <span class="drawer-label">Designation</span>
+              <span class="drawer-val">{{ pc.stored?.designation }}</span>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Section 2: Industrial & System Profile -->
+      <section class="drawer-card">
+        <h3 class="drawer-card__title">
+          <ar-icon name="workspaces" [size]="15" />
+          <span>Company & Plant Details</span>
+        </h3>
+        <div class="drawer-rows">
+          <div class="drawer-row">
+            <span class="drawer-label">Account Name</span>
+            <span class="drawer-val" translate="no">{{ pc.company || '—' }}</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-label">Plant / Systems</span>
+            <span class="drawer-val">{{ systems(pc) || 'None recorded' }}</span>
+          </div>
+          @if (pc.attributes.industry) {
+            <div class="drawer-row">
+              <span class="drawer-label">Industry</span>
+              <span class="drawer-val">{{ pc.attributes.industry }}</span>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Section 3: Engagement Score -->
+      <section class="drawer-card">
+        <h3 class="drawer-card__title">
+          <ar-icon name="analytics-overview" [size]="15" />
+          <span>Engagement Score</span>
+        </h3>
+        <div class="score-card-body">
+          <div class="score-display">
+            <span class="score-big">{{ pc.score ?? '—' }}</span>
+            <span class="score-out-of">/ 100</span>
+          </div>
+          <div class="score-meter">
+            <div
+              class="score-meter__fill"
+              [style.width.%]="pc.score ?? 0"
+              [class.score-meter__fill--high]="(pc.score ?? 0) >= 60"
+              [class.score-meter__fill--mid]="(pc.score ?? 0) >= 25 && (pc.score ?? 0) < 60"
+            ></div>
+          </div>
+          <span class="score-activity-note">
+            Last active: {{ pc.lastActivity || 'No recent interactions' }}
+          </span>
+        </div>
+      </section>
+
+      <!-- Section 4: Marketing Consent -->
+      <section class="drawer-card">
+        <h3 class="drawer-card__title">
+          <ar-icon name="shield" [size]="15" />
+          <span>Marketing Consent</span>
+        </h3>
+        <div class="drawer-rows">
+          <div class="drawer-row">
+            <span class="drawer-label">Source</span>
+            <ar-chip [tone]="consentTone(pc)">{{ consentLabel(pc) }}</ar-chip>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-label">Evidence</span>
+            <span class="drawer-val">{{ pc.consent.evidence || 'Signed Agreement / Form' }}</span>
+          </div>
+          @if (pc.consent.grantedAt) {
+            <div class="drawer-row">
+              <span class="drawer-label">Granted On</span>
+              <span class="drawer-val">{{ pc.consent.grantedAt | date: 'dd MMM yyyy' }}</span>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Section 5: AMC Details -->
+      <section class="drawer-card">
+        <h3 class="drawer-card__title">
+          <ar-icon name="amc-contracts" [size]="15" />
+          <span>Maintenance & AMC</span>
+        </h3>
+        <div class="drawer-rows">
+          <div class="drawer-row">
+            <span class="drawer-label">Contract Expiry</span>
+            <span class="drawer-val" [class.text-muted]="!pc.amcExpiry || pc.amcExpiry === '—'">
+              {{ pc.amcExpiry || 'No active AMC recorded' }}
+            </span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </aside>
+}
+
+<!-- ========================================================================= -->
+<!-- 3. ADVANCED FILTER RIGHT-SIDE DRAWER -->
+<!-- ========================================================================= -->
+@if (filterDrawerOpen()) {
+  <div class="drawer-overlay" (click)="filterDrawerOpen.set(false)" aria-hidden="true"></div>
+  <aside class="filter-drawer" role="dialog" aria-label="Filter contacts">
+    <div class="drawer-header">
+      <div class="filter-drawer-title-wrap">
+        <ar-icon name="filter" [size]="18" />
+        <h2 class="drawer-name">Filter Contacts</h2>
+        @if (activeFilterCount() > 0) {
+          <span class="filter-badge">{{ activeFilterCount() }}</span>
+        }
+      </div>
+      <button
+        type="button"
+        class="drawer-close-btn"
+        (click)="filterDrawerOpen.set(false)"
+        aria-label="Close filter drawer"
+      >
+        <ar-icon name="plus" [size]="18" class="drawer-close-icon" />
+      </button>
+    </div>
+
+    <div class="filter-drawer-body ar-scroll">
+      <!-- Filter 1: Decision Role -->
+      <div class="f-group">
+        <label class="f-label" for="filter-role">Decision Role</label>
+        <select
+          id="filter-role"
+          class="contacts-select"
+          [value]="roleFilter()"
+          (change)="roleFilter.set($any($event.target).value)"
+        >
+          <option value="">All Roles</option>
+          <option value="Maintenance">Maintenance</option>
+          <option value="Purchase">Purchase</option>
+          <option value="Engineering">Engineering</option>
+          <option value="Plant head">Plant head</option>
+          <option value="Dealer">Dealer</option>
+        </select>
+      </div>
+
+      <!-- Filter 2: Company Account -->
+      <div class="f-group">
+        <label class="f-label" for="filter-company">Company / Account</label>
+        <select
+          id="filter-company"
+          class="contacts-select"
+          [value]="accountId()"
+          (change)="chooseAccount($any($event.target).value)"
+        >
+          <option value="">All Accounts</option>
+          @for (row of accountRows(); track row.account.id) {
+            <option [value]="row.account.id" [selected]="row.account.id === accountId()">
+              {{ '\u2003'.repeat(row.depth - 1) }}{{ row.account.name }}
+            </option>
+          }
+        </select>
+      </div>
+
+      <!-- Filter 3: Marketing Consent -->
+      <div class="f-group">
+        <label class="f-label" for="filter-consent">Marketing Consent</label>
+        <select
+          id="filter-consent"
+          class="contacts-select"
+          [value]="consentFilter()"
+          (change)="consentFilter.set($any($event.target).value)"
+        >
+          <option value="">All Consent Sources</option>
+          <option value="whatsapp_optin">WhatsApp opt-in</option>
+          <option value="website">Website form</option>
+          <option value="ctwa">Click-to-WhatsApp</option>
+          <option value="manual">Dealer agreement</option>
+          <option value="qr">Exhibition QR</option>
+          <option value="import">Imported (signed form)</option>
+        </select>
+      </div>
+
+      <!-- Filter 4: AMC Expiry -->
+      <div class="f-group">
+        <label class="f-label" for="filter-amc">AMC Status</label>
+        <select
+          id="filter-amc"
+          class="contacts-select"
+          [value]="amcFilter()"
+          (change)="amcFilter.set($any($event.target).value)"
+        >
+          <option value="">All Contacts</option>
+          <option value="active">Active AMC Contract</option>
+          <option value="none">No Active AMC</option>
+        </select>
+      </div>
+
+      <!-- Filter 5: Engagement Score -->
+      <div class="f-group">
+        <label class="f-label" for="filter-score">Engagement Score Tier</label>
+        <select
+          id="filter-score"
+          class="contacts-select"
+          [value]="scoreFilter()"
+          (change)="scoreFilter.set($any($event.target).value)"
+        >
+          <option value="">All Scores</option>
+          <option value="60">High Score (60+)</option>
+          <option value="25">Medium Score (25–59)</option>
+          <option value="0">Cold / Low Score (&lt;25)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Filter Drawer Actions Footer -->
+    <div class="filter-drawer-footer">
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        (click)="clearAdvancedFilters()"
+        [disabled]="activeFilterCount() === 0"
+      >
+        Reset filters
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        (click)="filterDrawerOpen.set(false)"
+      >
+        Apply ({{ count(visible().length) }} results)
+      </button>
+    </div>
+  </aside>
+}
 
 @if (reorderFor(); as r) {
   <ar-send-reorder-link [contactId]="r.id" [contactName]="r.name" (closed)="reorderFor.set(null)" />

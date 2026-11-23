@@ -1,186 +1,504 @@
 <ar-topbar
   title="Voice / IVR"
-  [subtitle]="entryPoint() ? 'Entry point: ' + entryPoint()!.name : 'No entry point set yet'"
+  subtitle="The menu callers hear when they ring your Exotel number, and the lines your agents call on"
   help="Use WhatsApp for agent calls and Exotel for phone calls with automated IVR. Connect each provider separately. The prompts below are served to Exotel live."
 >
-  @if (canManage()) {
+  @if (canManage() && tab() === 'Phone menu') {
     <a ar-button variant="primary" icon="plus" routerLink="/channels/voice-ivr/prompts/new">
-      New prompt
+      New menu
     </a>
   }
 </ar-topbar>
 
-<section class="vi__providers" aria-label="Voice providers">
-  <article class="vi__channel">
-    <h2 class="vi__panel-title">WhatsApp voice</h2>
-    <p class="vi__hint">
-      Your team can answer customer calls and call customers who have granted permission. Connect a
-      Meta Cloud API number in Channels and enable calling for that number in Meta. A connected
-      messaging number alone does not confirm calling availability.
-    </p>
-    @if (canManage()) {
-      <a ar-button variant="quiet" routerLink="/channels">Connect WhatsApp number</a>
+<div class="vi ar-scroll">
+  <!-- Where things stand: four tiles, each opening the part that needs attention -->
+  <section class="vi__status" aria-label="Set-up status">
+    @for (s of status(); track s.label) {
+      <button
+        type="button"
+        class="vi__tile"
+        [class]="'vi__tile vi__tile--' + s.tone"
+        (click)="tab.set(s.tab)"
+      >
+        <span class="vi__tile-icon"
+          ><ar-icon
+            [name]="s.tone === 'good' ? 'check' : s.tone === 'bad' ? 'alert' : 'clock'"
+            [size]="14"
+        /></span>
+        <span class="vi__tile-body">
+          <span class="vi__tile-label">{{ s.label }}</span>
+          <span class="vi__tile-value" translate="no">{{ s.value }}</span>
+        </span>
+      </button>
     }
-    @if (canCall()) {
-      <a ar-button variant="quiet" routerLink="/calls/whatsapp">WhatsApp calls and recordings</a>
-      <a ar-button variant="quiet" routerLink="/inbox">Open inbox to call a customer</a>
-    }
-  </article>
-  <article class="vi__channel">
-    <h2 class="vi__panel-title">Exotel voice and IVR</h2>
-    <p class="vi__hint">
-      Set up your Exotel number and flow below, then edit greetings, keypad choices and agent
-      transfers. These automated menus apply to Exotel calls. WhatsApp calls use your agents.
-    </p>
-    @if (canManage()) {
-      <button ar-button variant="quiet" (click)="editAccount()">Configure Exotel account</button>
-      @if (accountEditing()) {
-        <form (submit)="$event.preventDefault(); saveAccount()">
-          <label
-            >Exotel phone number
-            <input
-              required
-              [value]="exoPhoneDraft()"
-              (input)="exoPhoneDraft.set($any($event.target).value)"
-            />
-          </label>
-          <label
-            >Account SID
-            <input
-              required
-              [value]="accountSidDraft()"
-              (input)="accountSidDraft.set($any($event.target).value)"
-            />
-          </label>
-          <label
-            >API hostname
-            <select
-              [value]="subdomainDraft()"
-              (change)="subdomainDraft.set($any($event.target).value)"
-            >
-              <option value="api.in.exotel.com">Mumbai (api.in.exotel.com)</option>
-              <option value="api.exotel.com">Singapore (api.exotel.com)</option>
-            </select>
-          </label>
-          <label
-            >API key:API token
-            <input
-              type="password"
-              autocomplete="new-password"
-              [value]="credentialDraft()"
-              (input)="credentialDraft.set($any($event.target).value)"
-            />
-          </label>
+  </section>
+
+  <ar-tabs [tabs]="tabs" [(active)]="tab" />
+
+  @if (error(); as e) {
+    <p class="vi__err" role="alert">{{ e }}</p>
+  }
+
+  @if (loading()) {
+    <p class="vi__loading">Loading…</p>
+  } @else if (tab() === 'Phone menu') {
+    <!-- ============================== PHONE MENU ============================== -->
+    <div class="vi__menu">
+      <div class="vi__tree">
+        @if (prompts().length === 0) {
+          <div class="vi__empty">
+            <ar-icon name="phone" [size]="22" />
+            <strong>No menu yet</strong>
+            <p>
+              Create the first menu: what callers hear when they ring, like “Press 1 for sales, 2
+              for service”. It becomes the start of every call.
+            </p>
+            @if (canManage()) {
+              <a
+                ar-button
+                variant="primary"
+                icon="plus"
+                routerLink="/channels/voice-ivr/prompts/new"
+              >
+                New menu
+              </a>
+            }
+          </div>
+        }
+
+        @for (node of tree(); track node.prompt.id) {
+          <article
+            class="vi__node"
+            [class.vi__node--sub]="node.level > 0"
+            [style.--level]="node.level"
+          >
+            @if (node.level > 0) {
+              <span class="vi__via">{{ node.via }}</span>
+            }
+            <div class="vi__card">
+              <header class="vi__card-head">
+                <div class="vi__card-title">
+                  <span class="vi__level">Level {{ node.level + 1 }}</span>
+                  <h3 translate="no">{{ node.prompt.name }}</h3>
+                  @if (node.prompt.isEntryPoint) {
+                    <ar-chip tone="teal" [dot]="true">Start of call</ar-chip>
+                  }
+                </div>
+                @if (canManage()) {
+                  <div class="vi__card-actions">
+                    <a
+                      ar-button
+                      variant="ghost"
+                      icon="edit"
+                      [routerLink]="['/channels/voice-ivr/prompts', node.prompt.id]"
+                    >
+                      Edit
+                    </a>
+                    <button
+                      ar-button
+                      variant="quiet"
+                      icon="trash"
+                      title="Delete menu"
+                      [disabled]="busy()"
+                      (click)="removePrompt(node.prompt)"
+                    ></button>
+                  </div>
+                }
+              </header>
+
+              <p class="vi__say">
+                <ar-icon name="phone" [size]="13" />
+                <span>“{{ node.prompt.sayText }}”</span>
+              </p>
+
+              <ul class="vi__keys-list" aria-label="Keys">
+                @for (b of node.prompt.branches; track b.digit) {
+                  <li class="vi__branch">
+                    <span
+                      class="vi__key-cap"
+                      [class.vi__key-cap--wide]="b.digit === '*'"
+                      translate="no"
+                    >
+                      {{ b.digit === '*' ? 'Other' : b.digit }}
+                    </span>
+                    <span class="vi__branch-text">
+                      <span
+                        class="vi__branch-action"
+                        [class]="'vi__branch-action vi__branch-action--' + actionKind(b.action)"
+                      >
+                        {{ actionLabel(b.action) }}
+                      </span>
+                      <span class="vi__branch-target" translate="no">{{ branchTarget(b) }}</span>
+                    </span>
+                    @if (canManage()) {
+                      <button
+                        ar-button
+                        variant="quiet"
+                        icon="trash"
+                        title="Remove this key"
+                        [disabled]="busy()"
+                        (click)="removeBranch(node.prompt.id!, b.digit)"
+                      ></button>
+                    }
+                  </li>
+                } @empty {
+                  <li class="vi__branch vi__branch--none">
+                    No keys yet: callers hear this and then the call ends.
+                  </li>
+                }
+              </ul>
+
+              <footer class="vi__card-foot">
+                <span class="vi__meta">
+                  Waits {{ node.prompt.inputTimeoutSeconds }}s for
+                  {{
+                    node.prompt.maxDigits === 1
+                      ? 'one key'
+                      : 'up to ' + node.prompt.maxDigits + ' digits'
+                  }}
+                </span>
+                @if (canManage()) {
+                  <button
+                    ar-button
+                    variant="ghost"
+                    icon="plus"
+                    [disabled]="busy()"
+                    (click)="openBranchForm(node.prompt.id!)"
+                  >
+                    Add a key
+                  </button>
+                }
+              </footer>
+            </div>
+          </article>
+        }
+
+        @if (unreached().length) {
+          <section class="vi__unreached" aria-labelledby="vi-unreached">
+            <h2 id="vi-unreached" class="vi__section-title">Not reached by any key</h2>
+            <p class="vi__hint">
+              Callers never hear these. Link one from a key above, or make it the start of the call.
+            </p>
+            @for (p of unreached(); track p.id) {
+              <div class="vi__card vi__card--muted">
+                <header class="vi__card-head">
+                  <h3 translate="no">{{ p.name }}</h3>
+                  @if (canManage()) {
+                    <div class="vi__card-actions">
+                      <button
+                        ar-button
+                        variant="quiet"
+                        [disabled]="busy()"
+                        (click)="makeEntryPoint(p)"
+                      >
+                        Make start of call
+                      </button>
+                      <a
+                        ar-button
+                        variant="ghost"
+                        icon="edit"
+                        [routerLink]="['/channels/voice-ivr/prompts', p.id]"
+                        >Edit</a
+                      >
+                      <button
+                        ar-button
+                        variant="quiet"
+                        icon="trash"
+                        title="Delete menu"
+                        [disabled]="busy()"
+                        (click)="removePrompt(p)"
+                      ></button>
+                    </div>
+                  }
+                </header>
+                <p class="vi__say">
+                  <span>“{{ p.sayText }}”</span>
+                </p>
+              </div>
+            }
+          </section>
+        }
+      </div>
+
+      <aside class="vi__side">
+        <section class="vi__panel">
+          <h2 class="vi__section-title">Try it like a caller</h2>
           <p class="vi__hint">
-            Enter key:token on first setup. Leave blank to keep the saved credential. Saving does
-            not verify the account or place a call.
+            Pick the key pressed at each level. Leave one empty to try silence.
           </p>
-          <button ar-button type="submit" [disabled]="busy()">Save account</button>
-          <button ar-button type="button" [disabled]="busy()" (click)="cancelAccount()">
-            Cancel
+          <div class="vi__try">
+            @for (n of [0, 1, 2]; track n) {
+              <label class="vi__try-key">
+                <span>Level {{ n + 1 }}</span>
+                <input
+                  class="ar-field__input vi__key"
+                  maxlength="1"
+                  inputmode="numeric"
+                  placeholder="–"
+                  [attr.aria-label]="'Key pressed at level ' + (n + 1)"
+                  [value]="keys()[n]"
+                  (input)="setKey(n, $any($event.target).value)"
+                />
+              </label>
+            }
+          </div>
+          <button
+            ar-button
+            variant="primary"
+            icon="phone"
+            [disabled]="simulating() || !entryPoint()"
+            (click)="runSimulation()"
+          >
+            {{ simulating() ? 'Calling…' : 'Place test call' }}
           </button>
-        </form>
-      }
-    }
-  </article>
-</section>
-
-@if (loading()) {
-  <p class="vi__loading">Loading…</p>
-} @else {
-  <div class="vi ar-scroll">
-    @if (error(); as e) {
-      <p class="vi__err">{{ e }}</p>
-    }
-
-    @if (channel(); as ch) {
-      <section class="vi__channel">
-        <div class="vi__channel-row">
-          <span class="vi__channel-label">Exotel number</span>
-          <span class="ar-mono">{{ ch.exoPhone }}</span>
-          <ar-chip [tone]="stateTone(ch.state)">{{ ChannelState[ch.state!] }}</ar-chip>
-        </div>
-      </section>
-    }
-
-    @if (channel(); as ch) {
-      <section class="vi__panel">
-        <h2 class="vi__panel-title">Connect to Exotel <span class="vi__once">(once)</span></h2>
-
-        @if (!ch.ivrSetup?.ready) {
-          <p class="vi__hint vi__hint--warn">
-            {{ ch.ivrSetup?.problem ?? 'The Exotel URLs cannot be issued yet.' }} Ask your MNI
-            Assist administrator to fix this.
-          </p>
-        } @else {
-          <p class="vi__hint">
-            On your Exotel dashboard, build this flow <strong>once</strong>. It does not contain
-            your menu — only the plumbing. After that, everything you edit below is live.
-          </p>
-          <ol class="vi__steps">
-            <li>
-              Add three <strong>Gather</strong> applets. Turn on “application URL” for each and
-              paste:
-              <ul class="vi__urls">
-                @for (u of ch.ivrSetup!.gatherUrls; track u; let n = $index) {
-                  <li>
-                    <span class="vi__url-label">Gather {{ n + 1 }}</span>
-                    <code class="ar-mono">{{ u }}</code>
-                    <button ar-button variant="quiet" (click)="copy(u)">
-                      {{ copied() === u ? 'Copied' : 'Copy' }}
-                    </button>
-                  </li>
-                }
-              </ul>
-            </li>
-            <li>
-              After Gather 1 and Gather 2, add a <strong>Passthru</strong> applet (not async) with:
-              <ul class="vi__urls">
-                @for (u of ch.ivrSetup!.routeUrls; track u; let n = $index) {
-                  <li>
-                    <span class="vi__url-label">Passthru {{ n + 1 }}</span>
-                    <code class="ar-mono">{{ u }}</code>
-                    <button ar-button variant="quiet" (click)="copy(u)">
-                      {{ copied() === u ? 'Copied' : 'Copy' }}
-                    </button>
-                  </li>
-                }
-              </ul>
-              A <em>200</em> result continues to the next Gather; a <em>302</em> result goes to
-              Connect. Gather 3 goes straight to Connect.
-            </li>
-            <li>
-              Add one <strong>Connect</strong> applet with “application URL”:
-              <ul class="vi__urls">
+          @if (!entryPoint()) {
+            <p class="vi__hint">Create a menu first.</p>
+          }
+          @if (steps(); as list) {
+            <ol class="vi__sim">
+              @for (st of list; track $index) {
                 <li>
-                  <span class="vi__url-label">Connect</span>
-                  <code class="ar-mono">{{ ch.ivrSetup!.connectUrl }}</code>
-                  <button ar-button variant="quiet" (click)="copy(ch.ivrSetup!.connectUrl!)">
+                  <div class="vi__sim-head">
+                    <strong translate="no">{{ st.promptName }}</strong>
+                    <ar-chip [tone]="outcomeTone(st.outcome)">{{
+                      outcomeLabel(st.outcome)
+                    }}</ar-chip>
+                  </div>
+                  <p class="vi__say">“{{ st.sayText }}”</p>
+                  <p class="vi__meta">
+                    @if (st.keyPressed) {
+                      Caller presses <span class="ar-mono">{{ st.keyPressed }}</span
+                      >.
+                    }
+                    {{ st.detail }}
+                  </p>
+                </li>
+              }
+            </ol>
+          }
+        </section>
+
+        <section class="vi__panel">
+          <h2 class="vi__section-title">Menu check</h2>
+          @if (issues().length === 0) {
+            <p class="vi__ok"><ar-icon name="check" [size]="14" /> Nothing to fix.</p>
+          } @else {
+            <ul class="vi__issues">
+              @for (i of issues(); track $index) {
+                <li>
+                  <ar-chip [tone]="issueTone(i)">{{
+                    i.severity === 2 ? 'Fix' : i.severity === 1 ? 'Check' : 'Note'
+                  }}</ar-chip>
+                  <span>{{ i.message }}</span>
+                </li>
+              }
+            </ul>
+          }
+          <p class="vi__hint">
+            Up to three levels; the third level can only transfer or end the call.
+          </p>
+        </section>
+      </aside>
+    </div>
+  } @else if (tab() === 'Exotel setup') {
+    <!-- ============================== EXOTEL SETUP ============================== -->
+    <ol class="vi__setup">
+      <!-- 1. Account -->
+      <li class="vi__step" [class.vi__step--done]="!!channel()">
+        <span class="vi__step-num">
+          @if (channel()) {
+            <ar-icon name="check" [size]="14" />
+          } @else {
+            1
+          }
+        </span>
+        <div class="vi__step-body">
+          <header class="vi__step-head">
+            <h2 class="vi__section-title">Exotel account</h2>
+            @if (channel(); as ch) {
+              <span class="ar-mono" translate="no">{{ ch.exoPhone }}</span>
+              <ar-chip [tone]="stateTone(ch.state)">{{ ChannelState[ch.state!] }}</ar-chip>
+            }
+          </header>
+          <p class="vi__hint">
+            Your ExoPhone and the API key from Exotel’s dashboard (Settings › API).
+          </p>
+          @if (canManage()) {
+            @if (accountEditing() || !channel()) {
+              <form class="vi__form" (submit)="$event.preventDefault(); saveAccount()">
+                <label class="ar-field"
+                  ><span class="ar-field__label">Exotel phone number</span>
+                  <input
+                    class="ar-field__input"
+                    required
+                    inputmode="tel"
+                    [value]="exoPhoneDraft()"
+                    (input)="exoPhoneDraft.set($any($event.target).value)"
+                  />
+                </label>
+                <label class="ar-field"
+                  ><span class="ar-field__label">Account SID</span>
+                  <input
+                    class="ar-field__input"
+                    required
+                    autocapitalize="none"
+                    [value]="accountSidDraft()"
+                    (input)="accountSidDraft.set($any($event.target).value)"
+                  />
+                </label>
+                <label class="ar-field"
+                  ><span class="ar-field__label">Region</span>
+                  <select
+                    class="ar-field__input"
+                    [value]="subdomainDraft()"
+                    (change)="subdomainDraft.set($any($event.target).value)"
+                  >
+                    <option value="api.in.exotel.com">Mumbai (api.in.exotel.com)</option>
+                    <option value="api.exotel.com">Singapore (api.exotel.com)</option>
+                  </select>
+                </label>
+                <label class="ar-field"
+                  ><span class="ar-field__label">API key:API token</span>
+                  <input
+                    class="ar-field__input"
+                    type="password"
+                    autocomplete="new-password"
+                    [placeholder]="channel() ? 'Leave blank to keep the saved one' : 'key:token'"
+                    [value]="credentialDraft()"
+                    (input)="credentialDraft.set($any($event.target).value)"
+                  />
+                </label>
+                <div class="vi__row">
+                  <button ar-button variant="primary" type="submit" [disabled]="busy()">
+                    Save account
+                  </button>
+                  @if (channel()) {
+                    <button
+                      ar-button
+                      variant="ghost"
+                      type="button"
+                      [disabled]="busy()"
+                      (click)="cancelAccount()"
+                    >
+                      Cancel
+                    </button>
+                  }
+                </div>
+              </form>
+            } @else {
+              <button ar-button variant="ghost" icon="edit" (click)="editAccount()">
+                Change account
+              </button>
+            }
+          }
+        </div>
+      </li>
+
+      @if (channel(); as ch) {
+        @if (!ch.ivrSetup?.ready) {
+          <li class="vi__step">
+            <span class="vi__step-num"><ar-icon name="alert" [size]="14" /></span>
+            <div class="vi__step-body">
+              <p class="vi__hint vi__hint--warn">
+                {{ ch.ivrSetup?.problem ?? 'The Exotel URLs cannot be issued yet.' }} Ask your MNI
+                Assist administrator to fix this.
+              </p>
+            </div>
+          </li>
+        } @else {
+          <!-- 2. Build the flow -->
+          <li class="vi__step" [class.vi__step--done]="!!ch.flowUrl">
+            <span class="vi__step-num">
+              @if (ch.flowUrl) {
+                <ar-icon name="check" [size]="14" />
+              } @else {
+                2
+              }
+            </span>
+            <div class="vi__step-body">
+              <header class="vi__step-head">
+                <h2 class="vi__section-title">
+                  Build the call flow in Exotel <span class="vi__once">once</span>
+                </h2>
+              </header>
+              <p class="vi__hint">
+                This flow is only the wiring. Your menu itself stays here and changes take effect on
+                the next call. In Exotel’s flow builder, add these applets in order and paste each
+                URL into its “application URL”.
+              </p>
+              <ol class="vi__applets">
+                @for (u of ch.ivrSetup!.gatherUrls; track u; let n = $index) {
+                  <li class="vi__applet">
+                    <span class="vi__applet-name">Gather {{ n + 1 }}</span>
+                    <code class="ar-mono" translate="no">{{ u }}</code>
+                    <button ar-button variant="quiet" icon="copy" (click)="copy(u)">
+                      {{ copied() === u ? 'Copied' : 'Copy' }}
+                    </button>
+                  </li>
+                  @if (ch.ivrSetup!.routeUrls[n]; as r) {
+                    <li class="vi__applet">
+                      <span class="vi__applet-name">Passthru {{ n + 1 }}</span>
+                      <code class="ar-mono" translate="no">{{ r }}</code>
+                      <button ar-button variant="quiet" icon="copy" (click)="copy(r)">
+                        {{ copied() === r ? 'Copied' : 'Copy' }}
+                      </button>
+                      <span class="vi__applet-note"
+                        >Not async. 200 → next Gather, 302 → Connect.</span
+                      >
+                    </li>
+                  }
+                }
+                <li class="vi__applet">
+                  <span class="vi__applet-name">Connect</span>
+                  <code class="ar-mono" translate="no">{{ ch.ivrSetup!.connectUrl }}</code>
+                  <button
+                    ar-button
+                    variant="quiet"
+                    icon="copy"
+                    (click)="copy(ch.ivrSetup!.connectUrl!)"
+                  >
                     {{ copied() === ch.ivrSetup!.connectUrl ? 'Copied' : 'Copy' }}
                   </button>
+                  <span class="vi__applet-note"
+                    >Gather 3 goes straight here. Send its failure path to a Hangup applet.</span
+                  >
                 </li>
-              </ul>
-              Send its failure path to a <strong>Hangup</strong> applet — that is how a menu ends a
-              call.
-            </li>
-            <li>
-              Set the flow's call-status callback to:
-              <ul class="vi__urls">
-                <li>
-                  <span class="vi__url-label">Status</span>
-                  <code class="ar-mono">{{ ch.ivrSetup!.statusCallbackUrl }}</code>
-                  <button ar-button variant="quiet" (click)="copy(ch.ivrSetup!.statusCallbackUrl!)">
+                <li class="vi__applet">
+                  <span class="vi__applet-name">Status callback</span>
+                  <code class="ar-mono" translate="no">{{ ch.ivrSetup!.statusCallbackUrl }}</code>
+                  <button
+                    ar-button
+                    variant="quiet"
+                    icon="copy"
+                    (click)="copy(ch.ivrSetup!.statusCallbackUrl!)"
+                  >
                     {{ copied() === ch.ivrSetup!.statusCallbackUrl ? 'Copied' : 'Copy' }}
                   </button>
+                  <span class="vi__applet-note">The flow’s call-status callback.</span>
                 </li>
-              </ul>
-            </li>
-            <li>
-              Point your Exotel number at this flow for <strong>incoming</strong> calls, then paste
-              the flow's URL here so <strong>outgoing</strong> calls use it too:
-              <div class="vi__flow">
+              </ol>
+            </div>
+          </li>
+
+          <!-- 3. Flow URL -->
+          <li class="vi__step" [class.vi__step--done]="!!ch.flowUrl">
+            <span class="vi__step-num">
+              @if (ch.flowUrl) {
+                <ar-icon name="check" [size]="14" />
+              } @else {
+                3
+              }
+            </span>
+            <div class="vi__step-body">
+              <h2 class="vi__section-title">Connect your number to the flow</h2>
+              <p class="vi__hint">
+                In Exotel, point your number’s incoming calls at this flow. Then paste the flow’s
+                URL here so outgoing calls use it too.
+              </p>
+              <div class="vi__row">
                 <input
-                  class="ar-field__input"
+                  class="ar-field__input vi__grow"
+                  aria-label="Call flow URL"
                   placeholder="http://my.exotel.in/exoml/start/12345"
                   autocapitalize="none"
                   [value]="flowUrlDraft() || ch.flowUrl || ''"
@@ -191,171 +509,364 @@
                   Save
                 </button>
               </div>
-            </li>
-          </ol>
-          <p class="vi__hint">
-            Keep the menu to three levels — that is what the flow above can serve, and the depth
-            Exotel itself recommends. The third menu can only transfer or end the call.
-          </p>
-        }
-      </section>
-    }
+            </div>
+          </li>
 
-    @if (channel(); as ch) {
-      @if (ch.ivrSetup?.ready && ch.ivrSetup?.voicebotUrl) {
-        <section class="vi__panel" aria-labelledby="vi-ai-flow">
-          <h2 class="vi__panel-title" id="vi-ai-flow">AI call flow</h2>
-          <p class="vi__hint">
-            Lets an AI voice agent call customers on this phone line. Exotel enables its Voicebot
-            applet on request; ask them first if it isn't in your flow builder.
-          </p>
-          <ol class="vi__steps">
-            <li>
-              In Exotel, create a new flow with one <strong>Voicebot</strong> applet whose URL is:
-              <ul class="vi__urls">
-                <li>
-                  <span class="vi__url-label">Voicebot</span>
-                  <code class="ar-mono">{{ ch.ivrSetup!.voicebotUrl }}</code>
-                  <button ar-button variant="quiet" (click)="copy(ch.ivrSetup!.voicebotUrl!)">
-                    {{ copied() === ch.ivrSetup!.voicebotUrl ? 'Copied' : 'Copy' }}
+          <!-- 4. AI call flow (optional) -->
+          @if (ch.ivrSetup?.voicebotUrl) {
+            <li class="vi__step" [class.vi__step--done]="!!ch.aiFlowUrl">
+              <span class="vi__step-num">
+                @if (ch.aiFlowUrl) {
+                  <ar-icon name="check" [size]="14" />
+                } @else {
+                  <ar-icon name="sparkle" [size]="14" />
+                }
+              </span>
+              <div class="vi__step-body">
+                <header class="vi__step-head">
+                  <h2 class="vi__section-title">AI agent calls</h2>
+                  <ar-chip tone="ai">Optional</ar-chip>
+                </header>
+                <p class="vi__hint">
+                  Lets an AI voice agent answer and place calls on this line. Exotel turns on its
+                  Voicebot applet on request. Create a second flow with one Voicebot applet, then a
+                  Hangup, with the same status callback.
+                </p>
+                <ol class="vi__applets">
+                  <li class="vi__applet">
+                    <span class="vi__applet-name">Voicebot</span>
+                    <code class="ar-mono" translate="no">{{ ch.ivrSetup!.voicebotUrl }}</code>
+                    <button
+                      ar-button
+                      variant="quiet"
+                      icon="copy"
+                      (click)="copy(ch.ivrSetup!.voicebotUrl!)"
+                    >
+                      {{ copied() === ch.ivrSetup!.voicebotUrl ? 'Copied' : 'Copy' }}
+                    </button>
+                  </li>
+                </ol>
+                <div class="vi__row">
+                  <input
+                    class="ar-field__input vi__grow"
+                    aria-label="AI call flow URL"
+                    placeholder="http://my.exotel.in/exoml/start/67890"
+                    autocapitalize="none"
+                    [value]="aiFlowUrlDraft() || ch.aiFlowUrl || ''"
+                    (focus)="startAiFlowUrlEdit()"
+                    (input)="aiFlowUrlDraft.set($any($event.target).value)"
+                  />
+                  <button ar-button variant="primary" [disabled]="busy()" (click)="saveAiFlowUrl()">
+                    Save
                   </button>
-                </li>
-              </ul>
-              then a <strong>Hangup</strong> applet, and set the flow's call-status callback to the
-              Status URL above.
-            </li>
-            <li>
-              Paste that flow's URL here:
-              <div class="vi__flow">
-                <input
-                  class="ar-field__input"
-                  aria-label="AI call flow URL"
-                  placeholder="http://my.exotel.in/exoml/start/67890"
-                  autocapitalize="none"
-                  [value]="aiFlowUrlDraft() || ch.aiFlowUrl || ''"
-                  (focus)="startAiFlowUrlEdit()"
-                  (input)="aiFlowUrlDraft.set($any($event.target).value)"
-                />
-                <button ar-button variant="primary" [disabled]="busy()" (click)="saveAiFlowUrl()">
-                  Save
-                </button>
+                </div>
+                <p class="vi__hint">
+                  {{
+                    ch.aiFlowUrl
+                      ? 'Set up. Place an AI call from a conversation’s call menu.'
+                      : 'Until this is saved, AI agents call only over WhatsApp.'
+                  }}
+                </p>
+
+                <h3 class="vi__sub">Who answers</h3>
+                <table class="vi__numbers">
+                  <thead>
+                    <tr>
+                      <th>Number</th>
+                      <th>AI agent</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <span translate="no" class="ar-mono">{{ ch.exoPhone }}</span>
+                        <span class="vi__meta">main</span>
+                      </td>
+                      <td>
+                        <select
+                          class="ar-field__input"
+                          aria-label="Agent for the main number"
+                          [disabled]="busy()"
+                          [value]="ch.inboundAiAgentChannelId ?? ''"
+                          (change)="saveInboundAgent($any($event.target).value)"
+                        >
+                          <option value="">Nobody (menu only)</option>
+                          @for (n of agentNumbers(); track n.id) {
+                            <option [value]="n.id" translate="no">
+                              {{ n.verifiedName || n.displayPhoneNumber }}
+                            </option>
+                          }
+                        </select>
+                      </td>
+                      <td></td>
+                    </tr>
+                    @for (n of lineNumbers(); track n.id) {
+                      <tr>
+                        <td>
+                          <span translate="no">{{ n.name || n.number }}</span>
+                          @if (n.name) {
+                            <span class="ar-mono vi__meta" translate="no">{{ n.number }}</span>
+                          }
+                        </td>
+                        <td>
+                          <select
+                            class="ar-field__input"
+                            aria-label="Agent for this number"
+                            [disabled]="busy()"
+                            [value]="n.agentChannelId ?? ''"
+                            (change)="setNumberAgent(n, $any($event.target).value)"
+                          >
+                            <option value="">No agent</option>
+                            @for (a of agentNumbers(); track a.id) {
+                              <option [value]="a.id" translate="no">
+                                {{ a.verifiedName || a.displayPhoneNumber }}
+                              </option>
+                            }
+                          </select>
+                        </td>
+                        <td>
+                          <button
+                            ar-button
+                            variant="quiet"
+                            icon="trash"
+                            title="Remove number"
+                            [disabled]="busy()"
+                            (click)="removeNumber(n)"
+                          ></button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                <div class="vi__row">
+                  <input
+                    class="ar-field__input"
+                    aria-label="Another number"
+                    placeholder="08069990001"
+                    inputmode="tel"
+                    [value]="numberDraft()"
+                    (input)="numberDraft.set($any($event.target).value)"
+                  />
+                  <button
+                    ar-button
+                    variant="ghost"
+                    icon="plus"
+                    [disabled]="busy()"
+                    (click)="addNumber()"
+                  >
+                    Add number
+                  </button>
+                  <button
+                    ar-button
+                    variant="quiet"
+                    icon="refresh"
+                    [disabled]="busy()"
+                    (click)="syncNumbers()"
+                  >
+                    Get numbers from Exotel
+                  </button>
+                </div>
+                @if (numberNote()) {
+                  <p class="vi__hint" role="status" translate="no">{{ numberNote() }}</p>
+                }
+                <p class="vi__hint">
+                  For the AI to answer a number’s incoming calls, point that number at the AI flow
+                  instead of the menu flow in Exotel.
+                </p>
               </div>
             </li>
-          </ol>
+          }
+        }
+      }
+    </ol>
+  } @else {
+    <!-- ============================== OTHER LINES ============================== -->
+    <div class="vi__lines">
+      <section class="vi__panel">
+        <header class="vi__step-head">
+          <h2 class="vi__section-title">WhatsApp calls</h2>
+        </header>
+        <p class="vi__hint">
+          Your team answers customer calls and calls customers who have given permission. Calling
+          must be turned on for the number in Meta; a connected messaging number alone is not
+          enough.
+        </p>
+        <div class="vi__row">
+          @if (canManage()) {
+            <a ar-button variant="ghost" routerLink="/channels">Connect WhatsApp number</a>
+          }
+          @if (canCall()) {
+            <a ar-button variant="quiet" routerLink="/calls/whatsapp">Calls and recordings</a>
+            <a ar-button variant="quiet" routerLink="/inbox">Call from the inbox</a>
+          }
+        </div>
+      </section>
+
+      @if (channel(); as ch) {
+        <section class="vi__panel">
+          <header class="vi__step-head">
+            <h2 class="vi__section-title">In-browser phone</h2>
+            <ar-chip [tone]="ch.softphoneEnabled ? 'good' : 'neutral'">{{
+              ch.softphoneEnabled ? 'On' : 'Off'
+            }}</ar-chip>
+          </header>
           <p class="vi__hint">
-            @if (ch.aiFlowUrl) {
-              AI calls on this line are set up. Place one from a conversation's call menu.
-            } @else {
-              Until the flow's URL is saved, AI agents can call only over WhatsApp.
+            A phone bar inside the app, so reps call and answer without a handset. Uses the
+            SIP/WebRTC details from your voice provider.
+          </p>
+          @if (!softphoneEditing()) {
+            @if (ch.softphoneEnabled) {
+              <code class="ar-mono" translate="no"
+                >sip:{{ ch.sipUsername }}&#64;{{ ch.sipDomain }}</code
+              >
             }
-          </p>
-          <label class="ar-field"
-            ><span>Agent for incoming calls on the main number</span>
-            <select
-              class="ar-field__input"
-              [disabled]="busy()"
-              [value]="ch.inboundAiAgentChannelId ?? ''"
-              (change)="saveInboundAgent($any($event.target).value)"
-            >
-              <option value="">Nobody: the AI doesn't answer incoming calls</option>
-              @for (n of agentNumbers(); track n.id) {
-                <option [value]="n.id" translate="no">
-                  {{ n.verifiedName || n.displayPhoneNumber }}
-                </option>
-              }
-            </select></label
-          >
-          <h3 class="vi__panel-title">More numbers</h3>
-          <p class="vi__hint">
-            Other ExoPhones on this Exotel account. Calls to them reach the same menu and AI call
-            flow; a number's agent answers its incoming calls, and that agent's phone calls show it.
-          </p>
-          @if (lineNumbers().length) {
-            <ul class="vi__urls">
-              @for (n of lineNumbers(); track n.id) {
-                <li>
-                  <span class="vi__url-label" translate="no">{{ n.name || n.number }}</span>
-                  <code class="ar-mono" translate="no">{{ n.number }}</code>
-                  <select
-                    class="ar-field__input"
-                    aria-label="Agent for this number"
-                    [disabled]="busy()"
-                    [value]="n.agentChannelId ?? ''"
-                    (change)="setNumberAgent(n, $any($event.target).value)"
-                  >
-                    <option value="">No agent</option>
-                    @for (a of agentNumbers(); track a.id) {
-                      <option [value]="a.id" translate="no">
-                        {{ a.verifiedName || a.displayPhoneNumber }}
-                      </option>
-                    }
-                  </select>
-                  <button ar-button variant="quiet" [disabled]="busy()" (click)="removeNumber(n)">
-                    Remove
-                  </button>
-                </li>
-              }
-            </ul>
+            @if (canManage()) {
+              <div class="vi__row">
+                <button
+                  ar-button
+                  variant="ghost"
+                  [disabled]="busy()"
+                  (click)="startSoftphoneEdit()"
+                >
+                  {{ ch.softphoneEnabled ? 'Edit' : 'Turn on' }}
+                </button>
+              </div>
+            }
+          } @else {
+            <div class="vi__form">
+              <label class="vi__checkbox">
+                <input
+                  type="checkbox"
+                  [checked]="softphoneEnabledDraft()"
+                  (change)="softphoneEnabledDraft.set($any($event.target).checked)"
+                />
+                Turn on the in-browser phone
+              </label>
+              <label class="ar-field"
+                ><span class="ar-field__label">SIP domain</span>
+                <input
+                  class="ar-field__input ar-mono"
+                  placeholder="voice.example.com"
+                  [value]="sipDomainDraft()"
+                  (input)="sipDomainDraft.set($any($event.target).value)"
+                />
+              </label>
+              <label class="ar-field"
+                ><span class="ar-field__label">SIP WebSocket server</span>
+                <input
+                  class="ar-field__input ar-mono"
+                  placeholder="wss://voice.example.com/ws"
+                  [value]="sipWsDraft()"
+                  (input)="sipWsDraft.set($any($event.target).value)"
+                />
+              </label>
+              <label class="ar-field"
+                ><span class="ar-field__label">SIP username</span>
+                <input
+                  class="ar-field__input ar-mono"
+                  placeholder="sales"
+                  [value]="sipUsernameDraft()"
+                  (input)="sipUsernameDraft.set($any($event.target).value)"
+                />
+              </label>
+              <label class="ar-field"
+                ><span class="ar-field__label">SIP password</span>
+                <input
+                  class="ar-field__input"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="Leave blank to keep it"
+                  [value]="sipPasswordDraft()"
+                  (input)="sipPasswordDraft.set($any($event.target).value)"
+                />
+              </label>
+              <div class="vi__row">
+                <button ar-button variant="primary" [disabled]="busy()" (click)="saveSoftphone()">
+                  {{ busy() ? 'Saving…' : 'Save' }}
+                </button>
+                <button
+                  ar-button
+                  variant="ghost"
+                  [disabled]="busy()"
+                  (click)="softphoneEditing.set(false)"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           }
-          <div class="vi__flow">
-            <input
-              class="ar-field__input"
-              aria-label="Another number"
-              placeholder="08069990001"
-              inputmode="tel"
-              [value]="numberDraft()"
-              (input)="numberDraft.set($any($event.target).value)"
-            />
-            <button ar-button variant="quiet" [disabled]="busy()" (click)="addNumber()">Add</button>
-            <button ar-button variant="quiet" [disabled]="busy()" (click)="syncNumbers()">
-              Get numbers from Exotel
-            </button>
-          </div>
-          @if (numberNote()) {
-            <p class="vi__hint" role="status" translate="no">{{ numberNote() }}</p>
-          }
-          <p class="vi__hint">
-            The chosen WhatsApp number's agent answers calls that come in through the AI call flow.
-            To have it answer your number's incoming calls, point the number's incoming calls at the
-            AI call flow instead of the menu flow in Exotel.
-          </p>
         </section>
       }
 
-      <section class="vi__panel" aria-labelledby="vi-sip">
-        <h2 class="vi__panel-title" id="vi-sip">SIP trunks</h2>
+      <section class="vi__panel">
+        <header class="vi__step-head">
+          <h2 class="vi__section-title">SIP trunks</h2>
+          @if (!trunkForm() && canManage()) {
+            <button ar-button variant="ghost" icon="plus" (click)="newTrunk()">
+              Add a SIP trunk
+            </button>
+          }
+        </header>
         <p class="vi__hint">
-          Your own carrier or PBX, over standard SIP with G.711 audio, as a phone line for an AI
-          agent: it answers the calls the trunk sends and calls out over it. Point the trunk at the
-          call relay's SIP address (ask your MNI contact), and allow the addresses it sends from.
+          Your own carrier or PBX (standard SIP, G.711 audio) as a phone line for an AI agent. Point
+          the trunk at the call relay’s SIP address (ask your MNI contact) and list the addresses it
+          sends from.
         </p>
         @if (trunks().length) {
-          <ul class="vi__urls">
-            @for (t of trunks(); track t.id) {
-              <li>
-                <span class="vi__url-label" translate="no">{{ t.name }}</span>
-                <code class="ar-mono" translate="no">{{ t.host }}:{{ t.port }}</code>
-                <span translate="no">{{ agentName(t.agentChannelId) }}</span>
-                @if (!t.enabled) {
-                  <span>Off</span>
-                }
-                <button ar-button variant="quiet" [disabled]="busy()" (click)="editTrunk(t)">
-                  Edit
-                </button>
-                <button ar-button variant="quiet" [disabled]="busy()" (click)="removeTrunk(t)">
-                  Remove
-                </button>
-              </li>
-            }
-          </ul>
+          <table class="vi__numbers">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Address</th>
+                <th>Agent</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of trunks(); track t.id) {
+                <tr>
+                  <td translate="no">
+                    {{ t.name }}
+                    @if (!t.enabled) {
+                      <ar-chip tone="neutral">Off</ar-chip>
+                    }
+                  </td>
+                  <td>
+                    <code class="ar-mono" translate="no">{{ t.host }}:{{ t.port }}</code>
+                  </td>
+                  <td translate="no">{{ agentName(t.agentChannelId) || '—' }}</td>
+                  <td class="vi__actions">
+                    <button
+                      ar-button
+                      variant="quiet"
+                      icon="edit"
+                      title="Edit trunk"
+                      [disabled]="busy()"
+                      (click)="editTrunk(t)"
+                    ></button>
+                    <button
+                      ar-button
+                      variant="quiet"
+                      icon="trash"
+                      title="Remove trunk"
+                      [disabled]="busy()"
+                      (click)="removeTrunk(t)"
+                    ></button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
         }
         @if (trunkForm(); as f) {
           <div class="vi__trunk">
             <label class="ar-field"
-              ><span>Name</span><input class="ar-field__input" maxlength="64" [(ngModel)]="f.name"
+              ><span class="ar-field__label">Name</span
+              ><input class="ar-field__input" maxlength="64" [(ngModel)]="f.name"
             /></label>
             <label class="ar-field"
-              ><span>SIP host</span
+              ><span class="ar-field__label">SIP host</span
               ><input
                 class="ar-field__input"
                 autocapitalize="none"
@@ -363,7 +874,7 @@
                 [(ngModel)]="f.host"
             /></label>
             <label class="ar-field"
-              ><span>Port</span
+              ><span class="ar-field__label">Port</span
               ><input
                 class="ar-field__input"
                 type="number"
@@ -372,11 +883,11 @@
                 [(ngModel)]="f.port"
             /></label>
             <label class="ar-field"
-              ><span>Username</span
+              ><span class="ar-field__label">Username</span
               ><input class="ar-field__input" autocapitalize="none" [(ngModel)]="f.username"
             /></label>
             <label class="ar-field"
-              ><span>Password</span
+              ><span class="ar-field__label">Password</span
               ><input
                 class="ar-field__input"
                 type="password"
@@ -385,18 +896,18 @@
                 [(ngModel)]="f.password"
             /></label>
             <label class="ar-field"
-              ><span>Addresses it sends calls from</span
+              ><span class="ar-field__label">Addresses it sends calls from</span
               ><input
                 class="ar-field__input"
                 placeholder="203.0.113.10, 203.0.113.11"
                 [(ngModel)]="f.addresses"
             /></label>
             <label class="ar-field"
-              ><span>Caller ID for the agent's calls</span
+              ><span class="ar-field__label">Caller ID for the agent’s calls</span
               ><input class="ar-field__input" inputmode="tel" [(ngModel)]="f.callerId"
             /></label>
             <label class="ar-field"
-              ><span>Agent</span>
+              ><span class="ar-field__label">Agent</span>
               <select class="ar-field__input" [(ngModel)]="f.agentChannelId">
                 <option [ngValue]="null">No agent</option>
                 @for (a of agentNumbers(); track a.id) {
@@ -404,320 +915,64 @@
                     {{ a.verifiedName || a.displayPhoneNumber }}
                   </option>
                 }
-              </select></label
-            >
-            <label class="vi__check"><input type="checkbox" [(ngModel)]="f.enabled" /> On</label>
-            <div class="vi__flow">
+              </select>
+            </label>
+            <label class="vi__checkbox"><input type="checkbox" [(ngModel)]="f.enabled" /> On</label>
+            <div class="vi__row">
               <button ar-button variant="primary" [disabled]="busy()" (click)="saveTrunk()">
                 Save
               </button>
-              <button ar-button variant="quiet" (click)="trunkForm.set(null)">Cancel</button>
+              <button ar-button variant="ghost" (click)="trunkForm.set(null)">Cancel</button>
             </div>
           </div>
-        } @else {
-          <button ar-button variant="quiet" (click)="newTrunk()">Add a SIP trunk</button>
         }
         @if (trunkNote()) {
           <p class="vi__hint" role="alert">{{ trunkNote() }}</p>
         }
       </section>
-
-      <section class="vi__panel">
-        <h2 class="vi__panel-title">In-browser phone</h2>
-        <p class="vi__hint">
-          Turn this on and reps get a phone bar docked in the app — they can call or answer without
-          a separate handset. It registers against a SIP/WebRTC line (your voice provider's SIP
-          trunk); the settings below are what they give you for it.
-        </p>
-
-        @if (!softphoneEditing()) {
-          <div class="vi__channel-row">
-            <span class="vi__channel-label">Status</span>
-            <ar-chip [tone]="ch.softphoneEnabled ? 'good' : 'neutral'">{{
-              ch.softphoneEnabled ? 'On' : 'Off'
-            }}</ar-chip>
-            @if (ch.softphoneEnabled) {
-              <code class="ar-mono">sip:{{ ch.sipUsername }}&#64;{{ ch.sipDomain }}</code>
-            }
-          </div>
-          @if (canManage()) {
-            <button ar-button variant="ghost" [disabled]="busy()" (click)="startSoftphoneEdit()">
-              {{ ch.softphoneEnabled ? 'Edit' : 'Turn on' }}
-            </button>
-          }
-        } @else {
-          <label class="vi__checkbox">
-            <input
-              type="checkbox"
-              [checked]="softphoneEnabledDraft()"
-              (change)="softphoneEnabledDraft.set($any($event.target).checked)"
-            />
-            Turn on the in-browser phone
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">SIP domain</span>
-            <input
-              class="ar-field__input ar-mono"
-              placeholder="voice.example.com"
-              [value]="sipDomainDraft()"
-              (input)="sipDomainDraft.set($any($event.target).value)"
-            />
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">SIP WebSocket server</span>
-            <input
-              class="ar-field__input ar-mono"
-              placeholder="wss://voice.example.com/ws"
-              [value]="sipWsDraft()"
-              (input)="sipWsDraft.set($any($event.target).value)"
-            />
-          </label>
-          <div class="ar-field-row">
-            <label class="ar-field">
-              <span class="ar-field__label">SIP username</span>
-              <input
-                class="ar-field__input ar-mono"
-                placeholder="sales"
-                [value]="sipUsernameDraft()"
-                (input)="sipUsernameDraft.set($any($event.target).value)"
-              />
-            </label>
-            <label class="ar-field">
-              <span class="ar-field__label"
-                >SIP password <span class="vi__once">(leave blank to keep it)</span></span
-              >
-              <input
-                class="ar-field__input"
-                type="password"
-                autocomplete="new-password"
-                [value]="sipPasswordDraft()"
-                (input)="sipPasswordDraft.set($any($event.target).value)"
-              />
-            </label>
-          </div>
-          <div class="vi__flow">
-            <button
-              ar-button
-              variant="ghost"
-              [disabled]="busy()"
-              (click)="softphoneEditing.set(false)"
-            >
-              Cancel
-            </button>
-            <button ar-button variant="primary" [disabled]="busy()" (click)="saveSoftphone()">
-              {{ busy() ? 'Saving…' : 'Save' }}
-            </button>
-          </div>
-        }
-      </section>
-    }
-
-    @if (issues().length > 0) {
-      <section class="vi__panel">
-        <h2 class="vi__panel-title">Check your menu</h2>
-        <ul class="vi__issues">
-          @for (i of issues(); track $index) {
-            <li>
-              <ar-chip [tone]="issueTone(i)">{{
-                i.severity === 2 ? 'Fix' : i.severity === 1 ? 'Check' : 'Note'
-              }}</ar-chip>
-              <span>{{ i.message }}</span>
-            </li>
-          }
-        </ul>
-      </section>
-    }
-
-    <section class="vi__panel">
-      <h2 class="vi__panel-title">Try the menu</h2>
-      <p class="vi__hint">
-        Press keys as a caller would. This runs the same rules a live call does — leave a key blank
-        to simulate silence.
-      </p>
-      <div class="vi__keys">
-        @for (n of [0, 1, 2]; track n) {
-          <label class="ar-field">
-            <span class="ar-field__label">Menu {{ n + 1 }} key</span>
-            <input
-              class="ar-field__input vi__key"
-              maxlength="1"
-              inputmode="numeric"
-              [value]="keys()[n]"
-              (input)="setKey(n, $any($event.target).value)"
-            />
-          </label>
-        }
-        <button
-          ar-button
-          variant="primary"
-          [disabled]="simulating() || !entryPoint()"
-          (click)="runSimulation()"
-        >
-          {{ simulating() ? 'Running…' : 'Run' }}
-        </button>
-      </div>
-      @if (steps(); as list) {
-        <ol class="vi__sim">
-          @for (st of list; track $index) {
-            <li>
-              <div class="vi__sim-head">
-                <strong>{{ st.promptName }}</strong>
-                <ar-chip [tone]="outcomeTone(st.outcome)">{{ outcomeLabel(st.outcome) }}</ar-chip>
-              </div>
-              <p class="vi__say">“{{ st.sayText }}”</p>
-              <p class="vi__meta">
-                @if (st.keyPressed) {
-                  Caller presses <span class="ar-mono">{{ st.keyPressed }}</span
-                  >.
-                }
-                {{ st.detail }}
-              </p>
-            </li>
-          }
-        </ol>
-      }
-    </section>
-
-    <section class="vi__prompts">
-      @if (prompts().length === 0) {
-        <p class="vi__empty">
-          No prompts yet. A fresh call has nowhere to start until one is created and marked as the
-          entry point.
-        </p>
-      }
-
-      @for (p of prompts(); track p.id) {
-        <article class="vi__card">
-          <header class="vi__card-head">
-            <div class="vi__card-title">
-              <h3>{{ p.name }}</h3>
-              @if (p.isEntryPoint) {
-                <ar-chip tone="teal" [dot]="true">Entry point</ar-chip>
-              }
-            </div>
-            @if (canManage()) {
-              <div class="vi__card-actions">
-                @if (!p.isEntryPoint) {
-                  <button ar-button variant="quiet" [disabled]="busy()" (click)="makeEntryPoint(p)">
-                    Set as entry point
-                  </button>
-                }
-                <a ar-button variant="ghost" [routerLink]="['/channels/voice-ivr/prompts', p.id]">
-                  Edit
-                </a>
-                <button ar-button variant="danger" [disabled]="busy()" (click)="removePrompt(p)">
-                  Delete
-                </button>
-              </div>
-            }
-          </header>
-
-          <p class="vi__say">"{{ p.sayText }}"</p>
-          <p class="vi__meta">
-            Collects up to {{ p.maxDigits }} digit{{ p.maxDigits === 1 ? '' : 's' }}, waits
-            {{ p.inputTimeoutSeconds }}s for input.
-          </p>
-
-          <ejs-grid
-            class="vi__branches"
-            arGrid="ivr-branches"
-            [arGridTools]="false"
-            [dataSource]="p.branches"
-            aria-label="Menu branches"
-          >
-            <e-columns>
-              <e-column field="digit" headerText="Digit" width="120">
-                <ng-template #template let-b>
-                  <span class="ar-mono">{{ b.digit === '*' ? '(no match)' : b.digit }}</span>
-                </ng-template>
-              </e-column>
-              <e-column field="action" headerText="Action">
-                <ng-template #template let-b>{{ actionLabel(b.action) }}</ng-template>
-              </e-column>
-              <e-column headerText="Target" [allowFiltering]="false">
-                <ng-template #template let-b>{{ branchTarget(b) }}</ng-template>
-              </e-column>
-              <e-column
-                headerText="Actions"
-                width="60"
-                textAlign="Right"
-                [allowSorting]="false"
-                [allowFiltering]="false"
-                [showInColumnChooser]="false"
-              >
-                <ng-template #template let-b>
-                  @if (canManage()) {
-                    <button
-                      ar-button
-                      variant="quiet"
-                      icon="trash"
-                      title="Remove branch"
-                      [disabled]="busy()"
-                      (click)="removeBranch(p.id!, b.digit)"
-                    ></button>
-                  }
-                </ng-template>
-              </e-column>
-            </e-columns>
-            <ng-template #emptyRecordTemplate>No branches configured.</ng-template>
-          </ejs-grid>
-
-          @if (canManage()) {
-            <button
-              ar-button
-              variant="ghost"
-              icon="plus"
-              [disabled]="busy()"
-              (click)="openBranchForm(p.id!)"
-            >
-              Add branch
-            </button>
-          }
-        </article>
-      }
-    </section>
-  </div>
-}
+    </div>
+  }
+</div>
 
 @if (branchPromptId(); as promptId) {
-  <ar-dialog title="Add branch" (dismiss)="closeBranchForm()">
+  <ar-dialog title="Add a key" (dismiss)="closeBranchForm()">
     <label class="ar-field">
-      <span class="ar-field__label">Digit</span>
+      <span class="ar-field__label">Key the caller presses</span>
       <input
         required
         pattern="[0-9*#]"
         title="One key: 0–9, * or #."
         class="ar-field__input ar-mono"
         maxlength="1"
-        placeholder="1, 2… or * for no match"
+        placeholder="1, 2… or * for any other key"
         [value]="branchDraft().digit"
         (input)="patchBranch('digit', $any($event.target).value)"
       />
     </label>
     <label class="ar-field">
-      <span class="ar-field__label">Action</span>
+      <span class="ar-field__label">Then</span>
       <select
         required
         class="ar-field__input"
         [value]="branchDraft().action"
         (change)="patchBranch('action', +$any($event.target).value)"
       >
-        <option [value]="BranchAction.GoToPrompt">Go to another prompt</option>
-        <option [value]="BranchAction.TransferToAgent">Transfer to an agent</option>
-        <option [value]="BranchAction.Hangup">Hang up</option>
+        <option [value]="BranchAction.GoToPrompt">Play another menu</option>
+        <option [value]="BranchAction.TransferToAgent">Transfer to a person</option>
+        <option [value]="BranchAction.Hangup">End the call</option>
       </select>
     </label>
 
     @if (branchDraft().action === BranchAction.GoToPrompt) {
       <label class="ar-field">
-        <span class="ar-field__label">Target prompt</span>
+        <span class="ar-field__label">Menu</span>
         <select
           required
           class="ar-field__input"
           [value]="branchDraft().nextPromptId"
           (change)="patchBranch('nextPromptId', $any($event.target).value)"
         >
-          <option value="" disabled>Select a prompt…</option>
+          <option value="" disabled>Select a menu…</option>
           @for (p of otherPrompts(promptId); track p.id) {
             <option [value]="p.id">{{ p.name }}</option>
           }
@@ -725,12 +980,13 @@
       </label>
     } @else if (branchDraft().action === BranchAction.TransferToAgent) {
       <label class="ar-field">
-        <span class="ar-field__label">Transfer to (E.164)</span>
+        <span class="ar-field__label">Phone number with country code</span>
         <input
           required
           pattern="\+?\d{8,15}"
           title="The number with country code, e.g. +919820011234."
           class="ar-field__input ar-mono"
+          inputmode="tel"
           placeholder="919000000000"
           [value]="branchDraft().transferToNumber"
           (input)="patchBranch('transferToNumber', $any($event.target).value)"

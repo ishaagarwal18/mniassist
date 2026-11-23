@@ -904,7 +904,7 @@ export const NAV: readonly NavGroup[] = [
         //tenantOnly: true,
       },
       {
-        label: 'Dropdown options',
+        label: 'Masters',
         icon: 'filter',
         route: '/settings/pick-lists',
         menu: 'settings',
