@@ -28,6 +28,11 @@ import {
   validateEnquiryDraft,
 } from './enquiry-form.logic';
 
+/**
+ * Modern, enterprise-grade New Enquiry creation form.
+ * Enables quick intake of incoming deals, technical requirements attachment,
+ * pipeline assignment, and commercial budget estimation.
+ */
 @Component({
   selector: 'ar-enquiry-form',
   imports: [ArTopbar, ArButton, ArCard, ArBanner, ArContactPicker],
@@ -52,6 +57,7 @@ export class ArEnquiryForm implements OnInit {
   protected readonly draft = signal<EnquiryDraft>({ ...BLANK_ENQUIRY_DRAFT });
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly touched = signal(false);
 
   private readonly projectsApi = inject(ProjectService);
   protected readonly canSeeProjects = grantedPolicy('AutoReach.Projects', this.permissions);
@@ -61,6 +67,45 @@ export class ArEnquiryForm implements OnInit {
   protected readonly selectedPipeline = computed(() => {
     const id = this.draft().pipelineId;
     return this.pipelines().find((p) => p.id === id) ?? this.currentPipeline();
+  });
+
+  /** Inline validation feedback */
+  protected readonly contactError = computed(() => {
+    if (!this.touched()) return null;
+    return !this.draft().contactId ? 'Pick the contact this enquiry is for.' : null;
+  });
+
+  protected readonly titleError = computed(() => {
+    if (!this.touched()) return null;
+    const t = this.draft().title?.trim();
+    if (!t) return 'Give the enquiry a short title.';
+    if (t.length > 256) return 'Enquiry title cannot exceed 256 characters.';
+    return null;
+  });
+
+  /** Formatted Indian currency preview */
+  protected readonly formattedValuePreview = computed(() => {
+    const val = this.draft().valueRupees;
+    if (!val) return null;
+    const num = Number(String(val).replace(/[^\d.]/g, ''));
+    if (!num || isNaN(num) || num <= 0) return null;
+
+    const inrStr = new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(num);
+
+    let suffix = '';
+    if (num >= 10000000) {
+      suffix = ` (${(num / 10000000).toFixed(2)} Cr)`;
+    } else if (num >= 100000) {
+      suffix = ` (${(num / 100000).toFixed(2)} Lakhs)`;
+    } else if (num >= 1000) {
+      suffix = ` (${(num / 1000).toFixed(1)}k)`;
+    }
+
+    return `${inrStr}${suffix}`;
   });
 
   ngOnInit(): void {
@@ -106,6 +151,7 @@ export class ArEnquiryForm implements OnInit {
   }
 
   protected async save(): Promise<void> {
+    this.touched.set(true);
     const currentDraft = this.draft();
     const validationError = validateEnquiryDraft(currentDraft);
 

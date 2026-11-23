@@ -18,9 +18,9 @@ import { readApiError } from '../../core/util/api-error';
 import { ContactService as ContactApi } from '../../proxy/contacts/contact.service';
 
 /**
- * A contact typeahead for the create dialogs: type a name, pick from the matches,
- * and the chosen contact's id is emitted. Kept deliberately small — the enquiry and
- * asset dialogs need to attach a contact and nothing more.
+ * Modern typeahead contact picker for enquiry and asset setup:
+ * search directory by name, company, or WhatsApp number; choose with one click;
+ * or quickly add a new contact without navigating away from the form.
  */
 @Component({
   selector: 'ar-contact-picker',
@@ -28,40 +28,93 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
   template: `
     @if (chosen(); as c) {
       <div class="cp__chosen">
-        <span>{{ c.label }}</span>
-        <button type="button" class="cp__clear" (click)="clear()">change</button>
+        <div class="cp__chosen-content">
+          <div class="cp__chosen-avatar" aria-hidden="true">
+            {{ getInitials(c.label) }}
+          </div>
+          <div class="cp__chosen-meta">
+            <span class="cp__chosen-name">{{ getContactName(c.label) }}</span>
+            @if (getContactCompany(c.label); as comp) {
+              <span class="cp__chosen-co">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                  <path d="M9 22v-4h6v4"></path>
+                </svg>
+                {{ comp }}
+              </span>
+            }
+          </div>
+        </div>
+        <button type="button" class="cp__clear" (click)="clear()" title="Pick a different contact">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          Change
+        </button>
       </div>
     } @else {
-      <input
-        class="ar-field__input"
-        type="search"
-        placeholder="Search contacts by name or company"
-        [value]="term()"
-        (input)="onType($any($event.target).value)"
-      />
+      <div class="cp__search-wrap">
+        <svg class="cp__search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          class="ar-field__input cp__search-input"
+          type="search"
+          placeholder="Search contacts by name, company, or phone…"
+          [value]="term()"
+          (input)="onType($any($event.target).value)"
+        />
+        @if (searching()) {
+          <div class="cp__spinner" aria-hidden="true"></div>
+        }
+      </div>
+
       @if (results().length) {
         <ul class="cp__list">
           @for (r of results(); track r.id) {
             <li>
-              <button type="button" class="cp__row" (click)="choose(r)">{{ r.label }}</button>
+              <button type="button" class="cp__row" (click)="choose(r)">
+                <div class="cp__row-avatar" aria-hidden="true">{{ getInitials(r.label) }}</div>
+                <div class="cp__row-info">
+                  <span class="cp__row-name">{{ getContactName(r.label) }}</span>
+                  @if (getContactCompany(r.label); as comp) {
+                    <span class="cp__row-co">{{ comp }}</span>
+                  }
+                </div>
+                <span class="cp__row-select-pill">Select</span>
+              </button>
             </li>
           }
         </ul>
       } @else if (term().trim().length > 1 && !searching()) {
-        <p class="cp__none">No contact matches “{{ term() }}”.</p>
+        <div class="cp__empty">
+          <p class="cp__none">No existing contact matches “{{ term() }}”.</p>
+        </div>
       }
+
       <!-- Not in Contacts yet: add them here rather than leaving the form. -->
       @if (canCreate() && !adding() && term().trim().length > 1 && !searching()) {
         <button type="button" class="cp__add" (click)="startAdd()">
-          + Add “{{ term().trim() }}” as a new contact
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Add “{{ term().trim() }}” as a new contact
         </button>
       }
+
       @if (adding()) {
         <div class="cp__new" role="group" aria-label="New contact">
+          <div class="cp__new-head">
+            <span class="cp__new-title">Quick Add New Contact</span>
+            <span class="cp__new-sub">Creates directory entry and attaches immediately</span>
+          </div>
           <input
             class="ar-field__input"
             type="text"
-            placeholder="Name"
+            placeholder="Contact Name *"
             maxlength="128"
             aria-label="New contact's name"
             [value]="newName()"
@@ -70,7 +123,7 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
           <input
             class="ar-field__input"
             type="tel"
-            placeholder="WhatsApp number, e.g. 919821012345"
+            placeholder="WhatsApp Phone (e.g. 919821012345) *"
             aria-label="New contact's WhatsApp number"
             [value]="newPhone()"
             (input)="newPhone.set($any($event.target).value)"
@@ -78,7 +131,7 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
           <input
             class="ar-field__input"
             type="text"
-            placeholder="Company (optional)"
+            placeholder="Company Name (optional)"
             maxlength="256"
             aria-label="New contact's company"
             [value]="newCompany()"
@@ -88,9 +141,9 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
             <p class="cp__err" role="alert">{{ e }}</p>
           }
           <div class="cp__new-actions">
-            <button type="button" class="cp__clear" (click)="adding.set(false)">Cancel</button>
+            <button type="button" class="cp__btn-cancel" (click)="adding.set(false)">Cancel</button>
             <button type="button" class="cp__save" [disabled]="saving()" (click)="saveNew()">
-              {{ saving() ? 'Adding…' : 'Add and choose' }}
+              {{ saving() ? 'Adding…' : 'Add & Attach' }}
             </button>
           </div>
         </div>
@@ -102,95 +155,329 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
       display: block;
       position: relative;
     }
+
     .cp__chosen {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      padding: 8px 11px;
-      border: 1px solid var(--ar-line-300);
-      border-radius: var(--ar-radius-control);
-      font: 400 13px var(--ar-font-sans);
+      gap: 12px;
+      padding: 10px 14px;
+      border: 1px solid #BFDBFE;
+      background: #F0F7FF;
+      border-radius: 9px;
+      transition: all 0.15s ease;
     }
+
+    .cp__chosen-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .cp__chosen-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #2563EB;
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .cp__chosen-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .cp__chosen-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #1E293B;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cp__chosen-co {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #64748B;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .cp__clear {
-      background: none;
-      border: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      padding: 5px 10px;
+      border-radius: 6px;
       cursor: pointer;
-      font: 500 12px var(--ar-font-sans);
-      color: var(--ar-blue-600);
+      font-size: 12px;
+      font-weight: 600;
+      color: #2563EB;
+      transition: all 0.12s ease;
+
+      &:hover {
+        background: #EFF6FF;
+        border-color: #93C5FD;
+      }
     }
+
+    /* Search Input Wrapper */
+    .cp__search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .cp__search-icon {
+      position: absolute;
+      left: 12px;
+      color: #94A3B8;
+      pointer-events: none;
+    }
+
+    .cp__search-input {
+      padding-left: 36px !important;
+      padding-right: 36px !important;
+    }
+
+    .cp__spinner {
+      position: absolute;
+      right: 12px;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #E2E8F0;
+      border-top-color: #2563EB;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Autocomplete Dropdown List */
     .cp__list {
       list-style: none;
-      margin: 4px 0 0;
-      padding: 4px;
-      border: 1px solid var(--ar-line-200);
-      border-radius: var(--ar-radius-control);
-      max-height: 180px;
+      margin: 6px 0 0;
+      padding: 6px;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      max-height: 220px;
       overflow-y: auto;
-      background: var(--ar-white);
+      background: #FFFFFF;
+      box-shadow: 0 10px 25px -5px rgba(16, 27, 48, 0.1), 0 8px 10px -6px rgba(16, 27, 48, 0.06);
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
+
     .cp__row {
-      display: block;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       width: 100%;
       text-align: left;
-      padding: 7px 9px;
+      padding: 8px 10px;
       border: 0;
-      border-radius: 4px;
+      border-radius: 7px;
       background: none;
       cursor: pointer;
-      font: 400 12.5px var(--ar-font-sans);
-      color: var(--ar-ink-900);
+      transition: background 0.12s ease;
+
+      &:hover {
+        background: #F1F5F9;
+      }
     }
-    .cp__row:hover {
-      background: var(--ar-bg-50);
+
+    .cp__row-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: #EFF6FF;
+      color: #2563EB;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
+
+    .cp__row-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .cp__row-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1E293B;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cp__row-co {
+      font-size: 11.5px;
+      color: #64748B;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cp__row-select-pill {
+      font-size: 11px;
+      font-weight: 600;
+      color: #2563EB;
+      background: #EFF6FF;
+      padding: 2px 8px;
+      border-radius: 5px;
+      opacity: 0;
+      transition: opacity 0.12s ease;
+    }
+
+    .cp__row:hover .cp__row-select-pill {
+      opacity: 1;
+    }
+
+    /* Empty and Add States */
+    .cp__empty {
+      padding: 10px 12px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      margin-top: 6px;
+    }
+
+    .cp__none {
+      margin: 0;
+      font-size: 12.5px;
+      color: #64748B;
+    }
+
     .cp__add {
-      display: block;
-      margin-top: 6px;
-      padding: 0;
-      border: 0;
-      background: none;
-      cursor: pointer;
-      font: 500 12.5px var(--ar-font-sans);
-      color: var(--ar-blue-600);
-    }
-    .cp__new {
-      display: grid;
+      display: inline-flex;
+      align-items: center;
       gap: 6px;
-      margin-top: 6px;
-      padding: 10px;
-      border: 1px solid var(--ar-line-200);
-      border-radius: var(--ar-radius-control);
-      background: var(--ar-bg-50);
+      margin-top: 8px;
+      padding: 6px 10px;
+      border: 1px dashed #BFDBFE;
+      border-radius: 7px;
+      background: #EFF6FF;
+      cursor: pointer;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #2563EB;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #DBEAFE;
+        border-color: #93C5FD;
+      }
     }
+
+    /* Quick Add Drawer Box */
+    .cp__new {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 14px;
+      border: 1px solid #BFDBFE;
+      border-radius: 10px;
+      background: #F8FAFC;
+    }
+
+    .cp__new-head {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-bottom: 4px;
+    }
+
+    .cp__new-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1E293B;
+    }
+
+    .cp__new-sub {
+      font-size: 11.5px;
+      color: #64748B;
+    }
+
     .cp__new-actions {
       display: flex;
       justify-content: flex-end;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
+      margin-top: 4px;
     }
-    .cp__save {
-      padding: 6px 12px;
-      border: 0;
-      border-radius: var(--ar-radius-control);
-      background: var(--ar-primary);
-      color: #fff;
+
+    .cp__btn-cancel {
+      background: transparent;
+      border: none;
+      color: #64748B;
+      font-size: 12.5px;
+      font-weight: 500;
       cursor: pointer;
-      font: 500 12.5px var(--ar-font-sans);
+      padding: 4px 8px;
+
+      &:hover {
+        color: #1E293B;
+      }
     }
-    .cp__save:disabled {
-      opacity: 0.6;
-      cursor: default;
+
+    .cp__save {
+      padding: 6px 14px;
+      border: 0;
+      border-radius: 7px;
+      background: #2563EB;
+      color: #FFFFFF;
+      cursor: pointer;
+      font-size: 12.5px;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
+      transition: all 0.12s ease;
+
+      &:hover:not(:disabled) {
+        background: #1D4ED8;
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
     }
+
     .cp__err {
       margin: 0;
-      font: 400 12px var(--ar-font-sans);
-      color: var(--ar-red-600, #b91c1c);
-    }
-    .cp__none {
-      margin: 6px 2px 0;
-      font: 400 12px var(--ar-font-sans);
-      color: var(--ar-ink-400);
+      font-size: 12px;
+      color: #DC2626;
+      font-weight: 500;
     }
   `,
 })
@@ -207,6 +494,25 @@ export class ArContactPicker {
   protected readonly newName = signal('');
   protected readonly newPhone = signal('');
   protected readonly newCompany = signal('');
+
+  /** Helpers for parsing contact labels */
+  protected getContactName(label: string): string {
+    const parts = label.split(/ — | · /);
+    return parts[0] || label;
+  }
+
+  protected getContactCompany(label: string): string | null {
+    const parts = label.split(/ — | · /);
+    return parts.length > 1 ? parts.slice(1).join(' — ') : null;
+  }
+
+  protected getInitials(label: string): string {
+    const name = this.getContactName(label).trim();
+    if (!name) return '—';
+    const parts = name.split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
 
   /** What was typed goes where it fits: digits are the number, anything else the name. */
   protected startAdd(): void {
