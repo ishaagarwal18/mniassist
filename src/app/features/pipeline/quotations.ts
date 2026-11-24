@@ -263,6 +263,10 @@ export class ArQuotations {
     return list;
   });
 
+  protected readonly visibleTotal = computed(() =>
+    this.filteredQuotes().reduce((sum, q) => sum + q.totalInPaise, 0),
+  );
+
   constructor() {
     effect(() => {
       const ids = this.quotes().map((q) => q.id);

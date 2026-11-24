@@ -54,9 +54,9 @@
     >
       <div class="kpi-card__top">
         <span class="kpi-card__icon kpi-card__icon--blue">
-          <ar-icon name="document" [size]="18" />
+          <ar-icon name="document" [size]="14" />
         </span>
-        <span class="kpi-card__label">TOTAL QUOTATIONS</span>
+        <span class="kpi-card__label">TOTAL QUOTES</span>
       </div>
       <div class="kpi-card__num">{{ totalQuotesCount() }}</div>
       <div class="kpi-card__sub">All records created</div>
@@ -73,7 +73,7 @@
     >
       <div class="kpi-card__top">
         <span class="kpi-card__icon kpi-card__icon--slate">
-          <ar-icon name="edit" [size]="18" />
+          <ar-icon name="edit" [size]="14" />
         </span>
         <span class="kpi-card__label">DRAFT</span>
       </div>
@@ -92,7 +92,7 @@
     >
       <div class="kpi-card__top">
         <span class="kpi-card__icon kpi-card__icon--indigo">
-          <ar-icon name="send" [size]="18" />
+          <ar-icon name="send" [size]="14" />
         </span>
         <span class="kpi-card__label">ISSUED</span>
       </div>
@@ -111,12 +111,12 @@
     >
       <div class="kpi-card__top">
         <span class="kpi-card__icon kpi-card__icon--amber">
-          <ar-icon name="clock" [size]="18" />
+          <ar-icon name="clock" [size]="14" />
         </span>
-        <span class="kpi-card__label">AWAITING DECISION</span>
+        <span class="kpi-card__label">AWAITING</span>
       </div>
       <div class="kpi-card__num">{{ awaitingDecision() }}</div>
-      <div class="kpi-card__sub">{{ money(awaitingDecisionValue()) }} in play</div>
+      <div class="kpi-card__sub">{{ money(awaitingDecisionValue()) }} value</div>
     </div>
 
     <!-- Card 5: Follow-ups Due -->
@@ -131,16 +131,16 @@
     >
       <div class="kpi-card__top">
         <span class="kpi-card__icon kpi-card__icon--rose">
-          <ar-icon name="alert" [size]="18" />
+          <ar-icon name="alert" [size]="14" />
         </span>
         <span class="kpi-card__label">FOLLOW-UPS DUE</span>
       </div>
       <div class="kpi-card__num">{{ followUpsDueCount() }}</div>
       <div class="kpi-card__sub">
         @if (followUpsDueCount() > 0) {
-          Action required today
+          Action required
         } @else {
-          Cadence up to date
+          Up to date
         }
       </div>
     </div>
@@ -156,12 +156,12 @@
     >
       <div class="kpi-card__top">
         <span class="kpi-card__icon kpi-card__icon--emerald">
-          <ar-icon name="billing" [size]="18" />
+          <ar-icon name="billing" [size]="14" />
         </span>
         <span class="kpi-card__label">TOTAL VALUE</span>
       </div>
       <div class="kpi-card__num kpi-card__num--value">{{ money(totalQuotationValue()) }}</div>
-      <div class="kpi-card__sub">Across all quotations</div>
+      <div class="kpi-card__sub">Combined value</div>
     </div>
   </section>
 
@@ -328,15 +328,17 @@
 
       <div class="table-infobar__right">
         <span class="financial-summary">
-          Visible Total: <strong>{{ money(filteredQuotes().reduce((sum, q) => sum + q.totalInPaise, 0)) }}</strong>
+          Visible Total: <strong>{{ money(visibleTotal()) }}</strong>
         </span>
       </div>
     </div>
 
-    <!-- Syncfusion Grid Component -->
+    <!-- Syncfusion Grid Component with fixed bottom pagination and internal independent scroll -->
     <div class="grid-wrapper">
       <ejs-grid
         arGrid="quotations"
+        [arGridSearch]="false"
+        [arGridPageSize]="20"
         arGridEmpty="No quotations match your criteria. Adjust your search or click 'New quotation' to create one."
         [dataSource]="filteredQuotes()"
         aria-label="Quotations Directory"
