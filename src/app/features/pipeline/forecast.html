@@ -1,489 +1,779 @@
-<ar-topbar
-  title="Forecast"
-  [subtitle]="periodLabel()"
-  help="What you are on course to sell in a month or quarter. Expected weights each open deal due in the period by how likely its stage is to win. Commit is what is won plus deals in Negotiation. Best case is everything scheduled landing. Deals with no close date, or a date that has passed, are listed but not counted."
->
-  <select
-    class="ar-field__input fc__pipe"
-    aria-label="Pipeline"
-    (change)="choosePipeline($any($event.target).value)"
-  >
-    <option value="" [selected]="!pipelineId()">All pipelines</option>
-    @for (p of pipelines(); track p.id) {
-      <option [value]="p.id" [selected]="p.id === pipelineId()">{{ p.name }}</option>
-    }
-  </select>
-  <button ar-button variant="ghost" (click)="openAssumptions()">Assumptions</button>
-  <button ar-button variant="primary" (click)="openQuotas()">Set quotas</button>
+<ar-topbar title="Forecast" [subtitle]="periodLabel() + (pipelineName() ? ' · ' + pipelineName() : ' · All Pipelines')"
+  help="Sales forecasting and revenue projection. Probability-weighted expected deals, committed pipeline, and quota tracking across fiscal periods.">
+  <div actions class="forecast-topbar-actions">
+    <!-- Pipeline Selector -->
+    <div class="pipe-select-wrap">
+      <ar-icon name="filter" [size]="13" class="pipe-icon" />
+      <select class="pipe-select" aria-label="Filter by pipeline" (change)="choosePipeline($any($event.target).value)">
+        <option value="" [selected]="!pipelineId()">All pipelines</option>
+        @for (p of pipelines(); track p.id) {
+        <option [value]="p.id" [selected]="p.id === pipelineId()">{{ p.name }}</option>
+        }
+      </select>
+    </div>
+
+    <!-- Assumptions Button -->
+    <button ar-button variant="ghost" class="topbar-btn" (click)="openAssumptions()">
+      <ar-icon name="settings-menu" [size]="13" />
+      <span>Assumptions</span>
+    </button>
+
+    <!-- Set Quotas Button -->
+    <button ar-button variant="primary" class="topbar-btn topbar-btn--primary" (click)="openQuotas()">
+      <ar-icon name="plus" [size]="13" />
+      <span>Set quotas</span>
+    </button>
+  </div>
 </ar-topbar>
 
-<div class="fc ar-scroll">
-  <div class="fc__bar">
-    <div class="seg" role="group" aria-label="Period">
-      <button type="button" [class.seg--on]="kind() === Kind.Month" (click)="setKind(Kind.Month)">
-        Month
-      </button>
-      <button
-        type="button"
-        [class.seg--on]="kind() === Kind.Quarter"
-        (click)="setKind(Kind.Quarter)"
-      >
-        Quarter
-      </button>
+<div class="fc-container ar-scroll">
+  <!-- 1. Forecast Period Controls Toolbar -->
+  <div class="fc-toolbar-card">
+    <div class="fc-toolbar-left">
+      <!-- Month / Quarter Segmented Toggle -->
+      <div class="period-seg-toggle" role="group" aria-label="Forecast timeframe">
+        <button type="button" class="period-seg-btn" [class.on]="kind() === Kind.Month" (click)="setKind(Kind.Month)">
+          Month
+        </button>
+        <button type="button" class="period-seg-btn" [class.on]="kind() === Kind.Quarter"
+          (click)="setKind(Kind.Quarter)">
+          Quarter
+        </button>
+      </div>
+
+      <!-- Period Stepper -->
+      <div class="period-nav-group">
+        <button type="button" class="period-arrow-btn" aria-label="Previous period" title="Previous period"
+          (click)="previous()">
+          <ar-icon name="chevron" [size]="12" class="arrow-back" />
+        </button>
+
+        <div class="period-display-badge">
+          <ar-icon name="clock" [size]="12" />
+          <span class="period-display-text">{{ periodLabel() }}</span>
+        </div>
+
+        <button type="button" class="period-arrow-btn" aria-label="Next period" title="Next period" (click)="next()">
+          <ar-icon name="chevron" [size]="12" />
+        </button>
+
+        <button type="button" class="period-today-btn" (click)="today()" title="Jump to current active period">
+          This period
+        </button>
+      </div>
     </div>
-    <div class="fc__nav">
-      <button
-        ar-button
-        variant="ghost"
-        class="fc__arrow fc__arrow--back"
-        icon="chevron"
-        aria-label="Previous period"
-        title="Previous period"
-        (click)="previous()"
-      ></button>
-      <b class="fc__label">{{ periodLabel() }}</b>
-      <button
-        ar-button
-        variant="ghost"
-        class="fc__arrow"
-        icon="chevron"
-        aria-label="Next period"
-        title="Next period"
-        (click)="next()"
-      ></button>
-      <button ar-button variant="ghost" (click)="today()">This period</button>
+
+    <div class="fc-toolbar-right">
+      <!-- Quick summary pills -->
+      @if (team(); as t) {
+      <div class="quick-stat-pill" title="Active sales pipeline">
+        <span class="pill-lbl">Pipeline:</span>
+        <span class="pill-val">{{ pipelineName() || 'All Pipelines' }}</span>
+      </div>
+      @if (coverageRatio(); as cov) {
+      <div class="quick-stat-pill quick-stat-pill--cov"
+        title="Pipeline coverage relative to target (Best Case / Target)">
+        <span class="pill-lbl">Coverage:</span>
+        <span class="pill-val">{{ cov }}x</span>
+      </div>
+      }
+      <div class="quick-stat-pill" title="Unweighted vs probability-weighted open deals">
+        <span class="pill-lbl">Weighted:</span>
+        <span class="pill-val">{{ money(weightedTotal()) }}</span>
+        <span class="pill-sub">of {{ money(unweightedTotal()) }}</span>
+      </div>
+      }
     </div>
   </div>
 
+  <!-- Plan & Load Status Banners -->
   @if (notInPlan()) {
-    <ar-banner tone="teal">
-      Sales forecasting is not part of this workspace's plan. Upgrade on the Billing page to see
-      what you are on course to sell.
-    </ar-banner>
+  <ar-banner tone="teal" class="fc-banner">
+    Sales forecasting is not part of this workspace's plan. Upgrade on the Billing page to unlock predictive sales
+    modeling.
+  </ar-banner>
   } @else if (failed()) {
-    <ar-banner tone="bad">
-      The forecast could not be loaded. The reason is shown in the message at the top right; try
-      again with “This period”.
-    </ar-banner>
+  <ar-banner tone="bad" class="fc-banner">
+    The forecast could not be loaded. Please check your network connection or try refreshing with “This period”.
+  </ar-banner>
   }
 
+  <!-- 2. KPI Section (6 Compact Cards in One Horizontal Row) -->
   @if (team(); as t) {
-    <section class="fc__cards" [class.fc__cards--loading]="loading()">
-      <ar-stat-tile
-        label="Target"
-        [value]="t.targetInPaise ? money(t.targetInPaise) : '—'"
-        [note]="t.targetInPaise ? 'set for the period' : 'no quota set'"
-      />
-      <ar-stat-tile
-        label="Closed"
-        [value]="money(t.closedInPaise)"
-        [note]="pct(t.attainment) + ' of target'"
-        tone="good"
-      />
-      <ar-stat-tile
-        label="Expected"
-        [value]="money(t.expectedInPaise)"
-        [note]="pct(t.projectedAttainment) + ' of target'"
-        tone="teal"
-      />
-      <ar-stat-tile label="Commit" [value]="money(t.commitInPaise)" note="won + Negotiation" />
-      <ar-stat-tile
-        label="Best case"
-        [value]="money(t.bestCaseInPaise)"
-        note="if everything lands"
-      />
-      <ar-stat-tile
-        label="Still to find"
-        [value]="t.targetInPaise ? money(t.gapInPaise) : '—'"
-        note="on the expected figure"
-        [tone]="(t.gapInPaise ?? 0) > 0 ? 'amber' : 'neutral'"
-      />
-    </section>
-
-    @if (t.targetInPaise) {
-      <div class="fc__meter-wrap">
-        <div class="fc__meter-head">
-          <span
-            >Target Attainment Progress: {{ pct(t.attainment) }}% Closed ·
-            {{ pct(t.projectedAttainment) }}% Expected</span
-          >
-          <span>Target: {{ money(t.targetInPaise) }}</span>
+  <section class="kpi-grid" [class.kpi-grid--loading]="loading()" aria-label="Forecast Financial KPIs">
+    <!-- Card 1: Target -->
+    <div class="kpi-card" title="Assigned sales quota for this period">
+      <div class="kpi-card__top">
+        <div class="kpi-card__icon kpi-card__icon--blue">
+          <ar-icon name="projection-plan" [size]="13" />
         </div>
-        <div
-          class="fc__meter"
-          role="img"
-          [attr.aria-label]="
-            'Closed ' +
-            pct(t.attainment) +
-            ', expected ' +
-            pct(t.projectedAttainment) +
-            ' of target'
-          "
-        >
-          <span class="fc__meter-exp" [style.width.%]="expectedShare()"></span>
-          <span class="fc__meter-won" [style.width.%]="closedShare()"></span>
+        <span class="kpi-card__label">Target</span>
+      </div>
+      <div class="kpi-card__num kpi-card__num--value">
+        {{ t.targetInPaise ? money(t.targetInPaise) : '—' }}
+      </div>
+      <div class="kpi-card__sub">
+        {{ t.targetInPaise ? 'Assigned quota' : 'No quota set' }}
+      </div>
+    </div>
+
+    <!-- Card 2: Closed -->
+    <div class="kpi-card" title="Successfully closed and won revenue">
+      <div class="kpi-card__top">
+        <div class="kpi-card__icon kpi-card__icon--emerald">
+          <ar-icon name="check" [size]="13" />
+        </div>
+        <span class="kpi-card__label">Closed (Won)</span>
+      </div>
+      <div class="kpi-card__num kpi-card__num--value font-emerald">
+        {{ money(t.closedInPaise) }}
+      </div>
+      <div class="kpi-card__sub">
+        <strong>{{ pct(t.attainment) }}</strong> achieved
+      </div>
+    </div>
+
+    <!-- Card 3: Expected -->
+    <div class="kpi-card" title="Probability-weighted open opportunities due in period">
+      <div class="kpi-card__top">
+        <div class="kpi-card__icon kpi-card__icon--teal">
+          <ar-icon name="analytics-overview" [size]="13" />
+        </div>
+        <span class="kpi-card__label">Expected</span>
+      </div>
+      <div class="kpi-card__num kpi-card__num--value font-teal">
+        {{ money(t.expectedInPaise) }}
+      </div>
+      <div class="kpi-card__sub">
+        <strong>{{ pct(t.projectedAttainment) }}</strong> projected
+      </div>
+    </div>
+
+    <!-- Card 4: Commit -->
+    <div class="kpi-card" title="High confidence revenue: Won deals plus Negotiation stage deals">
+      <div class="kpi-card__top">
+        <div class="kpi-card__icon kpi-card__icon--indigo">
+          <ar-icon name="gst-compliance" [size]="13" />
+        </div>
+        <span class="kpi-card__label">Commit</span>
+      </div>
+      <div class="kpi-card__num kpi-card__num--value font-indigo">
+        {{ money(t.commitInPaise) }}
+      </div>
+      <div class="kpi-card__sub">
+        Won + Negotiation
+      </div>
+    </div>
+
+    <!-- Card 5: Best Case -->
+    <div class="kpi-card" title="Ceiling revenue if every scheduled opportunity lands">
+      <div class="kpi-card__top">
+        <div class="kpi-card__icon kpi-card__icon--purple">
+          <ar-icon name="sparkle" [size]="13" />
+        </div>
+        <span class="kpi-card__label">Best Case</span>
+      </div>
+      <div class="kpi-card__num kpi-card__num--value font-purple">
+        {{ money(t.bestCaseInPaise) }}
+      </div>
+      <div class="kpi-card__sub">
+        Max pipeline ceiling
+      </div>
+    </div>
+
+    <!-- Card 6: Still to Find (Gap) -->
+    <div class="kpi-card" [class.kpi-card--alert]="(t.gapInPaise ?? 0) > 0"
+      title="Remaining revenue required to achieve target based on expected projection">
+      <div class="kpi-card__top">
+        <div class="kpi-card__icon" [class.kpi-card__icon--amber]="(t.gapInPaise ?? 0) > 0"
+          [class.kpi-card__icon--emerald]="(t.gapInPaise ?? 0) <= 0">
+          <ar-icon name="clock" [size]="13" />
+        </div>
+        <span class="kpi-card__label">Still to Find</span>
+      </div>
+      <div class="kpi-card__num kpi-card__num--value" [class.font-amber]="(t.gapInPaise ?? 0) > 0"
+        [class.font-emerald]="(t.gapInPaise ?? 0) <= 0">
+        {{ t.targetInPaise ? money(t.gapInPaise) : '—' }}
+      </div>
+      <div class="kpi-card__sub">
+        {{ (t.gapInPaise ?? 0) > 0 ? 'Gap to quota' : 'Target achieved!' }}
+      </div>
+    </div>
+  </section>
+
+  <!-- Target Attainment Dual-Meter -->
+  @if (t.targetInPaise) {
+  <div class="fc-meter-card">
+    <div class="fc-meter-head">
+      <div class="meter-title-wrap">
+        <span class="meter-title">Target Attainment Progress</span>
+        <div class="meter-tags">
+          <span class="meter-tag meter-tag--closed">
+            <span class="meter-dot meter-dot--closed"></span>
+            <span>{{ pct(t.attainment) }} Closed</span>
+          </span>
+          <span class="meter-tag meter-tag--expected">
+            <span class="meter-dot meter-dot--expected"></span>
+            <span>{{ pct(t.projectedAttainment) }} Expected</span>
+          </span>
         </div>
       </div>
-    }
+      <div class="meter-target-info">
+        <span class="target-lbl">Target:</span>
+        <strong class="target-val">{{ money(t.targetInPaise) }}</strong>
+      </div>
+    </div>
+
+    <div class="fc-meter-track" role="progressbar" [attr.aria-valuenow]="expectedShare()" aria-valuemin="0"
+      aria-valuemax="100"
+      [attr.aria-label]="'Closed ' + pct(t.attainment) + ', expected ' + pct(t.projectedAttainment) + ' of target'">
+      <!-- Expected (Light Teal/Blue Bar) -->
+      <span class="fc-meter-bar fc-meter-bar--exp" [style.width.%]="expectedShare()"></span>
+      <!-- Won / Closed (Deep Emerald Bar) -->
+      <span class="fc-meter-bar fc-meter-bar--won" [style.width.%]="closedShare()"></span>
+    </div>
+  </div>
+  }
   } @else if (!loading() && !failed()) {
-    <ar-banner tone="teal">Nothing is due, won or targeted in {{ periodLabel() }} yet.</ar-banner>
+  <ar-banner tone="teal" class="fc-banner">Nothing is due, won or targeted in {{ periodLabel() }} yet.</ar-banner>
   }
 
+  <!-- 3. Missing Close Date & Data Quality Alerts -->
   @if (
-    (forecast().unscheduledDeals ?? 0) > 0 ||
-    (forecast().overdueDeals ?? 0) > 0 ||
-    (forecast().unvaluedDeals ?? 0) > 0
+  (forecast().unscheduledDeals ?? 0) > 0 ||
+  (forecast().overdueDeals ?? 0) > 0 ||
+  (forecast().unvaluedDeals ?? 0) > 0
   ) {
-    <section class="fc__notes">
-      @if ((forecast().overdueDeals ?? 0) > 0) {
-        <p class="note note--warn">
-          <b
-            >{{ forecast().overdueDeals }} deal{{
-              forecast().overdueDeals === 1 ? '' : 's'
-            }}
-            slipped</b
-          >
-          ({{ money(forecast().overdueValueInPaise) }}): the expected close date has passed and they
-          are still open. They are not counted in any period until the date is updated.
+  <section class="fc-alert-strip" aria-label="Forecast Data Quality Alerts">
+    @if ((forecast().overdueDeals ?? 0) > 0) {
+    <div class="fc-alert-item fc-alert-item--danger">
+      <div class="fc-alert-icon">
+        <ar-icon name="clock" [size]="14" />
+      </div>
+      <div class="fc-alert-body">
+        <div class="fc-alert-title">
+          <strong>{{ forecast().overdueDeals }} slipped deal{{ forecast().overdueDeals === 1 ? '' : 's' }} ({{
+            money(forecast().overdueValueInPaise) }})</strong>
+        </div>
+        <p class="fc-alert-desc">
+          Expected close date has already passed. These deals are excluded from the current forecast until their dates
+          are rescheduled.
         </p>
-      }
-      @if ((forecast().unvaluedDeals ?? 0) > 0) {
-        <p class="note note--warn">
-          <b
-            >{{ forecast().unvaluedDeals }} open deal{{
-              forecast().unvaluedDeals === 1 ? '' : 's'
-            }}
-            with no value</b
-          >: no sent quotation and no estimate, so they add nothing to the forecast. Send a
-          quotation or add an estimate.
+      </div>
+    </div>
+    }
+    @if ((forecast().unvaluedDeals ?? 0) > 0) {
+    <div class="fc-alert-item fc-alert-item--warn">
+      <div class="fc-alert-icon">
+        <ar-icon name="fault-codes" [size]="14" />
+      </div>
+      <div class="fc-alert-body">
+        <div class="fc-alert-title">
+          <strong>{{ forecast().unvaluedDeals }} deal{{ forecast().unvaluedDeals === 1 ? '' : 's' }} missing
+            value</strong>
+        </div>
+        <p class="fc-alert-desc">
+          No issued quotation or commercial estimate recorded. They add ₹0 to probability weighting.
         </p>
-      }
-      @if ((forecast().unscheduledDeals ?? 0) > 0) {
-        <p class="note">
-          <b
-            >{{ forecast().unscheduledDeals }} open deal{{
-              forecast().unscheduledDeals === 1 ? '' : 's'
-            }}
-            with no close date</b
-          >
-          ({{ money(forecast().unscheduledValueInPaise) }}) cannot be placed in a period. Add an
-          expected close date to include them.
+      </div>
+    </div>
+    }
+    @if ((forecast().unscheduledDeals ?? 0) > 0) {
+    <div class="fc-alert-item fc-alert-item--info">
+      <div class="fc-alert-icon">
+        <ar-icon name="getting-started" [size]="14" />
+      </div>
+      <div class="fc-alert-body">
+        <div class="fc-alert-title">
+          <strong>{{ forecast().unscheduledDeals }} unscheduled deal{{ forecast().unscheduledDeals === 1 ? '' : 's' }}
+            ({{ money(forecast().unscheduledValueInPaise) }})</strong>
+        </div>
+        <p class="fc-alert-desc">
+          Missing an expected close date. Add an expected close date to include them in period projections.
         </p>
-      }
-    </section>
+      </div>
+    </div>
+    }
+  </section>
   }
 
-  <ar-card heading="By person">
-    @if (owners().length === 0) {
-      <p class="fc__empty">Nothing due, won or targeted in this period.</p>
-    } @else {
-      <ejs-grid arGrid="forecast-by-person" [arGridSearch]="false" [dataSource]="ownerRows()">
+  <!-- 4. Section: Forecast by Person (Sales Rep Performance) -->
+  <section class="fc-section-card">
+    <header class="fc-section-head">
+      <div class="head-title-wrap">
+        <h2 class="fc-section-title">Forecast by Person</h2>
+        <span class="fc-section-sub">{{ owners().length }} sales owners · Individual targets and attainment</span>
+      </div>
+    </header>
+
+    <div class="fc-section-body">
+      @if (owners().length === 0) {
+      <div class="fc-empty-state">
+        <ar-icon name="user" [size]="24" class="empty-icon" />
+        <p class="empty-title">No salesperson data</p>
+        <p class="empty-desc">No deals due, won, or targeted for this period.</p>
+      </div>
+      } @else {
+      <ejs-grid arGrid="forecast-by-person" [arGridSearch]="false" [dataSource]="ownerRows()"
+        aria-label="Forecast by Person Table">
         <e-columns>
-          <e-column field="name" headerText="Owner" />
-          <e-column field="target" headerText="Target" type="number" textAlign="Right">
-            <ng-template #template let-r>{{ r.target ? money(r.target) : '—' }}</ng-template>
+          <!-- 1. Owner / Salesperson -->
+          <e-column field="name" headerText="Salesperson" width="180">
+            <ng-template #template let-r>
+              <div class="cell-owner">
+                <ar-avatar [name]="r.name" [size]="22" />
+                <span class="owner-name" [class.owner-unassigned]="r.isUnassigned">{{ r.name }}</span>
+              </div>
+            </ng-template>
           </e-column>
-          <e-column field="closed" headerText="Closed" type="number" textAlign="Right">
-            <ng-template #template let-r>{{ money(r.closed) }}</ng-template>
+
+          <!-- 2. Target -->
+          <e-column field="target" headerText="Target" type="number" textAlign="Right" width="120">
+            <ng-template #template let-r>
+              <span class="val-num">{{ r.target ? money(r.target) : '—' }}</span>
+            </ng-template>
           </e-column>
-          <e-column field="expected" headerText="Expected" type="number" textAlign="Right">
-            <ng-template #template let-r>{{ money(r.expected) }}</ng-template>
+
+          <!-- 3. Closed (Won) -->
+          <e-column field="closed" headerText="Closed" type="number" textAlign="Right" width="120">
+            <ng-template #template let-r>
+              <strong class="val-num val-num--closed">{{ money(r.closed) }}</strong>
+            </ng-template>
           </e-column>
-          <e-column field="commit" headerText="Commit" type="number" textAlign="Right">
-            <ng-template #template let-r>{{ money(r.commit) }}</ng-template>
+
+          <!-- 4. Expected -->
+          <e-column field="expected" headerText="Expected" type="number" textAlign="Right" width="120">
+            <ng-template #template let-r>
+              <span class="val-num val-num--exp">{{ money(r.expected) }}</span>
+            </ng-template>
           </e-column>
-          <e-column field="bestCase" headerText="Best case" type="number" textAlign="Right">
-            <ng-template #template let-r>{{ money(r.bestCase) }}</ng-template>
+
+          <!-- 5. Commit -->
+          <e-column field="commit" headerText="Commit" type="number" textAlign="Right" width="120">
+            <ng-template #template let-r>
+              <span class="val-num">{{ money(r.commit) }}</span>
+            </ng-template>
           </e-column>
-          <e-column field="projected" headerText="Projected" type="number" textAlign="Right">
+
+          <!-- 6. Best Case -->
+          <e-column field="bestCase" headerText="Best Case" type="number" textAlign="Right" width="120">
+            <ng-template #template let-r>
+              <span class="val-num">{{ money(r.bestCase) }}</span>
+            </ng-template>
+          </e-column>
+
+          <!-- 7. Attainment Progress -->
+          <e-column field="projected" headerText="Attainment" type="number" textAlign="Right" width="140">
             <ng-template #template let-r>
               @if (r.projected != null) {
-                <ar-chip [tone]="tone(r.owner)">{{ pct(r.projected) }}</ar-chip>
+              <div class="cell-attainment">
+                <ar-chip [tone]="tone(r.owner)" class="attain-chip">{{ pct(r.projected) }}</ar-chip>
+                <div class="mini-progress-track" title="Attainment: {{ pct(r.projected) }}">
+                  <div class="mini-progress-fill mini-progress-fill--{{ tone(r.owner) }}"
+                    [style.width.%]="r.expectedProgress"></div>
+                </div>
+              </div>
               } @else {
-                <span class="fc__muted">no quota</span>
+              <span class="cell-muted">No quota</span>
               }
             </ng-template>
           </e-column>
-          <e-column field="deals" headerText="Deals" type="number" textAlign="Right" width="90" />
-        </e-columns>
-      </ejs-grid>
-    }
-  </ar-card>
 
-  <ar-card heading="Deals due this period">
-    @if (deals().length === 0) {
-      <p class="fc__empty">No open deals are due to close in this period.</p>
-    } @else {
-      <ejs-grid arGrid="forecast-deals" [dataSource]="dealRows()">
-        <e-columns>
-          <e-column field="title" headerText="Deal" width="280">
+          <!-- 8. Remaining Target -->
+          <e-column field="remaining" headerText="Remaining" type="number" textAlign="Right" width="120">
             <ng-template #template let-r>
-              <span class="fc__ref">{{ r.reference }}</span> {{ r.title }}
-              @if (r.contact) {
-                <span class="fc__muted"> · {{ r.contact }}</span>
-              }
+              <span class="val-num" [class.val-num--gap]="r.remaining > 0">{{ r.target ? money(r.remaining) : '—'
+                }}</span>
             </ng-template>
           </e-column>
-          <e-column field="owner" headerText="Owner" />
-          <e-column field="stage" headerText="Stage" />
-          <e-column field="due" headerText="Due" type="date" format="d MMM" />
-          <e-column field="value" headerText="Value" type="number" textAlign="Right">
+
+          <!-- 9. Open Deals Count -->
+          <e-column field="deals" headerText="Deals" type="number" textAlign="Right" width="80">
             <ng-template #template let-r>
-              {{ money(r.value) }}
-              <span class="fc__src" [class.fc__src--none]="r.deal.valueSource === Source.None">{{
-                r.source
-              }}</span>
+              <span class="deals-badge">{{ r.deals }}</span>
             </ng-template>
-          </e-column>
-          <e-column field="chance" headerText="Chance" type="number" textAlign="Right" width="100">
-            <ng-template #template let-r>{{ r.chance }}%</ng-template>
-          </e-column>
-          <e-column field="weighted" headerText="Weighted" type="number" textAlign="Right">
-            <ng-template #template let-r>{{ money(r.weighted) }}</ng-template>
           </e-column>
         </e-columns>
       </ejs-grid>
-    }
-  </ar-card>
-
-  <ar-card heading="How likely each stage is to win">
-    <p class="fc__sub">
-      @if (forecast().learnFromHistory) {
-        Starts from your settings and is moved by what happened to deals you have closed in the last
-        12 months. With few closed deals it stays close to your setting.
-      } @else {
-        Using your settings only. Turn on learning under Assumptions to let closed deals adjust
-        them.
       }
-    </p>
-    <ejs-grid arGrid="forecast-stage-chances" [arGridTools]="false" [dataSource]="chanceRows()">
-      <e-columns>
-        <e-column field="stage" headerText="Stage" />
-        <e-column field="configured" headerText="Your setting" type="number" textAlign="Right">
-          <ng-template #template let-r>{{ r.configured }}%</ng-template>
-        </e-column>
-        <e-column field="effective" headerText="Used" type="number" textAlign="Right">
-          <ng-template #template let-r
-            ><b>{{ r.effective }}%</b></ng-template
-          >
-        </e-column>
-        <e-column field="basis" headerText="Based on" />
-      </e-columns>
-      <ng-template #emptyRecordTemplate>No stages to show for this pipeline.</ng-template>
-    </ejs-grid>
-  </ar-card>
+    </div>
+  </section>
 
-  <ar-card heading="How this forecast has moved">
-    <button
-      card-actions
-      ar-button
-      variant="ghost"
-      icon="download"
-      [disabled]="busy()"
-      (click)="saveSnapshot()"
-    >
-      Save today's forecast
-    </button>
-    @if (changeText(); as c) {
-      <p class="fc__sub">
-        <ar-chip [tone]="(history().expectedChangeInPaise ?? 0) >= 0 ? 'good' : 'amber'">{{
-          c
-        }}</ar-chip>
-      </p>
-    }
-    @if (chart(); as ch) {
-      <div class="fc__chart">
-        @defer (on viewport) {
-          <ar-chart
-            id="fc-history-chart"
-            height="220px"
-            background="transparent"
-            [theme]="colours().theme"
-            [primaryXAxis]="xAxis"
-            [primaryYAxis]="yAxis"
-            [chartArea]="{ border: { width: 0 } }"
-            [tooltip]="{ enable: true, shared: true }"
-            [legendSettings]="{ visible: true, position: 'Bottom' }"
-            [crosshair]="{ enable: false }"
-            (axisLabelRender)="moneyAxisLabel($event)"
-            (sharedTooltipRender)="moneyTooltip($event)"
-            aria-label="Expected and closed over the period"
-          >
-            <ar-chart-series
-              [dataSource]="ch.points"
-              type="Line"
-              xName="day"
-              yName="expected"
-              name="Expected"
-              [width]="2"
-              [fill]="colours().expected"
-              [marker]="{ visible: true, width: 6, height: 6 }"
-            />
-            <ar-chart-series
-              [dataSource]="ch.points"
-              type="Line"
-              xName="day"
-              yName="closed"
-              name="Closed"
-              [width]="2"
-              [fill]="colours().closed"
-            />
+  <!-- 5. Section: Deals Due This Period -->
+  <section class="fc-section-card">
+    <header class="fc-section-head">
+      <div class="head-title-wrap">
+        <h2 class="fc-section-title">Deals Due This Period</h2>
+        <span class="fc-section-sub">{{ deals().length }} active opportunities scheduled to close in {{ periodLabel()
+          }}</span>
+      </div>
+    </header>
+
+    <div class="fc-section-body">
+      @if (deals().length === 0) {
+      <div class="fc-empty-state">
+        <ar-icon name="document" [size]="24" class="empty-icon" />
+        <p class="empty-title">No deals due</p>
+        <p class="empty-desc">No open opportunities have an expected close date in this period.</p>
+      </div>
+      } @else {
+      <ejs-grid arGrid="forecast-deals" [dataSource]="dealRows()" aria-label="Deals Due This Period Table">
+        <e-columns>
+          <!-- 1. Deal Title & Reference -->
+          <e-column field="title" headerText="Deal & Customer" width="280">
+            <ng-template #template let-r>
+              <div class="cell-deal-info">
+                <div class="deal-ref-row">
+                  @if (r.enquiryId) {
+                  <a class="deal-ref-link ar-mono" [routerLink]="['/enquiries', r.enquiryId]" title="View enquiry">
+                    {{ r.reference }}
+                  </a>
+                  } @else {
+                  <span class="deal-ref-link ar-mono">{{ r.reference }}</span>
+                  }
+                  <span class="deal-title">{{ r.title }}</span>
+                </div>
+                @if (r.contact) {
+                <div class="deal-contact-sub">
+                  <ar-icon name="user" [size]="10" />
+                  <span>{{ r.contact }}</span>
+                </div>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 2. Owner -->
+          <e-column field="owner" headerText="Owner" width="130">
+            <ng-template #template let-r>
+              <span class="deal-owner">{{ r.owner }}</span>
+            </ng-template>
+          </e-column>
+
+          <!-- 3. Stage -->
+          <e-column field="stage" headerText="Stage" width="120">
+            <ng-template #template let-r>
+              <ar-chip [tone]="stageTone(r.stageIndex)" class="stage-chip">
+                {{ r.stage }}
+              </ar-chip>
+            </ng-template>
+          </e-column>
+
+          <!-- 4. Due Date -->
+          <e-column field="due" headerText="Due Date" type="date" format="d MMM yyyy" width="120">
+            <ng-template #template let-r>
+              <div class="cell-date">
+                <ar-icon name="clock" [size]="10" />
+                <span>{{ r.due | date: 'd MMM yyyy' }}</span>
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 5. Value & Source -->
+          <e-column field="value" headerText="Deal Value" type="number" textAlign="Right" width="140">
+            <ng-template #template let-r>
+              <div class="cell-value-stack">
+                <span class="val-amount">{{ money(r.value) }}</span>
+                <span class="src-pill" [class.src-pill--none]="r.deal.valueSource === Source.None">
+                  {{ r.source }}
+                </span>
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 6. Win Chance (%) -->
+          <e-column field="chance" headerText="Win Chance" type="number" textAlign="Right" width="120">
+            <ng-template #template let-r>
+              <div class="cell-chance">
+                <span class="chance-pct">{{ r.chance }}%</span>
+                <div class="chance-bar-track">
+                  <div class="chance-bar-fill" [style.width.%]="r.chance"></div>
+                </div>
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 7. Weighted Value -->
+          <e-column field="weighted" headerText="Weighted (Exp.)" type="number" textAlign="Right" width="140">
+            <ng-template #template let-r>
+              <strong class="val-weighted">{{ money(r.weighted) }}</strong>
+            </ng-template>
+          </e-column>
+
+          <!-- 8. Actions -->
+          <e-column headerText="Actions" width="90" textAlign="Center">
+            <ng-template #template let-r>
+              @if (r.enquiryId) {
+              <a class="cell-act-link" [routerLink]="['/enquiries', r.enquiryId]" title="Open enquiry details">
+                <ar-icon name="document" [size]="12" />
+                <span>View</span>
+              </a>
+              }
+            </ng-template>
+          </e-column>
+        </e-columns>
+      </ejs-grid>
+      }
+    </div>
+  </section>
+
+  <!-- 6. Analytics Section (2-Column Grid) -->
+  <div class="fc-analytics-grid">
+    <!-- Left Column: Forecast Movement & Trend Analysis -->
+    <section class="fc-section-card">
+      <header class="fc-section-head">
+        <div class="head-title-wrap">
+          <h2 class="fc-section-title">Forecast Movement & Trend Analysis</h2>
+          <span class="fc-section-sub">Historical snapshots tracking closed vs expected revenue progression</span>
+        </div>
+        <button type="button" class="head-action-btn" [disabled]="busy()" (click)="saveSnapshot()"
+          title="Record today's forecast snapshot">
+          <ar-icon name="camera" [size]="12" />
+          <span>Save today's forecast</span>
+        </button>
+      </header>
+
+      <div class="fc-section-body">
+        @if (changeText(); as c) {
+        <div class="chart-summary-strip">
+          <ar-chip [tone]="(history().expectedChangeInPaise ?? 0) >= 0 ? 'good' : 'amber'" class="change-chip">
+            <ar-icon [name]="(history().expectedChangeInPaise ?? 0) >= 0 ? 'analytics-overview' : 'clock'" [size]="11" />
+            <span>{{ c }}</span>
+          </ar-chip>
+          <span class="chart-summary-meta">Daily automated snapshots for {{ periodLabel() }}</span>
+        </div>
+        }
+
+        @if (chart(); as ch) {
+        <div class="chart-wrapper">
+          @defer (on viewport) {
+          <ar-chart id="fc-history-chart" height="260px" width="100%" background="transparent" [theme]="colours().theme"
+            [primaryXAxis]="xAxis" [primaryYAxis]="yAxis" [chartArea]="{ border: { width: 0 } }"
+            [tooltip]="{ enable: true, shared: true }" [legendSettings]="{ visible: true, position: 'Bottom' }"
+            [crosshair]="{ enable: false }" (axisLabelRender)="moneyAxisLabel($event)"
+            (sharedTooltipRender)="moneyTooltip($event)" aria-label="Expected and closed over the period">
+            <ar-chart-series [dataSource]="ch.points" type="Line" xName="day" yName="expected" name="Expected"
+              [width]="2.5" [fill]="colours().expected" [marker]="{ visible: true, width: 6, height: 6 }" />
+            <ar-chart-series [dataSource]="ch.points" type="Line" xName="day" yName="closed" name="Closed" [width]="2.5"
+              [fill]="colours().closed" />
             @if (ch.hasTarget) {
-              <ar-chart-series
-                [dataSource]="ch.points"
-                type="Line"
-                xName="day"
-                yName="target"
-                name="Target"
-                dashArray="4,4"
-                [width]="1"
-                [fill]="colours().target"
-              />
+            <ar-chart-series [dataSource]="ch.points" type="Line" xName="day" yName="target" name="Target"
+              dashArray="4,4" [width]="1.5" [fill]="colours().target" />
             }
           </ar-chart>
-        } @placeholder {
-          <div style="min-height: 220px" aria-busy="true"></div>
+          } @placeholder {
+          <div class="chart-placeholder" aria-busy="true">
+            <span class="placeholder-text">Rendering trend chart...</span>
+          </div>
+          }
+        </div>
+        } @else {
+        <div class="fc-empty-state">
+          <ar-icon name="analytics-overview" [size]="24" class="empty-icon" />
+          <p class="empty-title">No history snapshots recorded</p>
+          <p class="empty-desc">
+            Daily snapshots capture forecast movements over time. Click "Save today's forecast" to record the first data
+            point.
+          </p>
+        </div>
         }
       </div>
-    } @else {
-      <p class="fc__empty">
-        No history for this period yet. A snapshot is saved each day, or use the button to save one
-        now.
-      </p>
-    }
+    </section>
 
-    @if ((history().accuracy ?? []).length > 0) {
-      <h3 class="fc__h2">How earlier forecasts turned out</h3>
-      <ejs-grid arGrid="forecast-accuracy" [arGridTools]="false" [dataSource]="accuracyRows()">
+    <!-- Right Column: Stage-Wise Win Probability -->
+    <section class="fc-section-card">
+      <header class="fc-section-head">
+        <div class="head-title-wrap">
+          <h2 class="fc-section-title">Stage-Wise Win Probability</h2>
+          <span class="fc-section-sub">
+            @if (forecast().learnFromHistory) {
+            Learned from past 12 months closed deal win rates
+            } @else {
+            Based on configured baseline settings only
+            }
+          </span>
+        </div>
+      </header>
+
+      <div class="fc-section-body">
+        <div class="stage-probability-list">
+          @for (s of chanceRows(); track s.stage) {
+          <div class="stage-prob-item">
+            <div class="stage-prob-header">
+              <div class="stage-prob-name-group">
+                <span class="stage-dot stage-dot--{{ s.stageIndex }}"></span>
+                <span class="stage-name">{{ s.stage }}</span>
+              </div>
+              <div class="stage-prob-metrics">
+                <span class="prob-tag prob-tag--cfg" title="Configured setting">Set: {{ s.configured }}%</span>
+                <span class="prob-tag prob-tag--used" title="Actual win rate used in forecast calculation">Used:
+                  <strong>{{ s.effective }}%</strong></span>
+              </div>
+            </div>
+
+            <!-- Dual Progress Bar Comparison -->
+            <div class="stage-prob-bar-container">
+              <div class="stage-prob-bar-track">
+                <!-- Configured bar marker -->
+                <div class="stage-prob-bar-cfg" [style.width.%]="s.configured" title="Configured: {{ s.configured }}%">
+                </div>
+                <!-- Effective used bar -->
+                <div class="stage-prob-bar-used" [style.width.%]="s.effective" title="Effective: {{ s.effective }}%">
+                </div>
+              </div>
+            </div>
+
+            <div class="stage-prob-footer">
+              <span class="stage-prob-basis">{{ s.basis }}</span>
+              @if (s.diff !== 0) {
+              <span class="stage-prob-diff" [class.diff-pos]="s.diff > 0" [class.diff-neg]="s.diff < 0">
+                {{ s.diff > 0 ? '+' + s.diff : s.diff }}% adjustment
+              </span>
+              }
+            </div>
+          </div>
+          } @empty {
+          <div class="fc-empty-state">
+            <p class="empty-title">No stages available</p>
+            <p class="empty-desc">No pipeline stages configured for this view.</p>
+          </div>
+          }
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 7. Historical Forecast Comparison (How Earlier Forecasts Turned Out) -->
+  @if ((history().accuracy ?? []).length > 0) {
+  <section class="fc-section-card">
+    <header class="fc-section-head">
+      <div class="head-title-wrap">
+        <h2 class="fc-section-title">Historical Forecast Comparison</h2>
+        <span class="fc-section-sub">Accuracy review: How earlier forecasted projections compared to final won
+          revenue</span>
+      </div>
+    </header>
+
+    <div class="fc-section-body">
+      <ejs-grid arGrid="forecast-accuracy" [arGridTools]="false" [dataSource]="accuracyRows()"
+        aria-label="Historical Forecast Accuracy Table">
         <e-columns>
-          <e-column field="period" headerText="Period" />
-          <e-column field="target" headerText="Target" type="number" textAlign="Right">
+          <e-column field="period" headerText="Period" width="150" />
+          <e-column field="target" headerText="Target" type="number" textAlign="Right" width="130">
             <ng-template #template let-r>{{ r.target ? money(r.target) : '—' }}</ng-template>
           </e-column>
-          <e-column field="atStart" headerText="Forecast at start" type="number" textAlign="Right">
-            <ng-template #template let-r>{{
-              r.atStart == null ? '—' : money(r.atStart)
-            }}</ng-template>
+          <e-column field="atStart" headerText="Forecast at Start" type="number" textAlign="Right" width="140">
+            <ng-template #template let-r>{{ r.atStart == null ? '—' : money(r.atStart) }}</ng-template>
           </e-column>
-          <e-column field="atMid" headerText="Forecast mid-period" type="number" textAlign="Right">
+          <e-column field="atMid" headerText="Forecast Mid-Period" type="number" textAlign="Right" width="150">
             <ng-template #template let-r>{{ r.atMid == null ? '—' : money(r.atMid) }}</ng-template>
           </e-column>
-          <e-column field="won" headerText="Actually won" type="number" textAlign="Right">
-            <ng-template #template let-r>{{ money(r.won) }}</ng-template>
+          <e-column field="won" headerText="Actually Won" type="number" textAlign="Right" width="140">
+            <ng-template #template let-r>
+              <strong class="val-num val-num--closed">{{ money(r.won) }}</strong>
+            </ng-template>
           </e-column>
-          <e-column field="error" headerText="Mid-period forecast was" />
+          <e-column field="error" headerText="Mid-Period Variance & Accuracy" width="200">
+            <ng-template #template let-r>
+              <ar-chip [tone]="varianceTone(r.rawError)" class="accuracy-chip">
+                {{ r.error }}
+              </ar-chip>
+            </ng-template>
+          </e-column>
         </e-columns>
       </ejs-grid>
-    }
-  </ar-card>
+    </div>
+  </section>
+  }
 </div>
 
+<!-- Modal: Set Quotas Dialog -->
 @if (quotaOpen()) {
-  <ar-dialog [title]="'Quotas · ' + forecast().label" (dismiss)="quotaOpen.set(false)">
-    <p class="dlg__text">
-      Targets in rupees for this {{ kind() === Kind.Month ? 'month' : 'quarter' }}. Leave blank for
-      none. A quarter with no quota of its own uses the sum of its months.
-    </p>
-    <div class="qt">
-      @for (r of quotaRows(); track r.userId ?? 'team'; let i = $index) {
-        <label class="qt__row">
-          <span class="qt__name">{{ r.name }}</span>
-          <span class="qt__rs">₹</span>
-          <input
-            class="ar-field__input qt__in"
-            inputmode="numeric"
-            placeholder="none"
-            [value]="r.rupees"
-            (input)="setRupees(i, $any($event.target).value)"
-            [attr.aria-label]="'Target for ' + r.name"
-          />
-        </label>
-      }
-    </div>
-    @if (error()) {
-      <p class="fc__err">{{ error() }}</p>
+<ar-dialog [title]="'Quotas · ' + forecast().label" (dismiss)="quotaOpen.set(false)">
+  <p class="dlg__text">
+    Targets in rupees for this {{ kind() === Kind.Month ? 'month' : 'quarter' }}. Leave blank for
+    none. A quarter with no quota of its own uses the sum of its months.
+  </p>
+  <div class="qt">
+    @for (r of quotaRows(); track r.userId ?? 'team'; let i = $index) {
+    <label class="qt__row">
+      <span class="qt__name">{{ r.name }}</span>
+      <span class="qt__rs">₹</span>
+      <input class="ar-field__input qt__in" inputmode="numeric" placeholder="none" [value]="r.rupees"
+        (input)="setRupees(i, $any($event.target).value)" [attr.aria-label]="'Target for ' + r.name" />
+    </label>
     }
-    <div dialogActions>
-      <button ar-button variant="ghost" (click)="quotaOpen.set(false)">Cancel</button>
-      <button ar-button variant="primary" [disabled]="busy()" (click)="saveQuotas()">
-        {{ busy() ? 'Saving…' : 'Save quotas' }}
-      </button>
-    </div>
-  </ar-dialog>
+  </div>
+  @if (error()) {
+  <p class="fc__err">{{ error() }}</p>
+  }
+  <div dialogActions>
+    <button ar-button variant="ghost" (click)="quotaOpen.set(false)">Cancel</button>
+    <button ar-button variant="primary" [disabled]="busy()" (click)="saveQuotas()">
+      {{ busy() ? 'Saving…' : 'Save quotas' }}
+    </button>
+  </div>
+</ar-dialog>
 }
 
+<!-- Modal: Forecast Assumptions Dialog -->
 @if (assumptionsOpen()) {
-  <ar-dialog title="Forecast assumptions" (dismiss)="assumptionsOpen.set(false)">
-    <label class="ar-field">
-      <span class="ar-field__label">Financial year starts in</span>
-      <select
-        required
-        class="ar-field__input"
-        (change)="fiscalStart.set(+$any($event.target).value)"
-      >
-        @for (m of months; track m; let i = $index) {
-          <option [value]="i + 1" [selected]="i + 1 === fiscalStart()">{{ m }}</option>
-        }
-      </select>
-    </label>
-    <label class="fc__check">
-      <input
-        type="checkbox"
-        [checked]="learn()"
-        (change)="learn.set($any($event.target).checked)"
-      />
-      Learn the chances from closed deals (your figures below are the starting point)
-    </label>
-    <label class="ar-field">
-      <span class="ar-field__label">Chances for</span>
-      <select class="ar-field__input" (change)="setScope($any($event.target).value)">
-        <option value="" [selected]="!scope()">Every pipeline (the default)</option>
-        @for (p of pipelines(); track p.id) {
-          <option [value]="p.id" [selected]="p.id === scope()">
-            {{ p.name }}{{ overrides()[p.id!] ? ' · own chances' : '' }}
-          </option>
-        }
-      </select>
-    </label>
-    <p class="dlg__text">
-      Chance of winning a deal in each stage, as a percentage. Expected weights each open deal by
-      its stage. A later stage cannot be lower than an earlier one.
-      @if (scope() && !scopeHasOverride()) {
-        This pipeline currently uses the default chances; changing a figure gives it its own.
+<ar-dialog title="Forecast assumptions" (dismiss)="assumptionsOpen.set(false)">
+  <label class="ar-field">
+    <span class="ar-field__label">Financial year starts in</span>
+    <select required class="ar-field__input" (change)="fiscalStart.set(+$any($event.target).value)">
+      @for (m of months; track m; let i = $index) {
+      <option [value]="i + 1" [selected]="i + 1 === fiscalStart()">{{ m }}</option>
       }
-    </p>
-    @if (scopeHasOverride()) {
-      <p class="dlg__text">
-        <button ar-button variant="ghost" (click)="useWorkspaceChances()">
-          Use the default chances for this pipeline
-        </button>
-      </p>
-    }
-    <div class="qt">
-      @for (w of weightRows; track w.key) {
-        <label class="qt__row">
-          <span class="qt__name">{{ w.label }}</span>
-          <input
-            class="ar-field__input qt__in"
-            type="number"
-            min="0"
-            max="100"
-            [value]="shownWeights()[w.key]"
-            (change)="setWeight(w.key, $any($event.target).value)"
-            [attr.aria-label]="'Chance of winning at ' + w.label"
-          />
-          <span class="qt__rs">%</span>
-        </label>
+    </select>
+  </label>
+  <label class="fc__check">
+    <input type="checkbox" [checked]="learn()" (change)="learn.set($any($event.target).checked)" />
+    Learn the chances from closed deals (your figures below are the starting point)
+  </label>
+  <label class="ar-field">
+    <span class="ar-field__label">Chances for</span>
+    <select class="ar-field__input" (change)="setScope($any($event.target).value)">
+      <option value="" [selected]="!scope()">Every pipeline (the default)</option>
+      @for (p of pipelines(); track p.id) {
+      <option [value]="p.id" [selected]="p.id === scope()">
+        {{ p.name }}{{ overrides()[p.id!] ? ' · own chances' : '' }}
+      </option>
       }
-    </div>
-    @if (error()) {
-      <p class="fc__err">{{ error() }}</p>
+    </select>
+  </label>
+  <p class="dlg__text">
+    Chance of winning a deal in each stage, as a percentage. Expected weights each open deal by
+    its stage. A later stage cannot be lower than an earlier one.
+    @if (scope() && !scopeHasOverride()) {
+    This pipeline currently uses the default chances; changing a figure gives it its own.
     }
-    <div dialogActions>
-      <button ar-button variant="ghost" (click)="assumptionsOpen.set(false)">Cancel</button>
-      <button ar-button variant="primary" [disabled]="busy()" (click)="saveAssumptions()">
-        {{ busy() ? 'Saving…' : 'Save' }}
-      </button>
-    </div>
-  </ar-dialog>
+  </p>
+  @if (scopeHasOverride()) {
+  <p class="dlg__text">
+    <button ar-button variant="ghost" (click)="useWorkspaceChances()">
+      Use the default chances for this pipeline
+    </button>
+  </p>
+  }
+  <div class="qt">
+    @for (w of weightRows; track w.key) {
+    <label class="qt__row">
+      <span class="qt__name">{{ w.label }}</span>
+      <input class="ar-field__input qt__in" type="number" min="0" max="100" [value]="shownWeights()[w.key]"
+        (change)="setWeight(w.key, $any($event.target).value)" [attr.aria-label]="'Chance of winning at ' + w.label" />
+      <span class="qt__rs">%</span>
+    </label>
+    }
+  </div>
+  @if (error()) {
+  <p class="fc__err">{{ error() }}</p>
+  }
+  <div dialogActions>
+    <button ar-button variant="ghost" (click)="assumptionsOpen.set(false)">Cancel</button>
+    <button ar-button variant="primary" [disabled]="busy()" (click)="saveAssumptions()">
+      {{ busy() ? 'Saving…' : 'Save' }}
+    </button>
+  </div>
+</ar-dialog>
 }

@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 import type {
   IAxisLabelRenderEventArgs,
@@ -23,7 +25,7 @@ import {
   StageWeightsDto,
 } from '../../proxy/pipeline';
 import { ArTopbar } from '../../layout/topbar';
-import { ArBanner, ArButton, ArCard, ArChip, ArDialog, ArStatTile } from '../../ui';
+import { ArAvatar, ArBanner, ArButton, ArChip, ArDialog, ArIcon } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { ArSelect } from '../../ui/select';
 
@@ -66,6 +68,7 @@ interface QuotaRow {
 @Component({
   selector: 'ar-forecast',
   imports: [
+    DatePipe,
     ArTopbar,
     ArButton,
     ArChip,
@@ -73,11 +76,12 @@ interface QuotaRow {
     ArSelect,
     ArChart,
     ArChartSeries,
-    ArStatTile,
     ArBanner,
-    ArCard,
     ArGrid,
     GridModule,
+    ArIcon,
+    ArAvatar,
+    RouterLink,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './forecast.html',
@@ -102,6 +106,28 @@ export class ArForecast {
   protected readonly team = computed(() => this.forecast().team);
   protected readonly owners = computed(() => this.forecast().owners ?? []);
   protected readonly deals = computed(() => this.forecast().deals ?? []);
+
+  protected readonly pipelineName = computed(() => {
+    const id = this.pipelineId();
+    if (!id) return '';
+    const p = this.pipelines().find((x) => x.id === id);
+    return p ? p.name : '';
+  });
+
+  protected readonly coverageRatio = computed(() => {
+    const target = this.team()?.targetInPaise;
+    const bestCase = this.team()?.bestCaseInPaise;
+    if (!target || target <= 0 || !bestCase) return null;
+    return (bestCase / target).toFixed(1);
+  });
+
+  protected readonly unweightedTotal = computed(() =>
+    this.deals().reduce((sum, d) => sum + (d.valueInPaise ?? 0), 0),
+  );
+
+  protected readonly weightedTotal = computed(() =>
+    this.deals().reduce((sum, d) => sum + (d.weightedInPaise ?? 0), 0),
+  );
 
   /** Share of the team target that is won and that is expected, capped at 100% for the bar. */
   protected readonly closedShare = computed(() =>
@@ -238,29 +264,68 @@ export class ArForecast {
     return this.kind() === SalesPeriodKind.Quarter ? `Quarter from ${month}` : month;
   });
 
+  protected stageTone(s: EnquiryStage | undefined): 'neutral' | 'good' | 'amber' | 'bad' {
+    switch (s) {
+      case EnquiryStage.Won:
+        return 'good';
+      case EnquiryStage.Negotiation:
+        return 'good';
+      case EnquiryStage.Quoted:
+        return 'amber';
+      case EnquiryStage.SiteVisit:
+      case EnquiryStage.Qualified:
+        return 'neutral';
+      case EnquiryStage.Lost:
+        return 'bad';
+      default:
+        return 'neutral';
+    }
+  }
+
+  protected varianceTone(error: number | null | undefined): 'good' | 'amber' | 'bad' | 'neutral' {
+    if (error == null) return 'neutral';
+    const abs = Math.abs(error);
+    if (abs <= 0.1) return 'good';
+    if (abs <= 0.25) return 'amber';
+    return 'bad';
+  }
+
   // ---- grid rows: plain values to sort, filter and export by ----------------
 
   protected readonly ownerRows = computed(() =>
-    this.owners().map((o) => ({
-      owner: o,
-      name: o.ownerName ?? 'Unassigned',
-      target: o.targetInPaise ?? 0,
-      closed: o.closedInPaise ?? 0,
-      expected: o.expectedInPaise ?? 0,
-      commit: o.commitInPaise ?? 0,
-      bestCase: o.bestCaseInPaise ?? 0,
-      projected: o.projectedAttainment ?? null,
-      deals: o.openDeals ?? 0,
-    })),
+    this.owners().map((o) => {
+      const target = o.targetInPaise ?? 0;
+      const closed = o.closedInPaise ?? 0;
+      const expected = o.expectedInPaise ?? 0;
+      const remaining = Math.max(0, target - closed);
+      return {
+        owner: o,
+        name: o.ownerName ?? 'Unassigned',
+        isUnassigned: !o.ownerUserId,
+        target,
+        closed,
+        expected,
+        commit: o.commitInPaise ?? 0,
+        bestCase: o.bestCaseInPaise ?? 0,
+        projected: o.projectedAttainment ?? null,
+        attainment: o.attainment ?? null,
+        deals: o.openDeals ?? 0,
+        remaining,
+        closedProgress: this.share(closed, target),
+        expectedProgress: this.share(expected, target),
+      };
+    }),
   );
   protected readonly dealRows = computed(() =>
     this.deals().map((d) => ({
       deal: d,
+      enquiryId: d.enquiryId,
       reference: d.reference ?? '',
       title: d.title || 'Untitled',
       contact: d.contactName ?? '',
-      owner: d.ownerName ?? '',
+      owner: d.ownerName ?? 'Unassigned',
       stage: this.stage(d.stage),
+      stageIndex: d.stage,
       due: d.expectedClose ? new Date(d.expectedClose) : null,
       value: d.valueInPaise ?? 0,
       source: this.sourceText(d),
@@ -271,20 +336,30 @@ export class ArForecast {
   protected readonly chanceRows = computed(() =>
     (this.forecast().chances ?? []).map((c) => ({
       stage: this.stage(c.stage),
+      stageIndex: c.stage,
       configured: c.configuredPercent ?? 0,
       effective: c.effectivePercent ?? 0,
+      sample: c.sample ?? 0,
       basis: this.basisText(c.basis, c.sample),
+      diff: (c.effectivePercent ?? 0) - (c.configuredPercent ?? 0),
     })),
   );
   protected readonly accuracyRows = computed(() =>
-    (this.history().accuracy ?? []).map((a) => ({
-      period: a.label ?? '',
-      target: a.targetInPaise ?? 0,
-      atStart: a.expectedAtStartInPaise ?? null,
-      atMid: a.expectedAtMidpointInPaise ?? null,
-      won: a.actualInPaise ?? 0,
-      error: this.errorText(a.midpointError),
-    })),
+    (this.history().accuracy ?? []).map((a) => {
+      const won = a.actualInPaise ?? 0;
+      const mid = a.expectedAtMidpointInPaise ?? 0;
+      const variance = won - mid;
+      return {
+        period: a.label ?? '',
+        target: a.targetInPaise ?? 0,
+        atStart: a.expectedAtStartInPaise ?? null,
+        atMid: a.expectedAtMidpointInPaise ?? null,
+        won,
+        error: this.errorText(a.midpointError),
+        rawError: a.midpointError,
+        variance,
+      };
+    }),
   );
 
   protected today(): void {
