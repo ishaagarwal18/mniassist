@@ -56,7 +56,7 @@ import { ArButton, ArCard } from '../../ui';
       <ar-card heading="SMS">
         <div class="am__body">
           <p class="am__hint">
-            Register a reminder template with DLT and add it to your MSG91 account, then choose it
+            Register a reminder template with DLT and add it under Channels › SMS (Exotel or MSG91), then choose it
             here. Its variables are filled in order: the person's name, then the task or meeting
             title, then when it is due or starts, then the link or place.
           </p>
@@ -79,7 +79,7 @@ import { ArButton, ArCard } from '../../ui';
           </label>
           @if (!smsTemplates().length) {
             <p class="am__hint">
-              No SMS templates yet. Connect MSG91 and add one under Channels › SMS.
+              No SMS templates yet. Connect Exotel or MSG91 and add one under Channels › SMS.
             </p>
           }
           @if (canManage()) {

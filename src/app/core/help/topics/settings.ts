@@ -477,7 +477,7 @@ export const SETTINGS_TOPICS: Readonly<Record<string, HelpTopic>> = {
     steps: [
       'Add task_reminder and meeting_reminder from Templates › Industrial library and submit them to Meta.',
       'Put each colleague’s mobile number on their user profile.',
-      'For SMS, register a reminder template with DLT and MSG91, then choose it here and click Save.',
+      'For SMS, register a reminder template with DLT and add it under Channels › SMS, then choose it here and click Save.',
     ],
     fields: [
       { name: 'task_reminder / meeting_reminder', text: 'Whether each WhatsApp template is approved. Until then, WhatsApp only reaches people who messaged you in the last 24 hours.' },

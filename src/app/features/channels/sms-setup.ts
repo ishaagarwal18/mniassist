@@ -15,6 +15,7 @@ import { ArTopbar } from '../../layout/topbar';
 import {
   SmsChannelDto,
   SmsChannelService,
+  SmsProvider,
   SmsTemplateCategory,
   SmsTemplateDto,
   SmsTemplateStatus,
@@ -40,8 +41,21 @@ export function countDltVariables(content: string): number {
   return (content.match(/\{#var#\}/gi) ?? []).length;
 }
 
+const PROVIDERS: { value: SmsProvider; label: string; note: string }[] = [
+  {
+    value: SmsProvider.Exotel,
+    label: 'Exotel',
+    note: 'Sends the DLT template ID with the message text. Uses your Exotel API key, token and account SID.',
+  },
+  {
+    value: SmsProvider.Msg91,
+    label: 'MSG91',
+    note: 'Sends through an MSG91 flow made from each DLT template. Uses your MSG91 auth key.',
+  },
+];
+
 /**
- * SMS set-up (MSG91 + India's DLT): the sender ID the messages come from, and the DLT templates the operator
+ * SMS set-up (Exotel or MSG91, plus India's DLT): the sender ID the messages come from, and the DLT templates the operator
  * registered. Templates are approved on the DLT portal, not here; this page records the result so only approved
  * ones can be sent.
  */
@@ -50,22 +64,91 @@ export function countDltVariables(content: string): number {
   imports: [ArTopbar, ArButton, ArChip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: '../shared/work-page.scss',
+  styles: `
+    .sms-providers {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 10px;
+      margin: 4px 0 14px;
+    }
+    .sms-provider {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px 14px;
+      border: 1px solid var(--ar-line-300);
+      border-radius: var(--ar-radius-card);
+      background: var(--ar-white);
+      cursor: pointer;
+    }
+    .sms-provider input {
+      margin-top: 3px;
+      accent-color: var(--ar-primary);
+    }
+    .sms-provider > span {
+      display: grid;
+      gap: 2px;
+    }
+    .sms-provider--on {
+      border-color: var(--ar-blue-500);
+      background: var(--ar-blue-100);
+    }
+    .sms-provider__tag {
+      margin-left: 6px;
+      padding: 1px 6px;
+      border-radius: var(--ar-radius-chip);
+      background: var(--ar-bg-50);
+      color: var(--ar-ink-500);
+      font-size: 11px;
+      font-weight: 600;
+    }
+  `,
   template: `
     <ar-topbar
       title="SMS set-up"
-      subtitle="Sender ID and DLT templates"
+      subtitle="Provider, sender ID and DLT templates"
       help="Every SMS in India must use a sender ID and a template registered on the DLT portal. Add them here exactly as registered."
     />
     <div class="wp">
       <section class="wp__card">
-        <h2 class="wp__title">Sender ID</h2>
+        <h2 class="wp__title">SMS provider and sender</h2>
         <p class="wp__muted">
-          The 6-character header registered on DLT (for example MNIAUT), and your MSG91 auth key.
+          Choose who sends your SMS, then enter the 6-character header registered on DLT (for
+          example MNIAUT) and that provider's API details.
           @if (channel(); as c) {
-            Current: <strong translate="no">{{ c.senderId || 'not set' }}</strong
-            >.
+            Current: <strong translate="no">{{ c.senderId === 'PENDNG' ? 'not set' : c.senderId }}</strong>
+            through <strong translate="no">{{ providerLabel(c.provider) }}</strong>.
           }
         </p>
+        @if (channel()?.setupProblem; as problem) {
+          <p class="wp__error">Not ready to send: {{ problem }}.</p>
+        }
+        <div class="sms-providers" role="radiogroup" aria-label="SMS provider">
+          @for (p of providers; track p.value) {
+            <label class="sms-provider" [class.sms-provider--on]="provider() === p.value">
+              <input
+                type="radio"
+                name="sms-provider"
+                [checked]="provider() === p.value"
+                (change)="provider.set(p.value)"
+              />
+              <span>
+                <span
+                  ><strong translate="no">{{ p.label }}</strong>
+                  @if (p.value === exotel) {
+                    <span class="sms-provider__tag">Default</span>
+                  }</span
+                >
+                <span class="wp__sub">{{ p.note }}</span>
+              </span>
+            </label>
+          }
+        </div>
+        @if (switching()) {
+          <p class="wp__muted">
+            Switching provider clears the saved API credential: enter the new provider's details.
+          </p>
+        }
         <div class="wp__grid">
           <label class="wp__field">
             <span>Sender ID</span>
@@ -77,26 +160,82 @@ export function countDltVariables(content: string): number {
             />
           </label>
           <label class="wp__field">
-            <span>MSG91 auth key</span>
+            <span>DLT entity ID{{ provider() === exotel ? '' : ' (optional)' }}</span>
             <input
               class="ar-field__input"
-              type="password"
-              autocomplete="off"
-              placeholder="Leave blank to keep the saved key"
-              [value]="authKey()"
-              (input)="authKey.set($any($event.target).value)"
+              maxlength="32"
+              placeholder="Principal Entity ID from the DLT portal"
+              [value]="dltEntityId()"
+              (input)="dltEntityId.set($any($event.target).value.trim())"
             />
           </label>
+          @if (provider() === exotel) {
+            <label class="wp__field">
+              <span>Exotel account SID</span>
+              <input
+                class="ar-field__input"
+                maxlength="64"
+                [value]="accountSid()"
+                (input)="accountSid.set($any($event.target).value.trim())"
+              />
+            </label>
+            <label class="wp__field">
+              <span>Exotel region</span>
+              <select
+                class="ar-field__input"
+                [value]="subdomain()"
+                (change)="subdomain.set($any($event.target).value)"
+              >
+                <option value="api.exotel.com">Singapore (api.exotel.com)</option>
+                <option value="api.in.exotel.com">Mumbai (api.in.exotel.com)</option>
+              </select>
+            </label>
+            <label class="wp__field">
+              <span>Exotel API key</span>
+              <input
+                class="ar-field__input"
+                type="password"
+                autocomplete="off"
+                [placeholder]="keepPlaceholder()"
+                [value]="authKey()"
+                (input)="authKey.set($any($event.target).value)"
+              />
+            </label>
+            <label class="wp__field">
+              <span>Exotel API token</span>
+              <input
+                class="ar-field__input"
+                type="password"
+                autocomplete="off"
+                [placeholder]="keepPlaceholder()"
+                [value]="apiToken()"
+                (input)="apiToken.set($any($event.target).value)"
+              />
+            </label>
+          } @else {
+            <label class="wp__field">
+              <span>MSG91 auth key</span>
+              <input
+                class="ar-field__input"
+                type="password"
+                autocomplete="off"
+                [placeholder]="keepPlaceholder()"
+                [value]="authKey()"
+                (input)="authKey.set($any($event.target).value)"
+              />
+            </label>
+          }
         </div>
         <div class="wp__actions">
           <button
             ar-button
             type="button"
             variant="primary"
-            [disabled]="busy() !== null || senderId().trim().length < 6"
+            [disabled]="busy() !== null || senderProblem() !== null"
+            [title]="senderProblem() ?? ''"
             (click)="saveSender()"
           >
-            {{ busy() === 'sender' ? 'Saving…' : 'Save sender' }}
+            {{ busy() === 'sender' ? 'Saving…' : 'Save' }}
           </button>
         </div>
       </section>
@@ -124,14 +263,16 @@ export function countDltVariables(content: string): number {
               (input)="dltId.set($any($event.target).value.trim())"
             />
           </label>
-          <label class="wp__field">
-            <span>MSG91 flow ID</span>
-            <input
-              class="ar-field__input"
-              [value]="flowId()"
-              (input)="flowId.set($any($event.target).value.trim())"
-            />
-          </label>
+          @if (savedProvider() === msg91) {
+            <label class="wp__field">
+              <span>MSG91 flow ID</span>
+              <input
+                class="ar-field__input"
+                [value]="flowId()"
+                (input)="flowId.set($any($event.target).value.trim())"
+              />
+            </label>
+          }
           <label class="wp__field">
             <span>Category</span>
             <select
@@ -236,6 +377,9 @@ export class ArSmsSetup implements OnInit {
   private readonly dialogs = inject(ConfirmService);
 
   protected readonly categories = CATEGORIES;
+  protected readonly providers = PROVIDERS;
+  protected readonly exotel = SmsProvider.Exotel;
+  protected readonly msg91 = SmsProvider.Msg91;
   protected readonly approved = SmsTemplateStatus.Approved;
   protected readonly rejected = SmsTemplateStatus.Rejected;
   protected readonly varToken = '{#var#}';
@@ -246,6 +390,33 @@ export class ArSmsSetup implements OnInit {
 
   protected readonly senderId = signal('');
   protected readonly authKey = signal('');
+  protected readonly provider = signal<SmsProvider>(SmsProvider.Exotel);
+  protected readonly apiToken = signal('');
+  protected readonly accountSid = signal('');
+  protected readonly subdomain = signal('api.exotel.com');
+  protected readonly dltEntityId = signal('');
+
+  /** The provider templates are sent through: the saved one, not the unsaved choice. */
+  protected readonly savedProvider = computed(() => this.channel()?.provider ?? SmsProvider.Exotel);
+  protected readonly switching = computed(
+    () => !!this.channel()?.hasCredential && this.provider() !== this.savedProvider(),
+  );
+  /** A saved credential may be kept by leaving the field blank, unless the provider changes. */
+  protected readonly keepPlaceholder = computed(() =>
+    this.channel()?.hasCredential && !this.switching() ? 'Leave blank to keep the saved one' : '',
+  );
+  protected readonly senderProblem = computed(() => {
+    if (this.senderId().trim().length < 6) return 'Enter the 6-character sender ID.';
+    if (this.provider() !== SmsProvider.Exotel) return null;
+    if (!this.accountSid()) return 'Enter the Exotel account SID.';
+    if (!this.dltEntityId()) return 'Enter the DLT entity ID.';
+    const key = this.authKey().trim();
+    const token = this.apiToken().trim();
+    if (!!key !== !!token) return 'Enter both the Exotel API key and the API token.';
+    if (!key && (!this.channel()?.hasCredential || this.switching()))
+      return 'Enter the Exotel API key and token.';
+    return null;
+  });
 
   protected readonly name = signal('');
   protected readonly dltId = signal('');
@@ -262,8 +433,11 @@ export class ArSmsSetup implements OnInit {
       .filter((v) => v.length > 0),
   );
   protected readonly templateProblem = computed(() => {
-    if (!this.name().trim() || !this.dltId() || !this.flowId() || !this.content().trim()) {
-      return 'Fill in the name, DLT template ID, flow ID and body.';
+    const needsFlow = this.savedProvider() === SmsProvider.Msg91;
+    if (!this.name().trim() || !this.dltId() || (needsFlow && !this.flowId()) || !this.content().trim()) {
+      return needsFlow
+        ? 'Fill in the name, DLT template ID, flow ID and body.'
+        : 'Fill in the name, DLT template ID and body.';
     }
     if (this.variableNames().length !== this.varCount()) {
       return `The body has ${this.varCount()} variable(s); name each one.`;
@@ -274,8 +448,7 @@ export class ArSmsSetup implements OnInit {
   async ngOnInit(): Promise<void> {
     try {
       const c = await firstValueFrom(this.api.getOrCreate());
-      this.channel.set(c);
-      this.senderId.set(c.senderId ?? '');
+      this.useChannel(c);
     } catch {
       /* the global handler already said why */
     }
@@ -294,22 +467,45 @@ export class ArSmsSetup implements OnInit {
     return STATUS[s] ?? STATUS[SmsTemplateStatus.Pending];
   }
 
+  private useChannel(c: SmsChannelDto): void {
+    this.channel.set(c);
+    this.senderId.set(c.senderId === 'PENDNG' ? '' : (c.senderId ?? ''));
+    this.provider.set(c.provider ?? SmsProvider.Exotel);
+    this.accountSid.set(c.exotelAccountSid ?? '');
+    this.subdomain.set(c.exotelSubdomain || 'api.exotel.com');
+    this.dltEntityId.set(c.dltEntityId ?? '');
+  }
+
+  protected providerLabel(p: SmsProvider): string {
+    return PROVIDERS.find((x) => x.value === p)?.label ?? 'MSG91';
+  }
+
   protected categoryLabel(c: number): string {
     return CATEGORIES.find((x) => x.value === c)?.label ?? 'Other';
   }
 
   protected async saveSender(): Promise<void> {
     await this.run('sender', async () => {
-      this.channel.set(
+      const exotel = this.provider() === SmsProvider.Exotel;
+      this.useChannel(
         await firstValueFrom(
           this.api.setSender(
-            { senderId: this.senderId().trim(), authKey: this.authKey().trim() || null },
+            {
+              senderId: this.senderId().trim(),
+              provider: this.provider(),
+              authKey: this.authKey().trim() || null,
+              apiToken: exotel ? this.apiToken().trim() || null : null,
+              exotelAccountSid: exotel ? this.accountSid() || null : null,
+              exotelSubdomain: exotel ? this.subdomain() : null,
+              dltEntityId: this.dltEntityId() || null,
+            },
             { skipHandleError: true },
           ),
         ),
       );
       this.authKey.set('');
-      this.toasts.success('Sender saved.', 'SMS');
+      this.apiToken.set('');
+      this.toasts.success(`SMS will be sent through ${this.providerLabel(this.provider())}.`, 'SMS');
     });
   }
 
@@ -320,7 +516,7 @@ export class ArSmsSetup implements OnInit {
           {
             name: this.name().trim(),
             dltTemplateId: this.dltId(),
-            flowId: this.flowId(),
+            flowId: this.savedProvider() === SmsProvider.Msg91 ? this.flowId() : null,
             content: this.content().trim(),
             category: this.category(),
             variableNames: this.variableNames(),

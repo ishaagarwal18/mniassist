@@ -1469,7 +1469,7 @@ const BASE_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Only approved templates can be sent, so nothing is blocked by operators.',
     ],
     steps: [
-      'Enter the sender ID registered on DLT and your MSG91 auth key.',
+      'Choose Exotel (the default) or MSG91, enter the sender ID registered on DLT and that provider’s API details, then Save.',
       'Add each DLT template exactly as approved, naming every variable.',
       'Mark a template approved or rejected once the DLT portal decides.',
     ],
@@ -1774,7 +1774,7 @@ const BASE_TOPICS: Readonly<Record<string, HelpTopic>> = {
     steps: [
       'Add task_reminder and meeting_reminder from Templates › Industrial library and submit them to Meta.',
       'Put each colleague’s mobile number on their user profile.',
-      'For SMS, register a reminder template with DLT and MSG91, then choose it here and click Save.',
+      'For SMS, register a reminder template with DLT and add it under Channels › SMS, then choose it here and click Save.',
     ],
   },
   'settings/email-sending': {

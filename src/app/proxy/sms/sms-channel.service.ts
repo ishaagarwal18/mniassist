@@ -8,6 +8,20 @@ export interface SmsChannelDto {
   restrictionReason?: string | null;
   /** The virtual number customers' SMS replies arrive on; null when none is set. */
   inboundNumber?: string | null;
+  provider: SmsProvider;
+  exotelAccountSid?: string | null;
+  exotelSubdomain?: string | null;
+  dltEntityId?: string | null;
+  /** Whether an API credential is saved (never the credential itself). */
+  hasCredential: boolean;
+  /** What still blocks sending, or null when the account is ready. */
+  setupProblem?: string | null;
+}
+
+/** Who carries the workspace's SMS. Stored values: MSG91 is 0 (accounts from before the choice). */
+export enum SmsProvider {
+  Msg91 = 0,
+  Exotel = 1,
 }
 
 export interface SetSmsInboundNumberInput {
@@ -24,7 +38,8 @@ export interface SmsTemplateDto {
   id: string;
   name: string;
   dltTemplateId: string;
-  flowId: string;
+  /** MSG91 only. */
+  flowId?: string | null;
   /** DLT body, with a {#var#} placeholder for each variable in registration order. */
   content: string;
   category: number;
@@ -43,8 +58,14 @@ export interface SendSmsInput {
 export interface SetSmsSenderInput {
   /** The 6-character DLT header (sender ID). */
   senderId: string;
-  /** The MSG91 auth key; blank keeps the stored one. */
+  /** MSG91: the auth key. Exotel: the API key. Blank keeps the stored credential. */
   authKey?: string | null;
+  provider: SmsProvider;
+  /** Exotel: the API token that goes with the API key. */
+  apiToken?: string | null;
+  exotelAccountSid?: string | null;
+  exotelSubdomain?: string | null;
+  dltEntityId?: string | null;
 }
 
 export enum SmsTemplateCategory {
@@ -57,7 +78,7 @@ export enum SmsTemplateCategory {
 export interface CreateSmsTemplateInput {
   name: string;
   dltTemplateId: string;
-  flowId: string;
+  flowId?: string | null;
   content: string;
   category: SmsTemplateCategory;
   variableNames: string[];
@@ -67,7 +88,7 @@ export interface MarkSmsTemplateRejectedInput {
   reason?: string | null;
 }
 
-/** The workspace's MSG91 SMS channel. Routes follow ABP's conventional-controller naming for SmsChannelAppService. */
+/** The workspace's SMS channel (Exotel or MSG91). Routes follow ABP's conventional-controller naming for SmsChannelAppService. */
 @Injectable({ providedIn: 'root' })
 export class SmsChannelService {
   private restService = inject(RestService);

@@ -277,7 +277,8 @@ import { pathOf } from './cockpit-origin.logic';
       }
       .tb__util-btn {
         display: grid;
-        order: 2;
+        /* On the title's line, right after it (the title's auto margin pushes it right). */
+        order: -2;
       }
       /* The section's tab strip above carries these two buttons instead. */
       :host(.tb--under-strip) .tb__menu,
