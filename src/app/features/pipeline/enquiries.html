@@ -1,14 +1,15 @@
 <ar-topbar
   title="Enquiries"
-  [subtitle]="openCount() + ' open · ' + value(pipelineValue()) + ' in play'"
-  help="A board over your real sales pipeline — moving a card's stage here updates the actual record, it isn't a separate local view."
+  [subtitle]="openCount() + ' open opportunities · ' + value(pipelineValue()) + ' active pipeline value'"
+  help="A visual CRM pipeline over your real sales enquiries. Move cards across stages to automatically trigger stage changes and update records."
 >
-  <div class="board__top-actions">
+  <div actions class="board__top-actions">
     <div class="board__pipe-wrap">
+      <ar-icon name="workspaces" [size]="14" class="board__pipe-icon" />
       <span class="board__pipe-label">Pipeline:</span>
       <select
-        class="ar-field__input board__pipe"
-        aria-label="Select pipeline"
+        class="board__pipe-select"
+        aria-label="Select sales pipeline"
         (change)="choosePipeline($any($event.target).value)"
       >
         @for (p of pipelines(); track p.id) {
@@ -17,22 +18,25 @@
       </select>
     </div>
     @if (canManage()) {
-      <button ar-button type="button" variant="ghost" class="board__pipes" (click)="managePipelines()">
-        Pipelines
+      <button ar-button type="button" variant="ghost" class="board__pipes-btn" (click)="managePipelines()">
+        <ar-icon name="settings-menu" [size]="14" />
+        <span>Pipelines</span>
       </button>
     }
     @if (canCreate()) {
-      <a ar-button variant="primary" icon="plus" class="board__new" [routerLink]="['/enquiries/new']">
-        New enquiry
+      <a ar-button variant="primary" class="board__new-btn" [routerLink]="['/enquiries/new']">
+        <ar-icon name="plus" [size]="14" />
+        <span>New enquiry</span>
       </a>
     }
   </div>
 </ar-topbar>
 
 @if (!canViewAll()) {
-  <p class="enq-scope" role="note">
-    Showing the enquiries you own. Seeing the whole team's needs the View all enquiries permission.
-  </p>
+  <div class="enq-scope" role="note">
+    <ar-icon name="contacts" [size]="14" />
+    <span>Showing enquiries assigned to you. Team-wide visibility requires the <em>View all enquiries</em> permission.</span>
+  </div>
 }
 
 @if (dialogOpen()) {
@@ -102,39 +106,85 @@
   </ar-dialog>
 }
 
-<!-- Executive Pipeline Health Ribbon -->
-<div class="board-kpi-strip">
-  <div class="kpi-mini-card">
-    <span class="kpi-mini-lbl">Total In Play</span>
-    <strong class="kpi-mini-val text-primary">{{ value(pipelineValue()) }}</strong>
-    <span class="kpi-mini-sub">{{ openCount() }} active opportunities</span>
+<!-- Executive Pipeline Health Ribbon (4 KPI Cards) -->
+<section class="board-kpi-strip" aria-label="Pipeline Key Performance Indicators">
+  <div class="kpi-card kpi-card--blue">
+    <div class="kpi-card__icon">
+      <ar-icon name="analytics-overview" [size]="20" />
+    </div>
+    <div class="kpi-card__details">
+      <span class="kpi-card__label">Total In Play</span>
+      <div class="kpi-card__val font-mono">{{ value(pipelineValue()) }}</div>
+      <span class="kpi-card__sub">{{ openCount() }} active opportunities</span>
+    </div>
   </div>
-  <div class="kpi-mini-card">
-    <span class="kpi-mini-lbl">Hot Leads</span>
-    <strong class="kpi-mini-val text-good">{{ hotLeadsCount() }}</strong>
-    <span class="kpi-mini-sub">High close probability</span>
+
+  <div class="kpi-card kpi-card--orange">
+    <div class="kpi-card__icon">
+      <ar-icon name="deal-registrations" [size]="20" />
+    </div>
+    <div class="kpi-card__details">
+      <span class="kpi-card__label">Hot Leads</span>
+      <div class="kpi-card__val font-mono">{{ hotLeadsCount() }}</div>
+      <span class="kpi-card__sub">High close probability</span>
+    </div>
   </div>
-  <div class="kpi-mini-card">
-    <span class="kpi-mini-lbl">Average Deal Size</span>
-    <strong class="kpi-mini-val">{{ value(avgDealValue()) }}</strong>
-    <span class="kpi-mini-sub">Per qualified enquiry</span>
+
+  <div class="kpi-card kpi-card--teal">
+    <div class="kpi-card__icon">
+      <ar-icon name="price-lists" [size]="20" />
+    </div>
+    <div class="kpi-card__details">
+      <span class="kpi-card__label">Average Deal Size</span>
+      <div class="kpi-card__val font-mono">{{ value(avgDealValue()) }}</div>
+      <span class="kpi-card__sub">Per qualified enquiry</span>
+    </div>
   </div>
-  <div class="kpi-mini-card">
-    <span class="kpi-mini-lbl">Current Pipeline</span>
-    <strong class="kpi-mini-val font-sans">{{
-      currentPipeline()?.name || 'Default Pipeline'
-    }}</strong>
-    <span class="kpi-mini-sub">{{ columns().length }} active stages</span>
+
+  <div class="kpi-card kpi-card--violet">
+    <div class="kpi-card__icon">
+      <ar-icon name="workspaces" [size]="20" />
+    </div>
+    <div class="kpi-card__details">
+      <span class="kpi-card__label">Current Pipeline</span>
+      <div class="kpi-card__val font-sans">{{ currentPipeline()?.name || 'Default Pipeline' }}</div>
+      <span class="kpi-card__sub">{{ columns().length }} active stages</span>
+    </div>
   </div>
-</div>
+</section>
 
 <div class="board">
   @if (loading()) {
-    <p class="board__empty">Loading the pipeline…</p>
+    <div class="board-loading" role="status">
+      <span class="board-loading__spinner" aria-hidden="true"></span>
+      <span>Loading sales pipeline…</span>
+    </div>
   }
   @if (moveError(); as e) {
-    <p class="board__err" role="alert">{{ e }}</p>
+    <div class="board__err" role="alert">
+      <ar-icon name="helpdesk" [size]="14" />
+      <span>{{ e }}</span>
+    </div>
   }
+
+  @if (!loading() && cards().length === 0) {
+    <div class="board-empty-state">
+      <div class="empty-icon-box">
+        <ar-icon name="analytics-overview" [size]="36" />
+      </div>
+      <h3 class="empty-title">No enquiries in this pipeline</h3>
+      <p class="empty-desc">
+        There are currently no open opportunities in this pipeline. Create an enquiry or import existing leads to begin tracking deals.
+      </p>
+      @if (canCreate()) {
+        <a ar-button variant="primary" class="empty-cta" [routerLink]="['/enquiries/new']">
+          <ar-icon name="plus" [size]="14" />
+          <span>Add first enquiry</span>
+        </a>
+      }
+    </div>
+  }
+
   <ejs-kanban
     id="enquiry-board"
     keyField="column"
@@ -148,38 +198,83 @@
     (dialogOpen)="$event.cancel = true"
   >
   </ejs-kanban>
+
   <ng-template #headerTemplate let-col>
-    <div class="col__head">
-      <span class="col__t">{{ col.headerText }}</span>
-      <span class="col__meta font-mono">{{ columnMeta(col.keyField) }}</span>
+    <div class="col__head" [class]="'col__head--' + stageTheme(col.keyField)">
+      <div class="col__title-wrap">
+        <span class="col__indicator"></span>
+        <span class="col__t">{{ col.headerText }}</span>
+        <span class="col__count">{{ colCount(col.keyField) }}</span>
+      </div>
+      <span class="col__meta font-mono">{{ colValue(col.keyField) }}</span>
     </div>
   </ng-template>
+
   <ng-template #cardTemplate let-c>
-    <article class="card" tabindex="0" (keydown.enter)="selectedId.set(c.id)">
+    <article
+      class="card"
+      tabindex="0"
+      (keydown.enter)="selectedId.set(c.id)"
+      (click)="selectedId.set(c.id)"
+      [class]="'card--' + stageTheme(c.column)"
+    >
       <div class="card__top">
-        <span class="card__ref ar-mono">{{ c.reference }}</span>
-        @if (c.score != null) {
-          <ar-chip [tone]="c.band === 'hot' ? 'good' : c.band === 'warm' ? 'amber' : 'neutral'">
-            {{ c.band === 'hot' ? '🔥 Hot' : c.band === 'warm' ? '⚡ Warm' : '❄️ Cold' }}
-            {{ c.score }}
-          </ar-chip>
-        }
-      </div>
-      <h3 class="card__title">{{ c.title }}</h3>
-      <p class="card__contact">
-        👤 {{ c.contact }}<span class="card__co">{{ c.company ? ' · 🏢 ' + c.company : '' }}</span>
-      </p>
-      <div class="card__foot">
-        <span class="card__val">{{ value(c.valueInPaise) }}</span>
-        <div class="card__meta">
-          @if (c.owner) {
-            <ar-chip tone="neutral" [mono]="true">{{ c.owner }}</ar-chip>
+        <span class="card__ref">{{ c.reference }}</span>
+        <div class="card__top-right">
+          @if (c.score != null) {
+            <span
+              class="card__temp-badge"
+              [class.card__temp-badge--hot]="c.band === 'hot'"
+              [class.card__temp-badge--warm]="c.band === 'warm'"
+              [class.card__temp-badge--cold]="c.band === 'cold'"
+            >
+              <span class="temp-dot"></span>
+              <span class="temp-text">{{ c.band === 'hot' ? 'Hot' : c.band === 'warm' ? 'Warm' : 'Cold' }}</span>
+              <span class="temp-score">{{ c.score }}</span>
+            </span>
           }
-          <ar-chip [tone]="c.daysInStage > 10 ? 'warn' : 'neutral'">
-            ⏱️ {{ c.daysInStage }}d
-          </ar-chip>
+          <button
+            type="button"
+            class="card__menu-btn"
+            (click)="$event.stopPropagation(); selectedId.set(c.id)"
+            title="View enquiry details"
+            aria-label="Enquiry options"
+          >
+            <ar-icon name="dots" [size]="14" />
+          </button>
         </div>
       </div>
+
+      <h3 class="card__title" [title]="c.title">{{ c.title }}</h3>
+
+      <div class="card__contact-row">
+        <div class="card__avatar" aria-hidden="true">
+          {{ getInitials(c.contact) }}
+        </div>
+        <div class="card__contact-details">
+          <span class="card__contact-name" translate="no">{{ c.contact || 'No contact specified' }}</span>
+          @if (c.company) {
+            <span class="card__company-name" translate="no">{{ c.company }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="card__foot">
+        <div class="card__val-block">
+          <span class="card__val-label">Value</span>
+          <span class="card__val">{{ value(c.valueInPaise) }}</span>
+        </div>
+        <div class="card__meta">
+          @if (c.owner) {
+            <span class="card__owner-chip" title="Owner: {{ c.owner }}">{{ c.owner }}</span>
+          }
+          <span class="card__age-chip" [class.card__age-chip--warn]="c.daysInStage > 10" title="Days in this stage">
+            <ar-icon name="clock" [size]="12" />
+            <span>{{ c.daysInStage }}d</span>
+          </span>
+        </div>
+      </div>
+
       @if (next(c.card); as n) {
         <button
           type="button"
@@ -188,7 +283,7 @@
           [title]="i18n.t('Move to {0}', i18n.t(n.label))"
           (click)="advance(c.card, $event)"
         >
-          <span class="card__advance-k">Move to</span>
+          <span class="card__advance-k">Advance to</span>
           <span class="card__advance-stage">{{ n.label }}</span>
           <ar-icon name="chevron" [size]="13" />
         </button>

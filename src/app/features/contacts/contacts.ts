@@ -396,9 +396,13 @@ export class ArContacts {
     this.store.filterByAccount(id);
   }
 
-  protected readonly totalContacts = computed(
-    () => this.segments().find((s) => s.id === 'all')?.count ?? this.store.contacts().length,
-  );
+  protected readonly totalContacts = computed(() => {
+    const serverTotal = this.store.totalCount();
+    if (serverTotal && serverTotal > 0) return serverTotal;
+    const allSeg = this.segments().find((s) => s.id === 'all')?.count;
+    if (allSeg && allSeg > 0) return allSeg;
+    return this.store.contacts().length;
+  });
 
   protected readonly totalCompanies = computed(() => {
     const set = new Set<string>();
@@ -428,7 +432,7 @@ export class ArContacts {
   });
 
   protected readonly segmentCount = computed(
-    () => this.segments().find((s) => s.id === this.activeSegment())?.count ?? 0,
+    () => this.segments().find((s) => s.id === this.activeSegment())?.count ?? this.totalContacts(),
   );
 
   protected readonly visible = computed(() => {
@@ -515,7 +519,7 @@ export class ArContacts {
   protected readonly suppressionIcon = suppressionIcon;
 
   protected readonly activeSegmentName = computed(
-    () => this.segments().find((s) => s.id === this.activeSegment())?.name ?? 'Segment',
+    () => this.segments().find((s) => s.id === this.activeSegment())?.name ?? 'All contacts',
   );
 
   // ---- New contact dialog ------------------------------------------------

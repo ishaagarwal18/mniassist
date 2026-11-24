@@ -3,12 +3,13 @@
   subtitle="Log a new sales enquiry, attach customer requirements, and initiate pipeline tracking"
   help="A board over your real sales pipeline — creating an enquiry enters it directly into the initial qualification stage of your sales pipeline."
 >
-  <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
+  <button ar-button type="button" variant="ghost" class="tb-btn" (click)="cancel()">Cancel</button>
   <button
     ar-button
     type="button"
     variant="primary"
     icon="check"
+    class="tb-btn tb-btn--primary"
     [disabled]="busy()"
     (click)="save()"
   >
@@ -19,65 +20,118 @@
 <div class="enquiry-form-page ar-scroll">
   <div class="enquiry-form-container">
     @if (error(); as err) {
-      <ar-banner tone="bad">{{ err }}</ar-banner>
+      <ar-banner tone="bad" class="form-banner">
+        <div class="banner-content">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>{{ err }}</span>
+        </div>
+      </ar-banner>
     }
 
     <!-- Main Enquiry Setup Form -->
     <form class="enquiry-form" (submit)="$event.preventDefault(); save()">
-      <!-- Card 1: Contact & Pipeline Selection -->
-      <ar-card heading="Customer Contact &amp; Sales Pipeline">
+      <!-- Card 1: Customer Contact & Sales Pipeline -->
+      <ar-card heading="Customer Contact & Sales Pipeline">
         <div class="form-section-body">
+          <p class="section-desc">
+            Assign the customer directory contact and select the destination sales qualification pipeline.
+          </p>
+
           <div class="form-grid">
             <!-- Contact Picker -->
-            <div class="ar-field form-grid--col2">
-              <span class="ar-field__label">
-                Customer Contact <span class="ar-field__req">*</span>
-              </span>
+            <div class="ar-field form-grid--col2" [class.ar-field--error]="contactError()">
+              <label class="ar-field__label">
+                <span class="label-text">
+                  <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  Customer Contact
+                </span>
+                <span class="ar-field__req" title="Required">*</span>
+              </label>
               <span class="ar-field__hint">
-                Search your directory by customer name or company. If they are not in your directory
-                yet, you can add them directly below.
+                Search directory by name, company, or WhatsApp number. Create directly if not listed.
               </span>
               <div class="contact-picker-wrapper">
                 <ar-contact-picker (picked)="onContactPicked($event)" />
               </div>
+              @if (contactError(); as ce) {
+                <span class="inline-error" role="alert">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  {{ ce }}
+                </span>
+              }
             </div>
 
             <!-- Pipeline Selection -->
             <div class="ar-field form-grid--col2">
               <label for="enquiry-pipeline" class="ar-field__label">
-                Target Sales Pipeline <span class="ar-field__req">*</span>
+                <span class="label-text">
+                  <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                  </svg>
+                  Target Sales Pipeline
+                </span>
+                <span class="ar-field__req" title="Required">*</span>
               </label>
               <span class="ar-field__hint">
-                The qualification workflow, stages, and probability tracking this enquiry will
-                follow.
+                The qualification workflow, stages, and probability tracking this enquiry will follow.
               </span>
-              <select
-                id="enquiry-pipeline"
-                name="pipelineId"
-                required
-                class="ar-field__input"
-                [value]="draft().pipelineId"
-                (change)="patch('pipelineId', $any($event.target).value)"
-              >
-                @for (p of pipelines(); track p.id) {
-                  <option [value]="p.id" [selected]="p.id === draft().pipelineId">
-                    {{ p.name }}
-                  </option>
-                }
-              </select>
+              <div class="select-wrapper">
+                <select
+                  id="enquiry-pipeline"
+                  name="pipelineId"
+                  required
+                  class="ar-field__input ar-field__select"
+                  [value]="draft().pipelineId"
+                  (change)="patch('pipelineId', $any($event.target).value)"
+                >
+                  @for (p of pipelines(); track p.id) {
+                    <option [value]="p.id" [selected]="p.id === draft().pipelineId">
+                      {{ p.name }}
+                    </option>
+                  }
+                </select>
+                <div class="select-chevron" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </ar-card>
 
       <!-- Card 2: Requirement & Commercial Scope -->
-      <ar-card heading="Requirement &amp; Commercial Scope">
+      <ar-card heading="Requirement & Commercial Scope">
         <div class="form-section-body">
+          <p class="section-desc">
+            Define technical requirement specifications, expected contract value, and lead acquisition source.
+          </p>
+
           <div class="form-grid">
             <!-- Enquiry Title -->
-            <div class="ar-field form-grid--col2">
+            <div class="ar-field form-grid--col2" [class.ar-field--error]="titleError()">
               <label for="enquiry-title" class="ar-field__label">
-                Enquiry Title <span class="ar-field__req">*</span>
+                <span class="label-text">
+                  <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                    <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                  </svg>
+                  Enquiry Title
+                </span>
+                <span class="ar-field__req" title="Required">*</span>
               </label>
               <span class="ar-field__hint">
                 Brief reference describing the deal (e.g.
@@ -94,17 +148,35 @@
                 [value]="draft().title"
                 (input)="patch('title', $any($event.target).value)"
               />
+              @if (titleError(); as te) {
+                <span class="inline-error" role="alert">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  {{ te }}
+                </span>
+              }
             </div>
 
             <!-- Detailed Requirement -->
             <div class="ar-field form-grid--col2">
               <label for="enquiry-requirement" class="ar-field__label">
-                Customer Requirement &amp; Specifications
+                <span class="label-text">
+                  <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  Customer Requirement & Specifications
+                </span>
                 <span class="ar-field__opt">optional</span>
               </label>
               <span class="ar-field__hint">
-                Technical scope, application details, motor ratings, target delivery schedule, or
-                customer pain points.
+                Technical scope, application details, motor ratings, target delivery schedule, or customer pain points.
               </span>
               <textarea
                 id="enquiry-requirement"
@@ -120,82 +192,130 @@
             <!-- Estimated Commercial Value -->
             <div class="ar-field">
               <label for="enquiry-value" class="ar-field__label">
-                Estimated Value (₹) <span class="ar-field__opt">optional</span>
+                <span class="label-text">
+                  <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                  </svg>
+                  Estimated Value (₹)
+                </span>
+                <span class="ar-field__opt">optional</span>
               </label>
               <span class="ar-field__hint">Expected contract or order value in Rupees</span>
-              <input
-                id="enquiry-value"
-                name="valueRupees"
-                type="text"
-                inputmode="numeric"
-                class="ar-field__input"
-                placeholder="e.g. 2,50,000"
-                [value]="draft().valueRupees"
-                (input)="patch('valueRupees', $any($event.target).value)"
-              />
-            </div>
-
-            @if (canSeeProjects() && projects().length) {
-              <div class="ar-field">
-                <label for="enquiry-project" class="ar-field__label">
-                  Project <span class="ar-field__opt">optional</span>
-                </label>
-                <span class="ar-field__hint"
-                  >The plant or line this enquiry is one bidder's part of</span
-                >
-                <select
-                  id="enquiry-project"
-                  class="ar-field__input"
-                  (change)="projectId.set($any($event.target).value)"
-                >
-                  <option value="" [selected]="!projectId()">None</option>
-                  @for (p of projects(); track p.id) {
-                    <option [value]="p.id" [selected]="projectId() === p.id" translate="no">
-                      {{ p.reference }} · {{ p.name }}
-                    </option>
-                  }
-                </select>
+              <div class="input-with-prefix">
+                <span class="currency-prefix">₹</span>
+                <input
+                  id="enquiry-value"
+                  name="valueRupees"
+                  type="text"
+                  inputmode="numeric"
+                  class="ar-field__input ar-field__input--prefixed"
+                  placeholder="e.g. 2,50,000"
+                  [value]="draft().valueRupees"
+                  (input)="patch('valueRupees', $any($event.target).value)"
+                />
               </div>
-            }
+              @if (formattedValuePreview(); as preview) {
+                <div class="value-preview-badge">
+                  <span class="preview-dot"></span>
+                  Formatted: <strong>{{ preview }}</strong>
+                </div>
+              }
+            </div>
 
             <!-- Lead Source -->
             <div class="ar-field">
               <label for="enquiry-source" class="ar-field__label">
-                Lead Source <span class="ar-field__req">*</span>
+                <span class="label-text">
+                  <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                  </svg>
+                  Lead Source
+                </span>
+                <span class="ar-field__req" title="Required">*</span>
               </label>
               <span class="ar-field__hint">Where this commercial inquiry originated</span>
-              <select
-                id="enquiry-source"
-                name="source"
-                required
-                class="ar-field__input"
-                [value]="draft().source"
-                (change)="patchSource($any($event.target).value)"
-              >
-                @for (s of sources; track s.value) {
-                  <option [value]="s.value" [selected]="s.value === draft().source">
-                    {{ s.label }}
-                  </option>
-                }
-              </select>
+              <div class="select-wrapper">
+                <select
+                  id="enquiry-source"
+                  name="source"
+                  required
+                  class="ar-field__input ar-field__select"
+                  [value]="draft().source"
+                  (change)="patchSource($any($event.target).value)"
+                >
+                  @for (s of sources; track s.value) {
+                    <option [value]="s.value" [selected]="s.value === draft().source">
+                      {{ s.label }}
+                    </option>
+                  }
+                </select>
+                <div class="select-chevron" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
+              </div>
             </div>
+
+            @if (canSeeProjects() && projects().length) {
+              <div class="ar-field form-grid--col2">
+                <label for="enquiry-project" class="ar-field__label">
+                  <span class="label-text">Project</span>
+                  <span class="ar-field__opt">optional</span>
+                </label>
+                <span class="ar-field__hint">The plant or line this enquiry is one bidder's part of</span>
+                <div class="select-wrapper">
+                  <select
+                    id="enquiry-project"
+                    class="ar-field__input ar-field__select"
+                    (change)="projectId.set($any($event.target).value)"
+                  >
+                    <option value="" [selected]="!projectId()">None</option>
+                    @for (p of projects(); track p.id) {
+                      <option [value]="p.id" [selected]="projectId() === p.id" translate="no">
+                        {{ p.reference }} · {{ p.name }}
+                      </option>
+                    }
+                  </select>
+                  <div class="select-chevron" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            }
           </div>
         </div>
       </ar-card>
 
-      <!-- Footer Actions -->
-      <div class="form-footer">
-        <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
-        <button
-          ar-button
-          type="button"
-          variant="primary"
-          icon="check"
-          [disabled]="busy()"
-          (click)="save()"
-        >
-          {{ busy() ? 'Creating…' : 'Create Enquiry' }}
-        </button>
+      <!-- Sticky Action Bar -->
+      <div class="form-sticky-footer">
+        <div class="form-sticky-footer__inner">
+          <span class="form-status-indicator">
+            <span class="status-dot"></span>
+            Entering an enquiry assigns it directly to qualification
+          </span>
+          <div class="form-footer-buttons">
+            <button ar-button type="button" variant="ghost" class="btn-cancel" (click)="cancel()">
+              Cancel
+            </button>
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              icon="check"
+              class="btn-submit"
+              [disabled]="busy()"
+              (click)="save()"
+            >
+              {{ busy() ? 'Creating…' : 'Create Enquiry' }}
+            </button>
+          </div>
+        </div>
       </div>
     </form>
   </div>

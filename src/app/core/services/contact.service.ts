@@ -32,7 +32,7 @@ export class ContactService {
   /** With an account chosen: also the contacts of every account beneath it. */
   readonly includeSubsidiaries = signal(true);
   readonly skipCount = signal(0);
-  readonly maxResultCount = signal(50);
+  readonly maxResultCount = signal(1000);
 
   private readonly contactsResource = rxResource({
     params: () => ({

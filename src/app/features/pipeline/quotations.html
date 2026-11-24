@@ -1,20 +1,34 @@
 <ar-topbar
   title="Quotations"
-  [subtitle]="awaitingDecision() + ' awaiting a decision'"
-  help="Every quotation, raised against an enquiry or by hand for a customer, with whose follow-up is due front and centre. New quotation and Edit open a page with the line items and issuing. Marking one Lost requires a reason — that feeds the loss-reason breakdown in Analytics."
+  [subtitle]="awaitingDecision() + ' awaiting customer decision · ' + money(awaitingDecisionValue()) + ' pipeline value'"
+  help="Enterprise quotation management dashboard. Track pending approvals, monitor deal values, review follow-up cadence, and issue, revise or download commercial quotations."
 >
-  @if (canCrossReference()) {
-    <a ar-button variant="ghost" routerLink="/quotations/cross-references">Cross-references</a>
-  }
-  @if (canImport()) {
-    <a ar-button variant="ghost" routerLink="/quotations/imports">File imports</a>
-  }
-  @if (canImport() && canCreate()) {
-    <a ar-button variant="ai" icon="sparkle" routerLink="/quotations/import">Quote from a file</a>
-  }
-  @if (canCreate()) {
-    <a ar-button variant="primary" icon="plus" routerLink="/quotations/new">New quotation</a>
-  }
+  <div actions class="quotations-topbar-actions">
+    @if (canCrossReference()) {
+      <a ar-button variant="ghost" class="topbar-btn" routerLink="/quotations/cross-references">
+        <ar-icon name="link" [size]="14" />
+        <span>Cross-references</span>
+      </a>
+    }
+    @if (canImport()) {
+      <a ar-button variant="ghost" class="topbar-btn" routerLink="/quotations/imports">
+        <ar-icon name="upload" [size]="14" />
+        <span>File imports</span>
+      </a>
+    }
+    @if (canImport() && canCreate()) {
+      <a ar-button variant="ai" class="topbar-btn topbar-btn--ai" routerLink="/quotations/import">
+        <ar-icon name="sparkle" [size]="14" />
+        <span>Quote from a file</span>
+      </a>
+    }
+    @if (canCreate()) {
+      <a ar-button variant="primary" class="topbar-btn topbar-btn--primary" routerLink="/quotations/new">
+        <ar-icon name="plus" [size]="14" />
+        <span>New quotation</span>
+      </a>
+    }
+  </div>
 </ar-topbar>
 
 @if (signingFor(); as q) {
@@ -26,88 +40,559 @@
   />
 }
 
-<div class="q ar-scroll">
-  @if (loading()) {
-    <p class="q__empty">Loading…</p>
-  }
+<div class="q-dashboard ar-scroll">
+  <!-- 1. KPI Summary Section (6 Compact Cards) -->
+  <section class="kpi-grid" aria-label="Quotations KPI Overview">
+    <!-- Card 1: Total Quotations -->
+    <div
+      class="kpi-card"
+      [class.kpi-card--active]="statusFilter() === 'all' && followUpFilter() === 'all'"
+      (click)="clearAllFilters()"
+      role="button"
+      tabindex="0"
+      title="Click to view all quotations"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__icon kpi-card__icon--blue">
+          <ar-icon name="document" [size]="14" />
+        </span>
+        <span class="kpi-card__label">TOTAL QUOTES</span>
+      </div>
+      <div class="kpi-card__num">{{ totalQuotesCount() }}</div>
+      <div class="kpi-card__sub">All records created</div>
+    </div>
 
-  <ejs-grid arGrid="quotations"
-          arGridEmpty="No quotations yet. Press “New quotation” to price your first enquiry." [dataSource]="quotes()" aria-label="Quotations">
-    <e-columns>
-      <e-column field="reference" headerText="Reference" width="160">
-        <ng-template #template let-q>
-          <span class="ar-mono">{{ q.reference }}</span>
-          @if (q.revision > 0) {
-            <span class="rev">rev {{ q.revision }}</span>
-          }
-        </ng-template>
-      </e-column>
-      <e-column field="state" headerText="State" width="160">
-        <ng-template #template let-q>
-          <ar-chip [tone]="tone(q.state)">{{ q.state }}</ar-chip>
-          @if (sigChip(q); as sc) {
-            <ar-chip [tone]="sc.tone">{{ sc.label }}</ar-chip>
-          }
-        </ng-template>
-      </e-column>
-      <e-column field="taxInPaise" headerText="GST" textAlign="Right" width="130">
-        <ng-template #template let-q>
-          <span [attr.title]="gstTitle(q) || null">
-            @if (q.taxInPaise !== undefined) {
-              {{ money(q.taxInPaise) }}
-              @if ((q.taxBreakdown?.length ?? 0) > 1) {
-                <span class="mix">{{ q.taxBreakdown?.length }} rates</span>
-              }
-            } @else {
-              —
-            }
-          </span>
-        </ng-template>
-      </e-column>
-      <e-column field="totalInPaise" headerText="Total" textAlign="Right" width="140">
-        <ng-template #template let-q>
-          {{ money(q.totalInPaise) }}
-        </ng-template>
-      </e-column>
-      <e-column field="issuedAt" headerText="Issued" width="130">
-        <ng-template #template let-q>
-          {{ when(q.issuedAt) }}
-        </ng-template>
-      </e-column>
-      <e-column field="validUntil" headerText="Valid until" width="130">
-        <ng-template #template let-q>
-          {{ when(q.validUntil) }}
-        </ng-template>
-      </e-column>
-      <e-column headerText="Follow-up" width="140">
-        <ng-template #template let-q>
-          <span [class.due]="followUp(q) === 'due now'">{{ followUp(q) }}</span>
-        </ng-template>
-      </e-column>
-      <e-column headerText="Actions" width="300" textAlign="Right">
-        <ng-template #template let-q>
-          <div class="actions">
-            <a
-              ar-button
-              variant="ghost"
-              [icon]="isRecord(q) || !canUpdate() ? 'document' : 'edit'"
-              [title]="isRecord(q) || !canUpdate() ? 'View quotation' : 'Edit quotation'"
-              [routerLink]="['/quotations', q.id, 'edit']"
-            ></a>
-            @if (signingAvailable && (canSign(q) || sigChip(q))) {
-              <button ar-button variant="ghost" icon="edit" title="Digital signature" [disabled]="!!busy()" (click)="signingFor.set(q)"></button>
-            }
-            <button ar-button variant="ghost" icon="download" title="Download PDF" [disabled]="!!busy()" (click)="download(q)"></button>
-            @if (canUpdate() && (q.state === 'issued' || q.state === 'revised')) {
-              <button ar-button variant="ghost" icon="check" title="Mark as won" [disabled]="!!busy()" (click)="won(q)"></button>
-              <button ar-button variant="ghost" icon="close" title="Mark as lost" [disabled]="!!busy()" (click)="lost(q)"></button>
-            }
-            @if (canDelete()) {
-              <button ar-button variant="danger" icon="trash" title="Delete quotation" [disabled]="!!busy()" (click)="remove(q)"></button>
-            }
-          </div>
-        </ng-template>
-      </e-column>
-    </e-columns>
-  </ejs-grid>
+    <!-- Card 2: Draft -->
+    <div
+      class="kpi-card"
+      [class.kpi-card--active]="statusFilter() === 'draft'"
+      (click)="setStatusFilter('draft')"
+      role="button"
+      tabindex="0"
+      title="Click to filter draft quotations"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__icon kpi-card__icon--slate">
+          <ar-icon name="edit" [size]="14" />
+        </span>
+        <span class="kpi-card__label">DRAFT</span>
+      </div>
+      <div class="kpi-card__num">{{ draftQuotesCount() }}</div>
+      <div class="kpi-card__sub">Not yet issued</div>
+    </div>
+
+    <!-- Card 3: Issued -->
+    <div
+      class="kpi-card"
+      [class.kpi-card--active]="statusFilter() === 'issued'"
+      (click)="setStatusFilter('issued')"
+      role="button"
+      tabindex="0"
+      title="Click to filter issued quotations"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__icon kpi-card__icon--indigo">
+          <ar-icon name="send" [size]="14" />
+        </span>
+        <span class="kpi-card__label">ISSUED</span>
+      </div>
+      <div class="kpi-card__num">{{ issuedQuotesCount() }}</div>
+      <div class="kpi-card__sub">Sent to customers</div>
+    </div>
+
+    <!-- Card 4: Awaiting Decision -->
+    <div
+      class="kpi-card"
+      [class.kpi-card--active]="statusFilter() === 'awaiting'"
+      (click)="setStatusFilter('awaiting')"
+      role="button"
+      tabindex="0"
+      title="Click to filter quotations awaiting customer decision"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__icon kpi-card__icon--amber">
+          <ar-icon name="clock" [size]="14" />
+        </span>
+        <span class="kpi-card__label">AWAITING</span>
+      </div>
+      <div class="kpi-card__num">{{ awaitingDecision() }}</div>
+      <div class="kpi-card__sub">{{ money(awaitingDecisionValue()) }} value</div>
+    </div>
+
+    <!-- Card 5: Follow-ups Due -->
+    <div
+      class="kpi-card"
+      [class.kpi-card--active]="followUpFilter() === 'due'"
+      [class.kpi-card--alert]="followUpsDueCount() > 0"
+      (click)="setFollowUpFilter('due')"
+      role="button"
+      tabindex="0"
+      title="Click to view quotations requiring follow-up"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__icon kpi-card__icon--rose">
+          <ar-icon name="alert" [size]="14" />
+        </span>
+        <span class="kpi-card__label">FOLLOW-UPS DUE</span>
+      </div>
+      <div class="kpi-card__num">{{ followUpsDueCount() }}</div>
+      <div class="kpi-card__sub">
+        @if (followUpsDueCount() > 0) {
+          Action required
+        } @else {
+          Up to date
+        }
+      </div>
+    </div>
+
+    <!-- Card 6: Total Value -->
+    <div
+      class="kpi-card"
+      [class.kpi-card--active]="statusFilter() === 'all'"
+      (click)="clearAllFilters()"
+      role="button"
+      tabindex="0"
+      title="Combined quotation value"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__icon kpi-card__icon--emerald">
+          <ar-icon name="billing" [size]="14" />
+        </span>
+        <span class="kpi-card__label">TOTAL VALUE</span>
+      </div>
+      <div class="kpi-card__num kpi-card__num--value">{{ money(totalQuotationValue()) }}</div>
+      <div class="kpi-card__sub">Combined value</div>
+    </div>
+  </section>
+
+  <!-- 2. Search & Filters Toolbar -->
+  <section class="toolbar-card" aria-label="Filters and Search">
+    <div class="toolbar-main">
+      <!-- Search Input -->
+      <div class="search-wrap">
+        <ar-icon name="search" [size]="16" class="search-icon" />
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search by quote reference, customer, company, or enquiry..."
+          [value]="searchTerm()"
+          (input)="searchTerm.set($any($event.target).value)"
+        />
+        @if (searchTerm()) {
+          <button
+            type="button"
+            class="search-clear-btn"
+            title="Clear search"
+            (click)="searchTerm.set('')"
+          >
+            <ar-icon name="close" [size]="12" />
+          </button>
+        }
+      </div>
+
+      <!-- Filter Controls Group -->
+      <div class="filters-group">
+        <!-- Status Filter -->
+        <div class="select-field">
+          <label for="filter-status" class="visually-hidden">Filter Status</label>
+          <select
+            id="filter-status"
+            class="filter-select"
+            [value]="statusFilter()"
+            (change)="statusFilter.set($any($event.target).value)"
+          >
+            <option value="all">All Statuses</option>
+            <option value="draft">Draft</option>
+            <option value="issued">Issued</option>
+            <option value="revised">Revised</option>
+            <option value="awaiting">Awaiting Decision</option>
+            <option value="won">Accepted (Won)</option>
+            <option value="lost">Rejected (Lost)</option>
+            <option value="expired">Expired</option>
+          </select>
+        </div>
+
+        <!-- Follow-up Filter -->
+        <div class="select-field">
+          <label for="filter-followup" class="visually-hidden">Follow-up Status</label>
+          <select
+            id="filter-followup"
+            class="filter-select"
+            [value]="followUpFilter()"
+            (change)="followUpFilter.set($any($event.target).value)"
+          >
+            <option value="all">All Follow-ups</option>
+            <option value="due">Due Now / Overdue</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="none">No Follow-up Pending</option>
+          </select>
+        </div>
+
+        <!-- Validity Filter -->
+        <div class="select-field">
+          <label for="filter-validity" class="visually-hidden">Validity Status</label>
+          <select
+            id="filter-validity"
+            class="filter-select"
+            [value]="validityFilter()"
+            (change)="validityFilter.set($any($event.target).value)"
+          >
+            <option value="all">All Validity</option>
+            <option value="valid">Active &amp; Valid</option>
+            <option value="expiring">Expiring Soon (&le;3d)</option>
+            <option value="expired">Expired</option>
+          </select>
+        </div>
+
+        <!-- Issue Date Preset Filter -->
+        <div class="select-field">
+          <label for="filter-date" class="visually-hidden">Date Range</label>
+          <select
+            id="filter-date"
+            class="filter-select"
+            [value]="dateRangePreset()"
+            (change)="dateRangePreset.set($any($event.target).value)"
+          >
+            <option value="all">All Dates</option>
+            <option value="7d">Last 7 Days</option>
+            <option value="30d">Last 30 Days</option>
+            <option value="this_month">This Month</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Quick Action Utilities -->
+      <div class="toolbar-actions">
+        @if (activeFiltersCount() > 0) {
+          <button
+            type="button"
+            class="clear-filters-btn"
+            title="Reset all active filters"
+            (click)="clearAllFilters()"
+          >
+            <ar-icon name="close" [size]="12" />
+            <span>Clear filters ({{ activeFiltersCount() }})</span>
+          </button>
+        }
+
+        <button
+          type="button"
+          class="tool-btn"
+          title="Export filtered records to Excel"
+          (click)="exportExcel()"
+        >
+          <ar-icon name="download" [size]="14" />
+          <span>Excel</span>
+        </button>
+
+        <button
+          type="button"
+          class="tool-btn"
+          title="Export filtered records to CSV"
+          (click)="exportCsv()"
+        >
+          <ar-icon name="download" [size]="14" />
+          <span>CSV</span>
+        </button>
+
+        <button
+          type="button"
+          class="tool-btn tool-btn--icon"
+          title="Refresh quotation list"
+          (click)="refreshData()"
+        >
+          <ar-icon name="refresh" [size]="14" />
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Quotations Table Card -->
+  <section class="table-card" aria-label="Quotations Table">
+    <!-- Table Header Info Bar -->
+    <div class="table-infobar">
+      <div class="table-infobar__left">
+        <span class="count-badge">
+          Showing <strong>{{ filteredQuotes().length }}</strong> of {{ quotes().length }} quotations
+        </span>
+        @if (statusFilter() !== 'all') {
+          <span class="filter-tag">Status: {{ statusFilter() }}</span>
+        }
+        @if (followUpFilter() !== 'all') {
+          <span class="filter-tag">Follow-up: {{ followUpFilter() }}</span>
+        }
+        @if (validityFilter() !== 'all') {
+          <span class="filter-tag">Validity: {{ validityFilter() }}</span>
+        }
+      </div>
+
+      <div class="table-infobar__right">
+        <span class="financial-summary">
+          Visible Total: <strong>{{ money(visibleTotal()) }}</strong>
+        </span>
+      </div>
+    </div>
+
+    <!-- Syncfusion Grid Component with fixed bottom pagination and internal independent scroll -->
+    <div class="grid-wrapper">
+      <ejs-grid
+        arGrid="quotations"
+        [arGridSearch]="false"
+        [arGridPageSize]="20"
+        arGridEmpty="No quotations match your criteria. Adjust your search or click 'New quotation' to create one."
+        [dataSource]="filteredQuotes()"
+        aria-label="Quotations Directory"
+      >
+        <e-columns>
+          <!-- 1. Quotation Reference -->
+          <e-column field="reference" headerText="Quotation Ref" width="160">
+            <ng-template #template let-q>
+              <div class="cell-ref">
+                <a
+                  class="ref-link ar-mono"
+                  [routerLink]="['/quotations', q.id, 'edit']"
+                  title="Open quotation details"
+                >
+                  {{ q.reference }}
+                </a>
+                @if (q.revision > 0) {
+                  <span class="rev-pill" title="Revision {{ q.revision }}">rev {{ q.revision }}</span>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 2. Customer / Company -->
+          <e-column headerText="Customer / Company" width="220">
+            <ng-template #template let-q>
+              <div class="cell-customer">
+                <div class="customer-name" [title]="customerName(q)">
+                  {{ customerName(q) }}
+                </div>
+                <div class="company-name" [title]="companyName(q) || 'Direct customer'">
+                  {{ companyName(q) || 'Direct Customer' }}
+                </div>
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 3. Enquiry Reference -->
+          <e-column headerText="Enquiry Ref" width="170">
+            <ng-template #template let-q>
+              <div class="cell-enquiry">
+                @if (q.enquiryId) {
+                  <a
+                    class="enquiry-badge"
+                    [routerLink]="['/enquiries']"
+                    [title]="enquiryTitle(q) || 'Linked Enquiry'"
+                  >
+                    <ar-icon name="enquiry" [size]="12" />
+                    <span>{{ enquiryRef(q) }}</span>
+                  </a>
+                } @else {
+                  <span class="manual-badge">Manual Quote</span>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 4. Status -->
+          <e-column field="state" headerText="Status" width="160">
+            <ng-template #template let-q>
+              <div class="cell-status">
+                <span [class]="statusBadgeClass(q.state)">
+                  <span class="status-dot"></span>
+                  <span>{{ statusLabel(q.state) }}</span>
+                </span>
+                @if (sigChip(q); as sc) {
+                  <ar-chip [tone]="sc.tone" class="sig-chip">{{ sc.label }}</ar-chip>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 5. GST Amount -->
+          <e-column field="taxInPaise" headerText="GST" textAlign="Right" width="130">
+            <ng-template #template let-q>
+              <div class="cell-gst" [attr.title]="gstTitle(q) || null">
+                @if (q.taxInPaise !== undefined) {
+                  <div class="tax-val num">{{ money(q.taxInPaise) }}</div>
+                  @if ((q.taxBreakdown?.length ?? 0) > 1) {
+                    <div class="tax-rate-sub">{{ q.taxBreakdown?.length }} rates</div>
+                  }
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 6. Total Amount -->
+          <e-column field="totalInPaise" headerText="Total Amount" textAlign="Right" width="150">
+            <ng-template #template let-q>
+              <div class="cell-total num">
+                <span class="total-amount">{{ money(q.totalInPaise) }}</span>
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 7. Issue Date -->
+          <e-column field="issuedAt" headerText="Issue Date" width="130">
+            <ng-template #template let-q>
+              <div class="cell-date">
+                <div class="date-main">{{ when(q.issuedAt) }}</div>
+                @if (q.issuedAt && q.daysSinceIssue > 0) {
+                  <div class="date-sub">{{ q.daysSinceIssue }}d ago</div>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 8. Valid Until -->
+          <e-column field="validUntil" headerText="Valid Until" width="140">
+            <ng-template #template let-q>
+              @let val = validityInfo(q);
+              <div class="cell-validity" [class.cell-validity--warn]="val.isWarning">
+                @if (val.status === 'expired') {
+                  <span class="val-badge val-badge--expired" title="Validity expired">
+                    <ar-icon name="alert" [size]="12" />
+                    <span>{{ val.label }}</span>
+                  </span>
+                } @else if (val.status === 'expiring') {
+                  <span class="val-badge val-badge--expiring" title="Expiring soon">
+                    <ar-icon name="clock" [size]="12" />
+                    <span>{{ val.label }}</span>
+                  </span>
+                } @else {
+                  <span class="val-text">{{ val.label }}</span>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 9. Follow-up Status -->
+          <e-column headerText="Follow-up" width="160">
+            <ng-template #template let-q>
+              @let fu = followUpInfo(q);
+              <div class="cell-followup">
+                <span class="fu-badge" [class]="fu.badgeClass">
+                  <ar-icon [name]="fu.icon" [size]="12" />
+                  <span>{{ fu.label }}</span>
+                </span>
+                <span class="fu-sub">{{ fu.sub }}</span>
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 10. Actions -->
+          <e-column headerText="Actions" width="280" textAlign="Right">
+            <ng-template #template let-q>
+              <div class="cell-actions">
+                <!-- View / Edit Link -->
+                <a
+                  ar-button
+                  variant="ghost"
+                  class="action-btn"
+                  [routerLink]="['/quotations', q.id, 'edit']"
+                  [title]="isRecord(q) || !canUpdate() ? 'View quotation' : 'Edit quotation'"
+                >
+                  <ar-icon [name]="isRecord(q) || !canUpdate() ? 'document' : 'edit'" [size]="13" />
+                  <span>{{ isRecord(q) || !canUpdate() ? 'View' : 'Edit' }}</span>
+                </a>
+
+                <!-- Download PDF -->
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  class="action-btn"
+                  title="Download quotation PDF"
+                  [disabled]="busy() === q.id"
+                  (click)="download(q)"
+                >
+                  <ar-icon name="download" [size]="13" />
+                  <span>PDF</span>
+                </button>
+
+                <!-- Digital Signature -->
+                @if (signingAvailable && (canSign(q) || sigChip(q))) {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    class="action-btn action-btn--sign"
+                    title="Digital signature status &amp; request"
+                    [disabled]="busy() === q.id"
+                    (click)="signingFor.set(q)"
+                  >
+                    <ar-icon name="shield" [size]="13" />
+                    <span>Sign</span>
+                  </button>
+                }
+
+                <!-- Accept (Won) -->
+                @if (canUpdate() && (q.state === 'issued' || q.state === 'revised')) {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    class="action-btn action-btn--won"
+                    title="Mark quotation as accepted / won"
+                    [disabled]="busy() === q.id"
+                    (click)="won(q)"
+                  >
+                    <ar-icon name="check" [size]="13" />
+                    <span>Accept</span>
+                  </button>
+                }
+
+                <!-- Reject (Lost) -->
+                @if (canUpdate() && (q.state === 'issued' || q.state === 'revised')) {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    class="action-btn action-btn--lost"
+                    title="Mark quotation as rejected / lost"
+                    [disabled]="busy() === q.id"
+                    (click)="lost(q)"
+                  >
+                    <ar-icon name="close" [size]="13" />
+                    <span>Reject</span>
+                  </button>
+                }
+
+                <!-- Duplicate Quotation -->
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  class="action-btn"
+                  title="Duplicate as new quotation"
+                  (click)="duplicateQuote(q)"
+                >
+                  <ar-icon name="copy" [size]="13" />
+                </button>
+
+                <!-- Delete -->
+                @if (canDelete()) {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    class="action-btn action-btn--danger"
+                    title="Delete quotation"
+                    [disabled]="busy() === q.id"
+                    (click)="remove(q)"
+                  >
+                    <ar-icon name="trash" [size]="13" />
+                  </button>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+        </e-columns>
+      </ejs-grid>
+    </div>
+  </section>
 </div>
