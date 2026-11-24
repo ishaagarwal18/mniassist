@@ -532,4 +532,17 @@ export class ArAiNegotiator implements OnInit {
   protected time(d: Date): string {
     return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
   }
+
+  protected simProfit(r: SimulateNegotiationResultDto): string {
+    const costPaise = rupeesToPaise(this.simCost()) ?? 0;
+    return inr(r.finalAmountInPaise - costPaise);
+  }
+
+  protected isFloorCompliant(r: SimulateNegotiationResultDto): boolean {
+    return r.finalMarginPercent >= this.draft().floorMarginPercent;
+  }
+
+  protected readonly selectedStartQuote = computed(() =>
+    this.quotes().find((q) => q.id === this.startQuoteId()) ?? null,
+  );
 }

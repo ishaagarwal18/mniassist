@@ -494,10 +494,10 @@
       }
 
       @case ('rules') {
-        <!-- Rules Configuration Form -->
+        <!-- 2. Rules Configuration (Balanced 2-Column Enterprise Layout) -->
         <div class="ng__rules-container">
           <div class="ng__rules-grid">
-            <!-- Card 1: Concession & Margin Limits -->
+            <!-- Left Card: Margin & Concession Thresholds -->
             <div class="ng__card-section">
               <div class="section-head">
                 <span class="section-icon section-icon--blue">
@@ -510,74 +510,114 @@
               </div>
 
               <div class="section-fields">
-                <label class="ar-field" for="r-target">
-                  <span class="ar-field__label">Target margin (%)</span>
-                  <span class="ar-field__hint">Offers at or above this are accepted.</span>
-                  <input
-                    id="r-target"
-                    class="ar-field__input"
-                    inputmode="decimal"
-                    [disabled]="!canManageRules()"
-                    [value]="draft().targetMarginPercent"
-                    (input)="patch('targetMarginPercent', num($any($event.target).value))"
-                  />
-                </label>
+                <!-- Target Margin -->
+                <div class="ar-setting-field">
+                  <div class="setting-text">
+                    <label class="setting-title" for="r-target">Target margin (%)</label>
+                    <span class="setting-desc">Offers resulting in margin at or above this are accepted.</span>
+                  </div>
+                  <div class="ar-input-addon-wrap">
+                    <input
+                      id="r-target"
+                      class="ar-field__input ar-input--addon"
+                      inputmode="decimal"
+                      [disabled]="!canManageRules()"
+                      [value]="draft().targetMarginPercent"
+                      (input)="patch('targetMarginPercent', num($any($event.target).value))"
+                    />
+                    <span class="ar-addon-tag">%</span>
+                  </div>
+                </div>
 
-                <label class="ar-field" for="r-floor">
-                  <span class="ar-field__label">Lowest margin you accept (%)</span>
-                  <span class="ar-field__hint">Hard floor. AI never goes below this.</span>
-                  <input
-                    id="r-floor"
-                    class="ar-field__input"
-                    inputmode="decimal"
-                    [disabled]="!canManageRules()"
-                    [value]="draft().floorMarginPercent"
-                    (input)="patch('floorMarginPercent', num($any($event.target).value))"
-                  />
-                </label>
+                <!-- Lowest Acceptable Margin (Emphasized Critical Constraint) -->
+                <div class="critical-constraint-box">
+                  <div class="constraint-badge">
+                    <ar-icon name="shield" [size]="11" />
+                    <span>CRITICAL NON-NEGOTIABLE FLOOR</span>
+                  </div>
+                  <div class="ar-setting-field">
+                    <div class="setting-text">
+                      <label class="setting-title setting-title--critical" for="r-floor">Lowest margin you accept (%)</label>
+                      <span class="setting-desc">Hard floor. The AI will never concede below this margin. When reached, it issues a final offer.</span>
+                    </div>
+                    <div class="ar-input-addon-wrap">
+                      <input
+                        id="r-floor"
+                        class="ar-field__input ar-input--addon ar-input--critical"
+                        inputmode="decimal"
+                        [disabled]="!canManageRules()"
+                        [value]="draft().floorMarginPercent"
+                        (input)="patch('floorMarginPercent', num($any($event.target).value))"
+                      />
+                      <span class="ar-addon-tag ar-addon-tag--critical">%</span>
+                    </div>
+                  </div>
+                </div>
 
-                <label class="ar-field" for="r-disc">
-                  <span class="ar-field__label">Largest discount (%)</span>
-                  <span class="ar-field__hint">Maximum concession against quoted price.</span>
-                  <input
-                    id="r-disc"
-                    class="ar-field__input"
-                    inputmode="decimal"
-                    [disabled]="!canManageRules()"
-                    [value]="draft().maxDiscountPercent"
-                    (input)="patch('maxDiscountPercent', num($any($event.target).value))"
-                  />
-                </label>
+                <div class="field-divider"></div>
 
-                <label class="ar-field" for="r-rounds">
-                  <span class="ar-field__label">Rounds before a final offer</span>
-                  <span class="ar-field__hint">Concession rounds allowed before walk-away.</span>
-                  <input
-                    id="r-rounds"
-                    class="ar-field__input"
-                    inputmode="numeric"
-                    [disabled]="!canManageRules()"
-                    [value]="draft().maxRounds"
-                    (input)="patch('maxRounds', num($any($event.target).value))"
-                  />
-                </label>
+                <!-- Largest Discount -->
+                <div class="ar-setting-field">
+                  <div class="setting-text">
+                    <label class="setting-title" for="r-disc">Largest discount (%)</label>
+                    <span class="setting-desc">Maximum total discount concession permitted on quoted price.</span>
+                  </div>
+                  <div class="ar-input-addon-wrap">
+                    <input
+                      id="r-disc"
+                      class="ar-field__input ar-input--addon"
+                      inputmode="decimal"
+                      [disabled]="!canManageRules()"
+                      [value]="draft().maxDiscountPercent"
+                      (input)="patch('maxDiscountPercent', num($any($event.target).value))"
+                    />
+                    <span class="ar-addon-tag">%</span>
+                  </div>
+                </div>
 
-                <label class="ar-field" for="r-step">
-                  <span class="ar-field__label">Concession per round (%)</span>
-                  <span class="ar-field__hint">Gradual discount step per round.</span>
-                  <input
-                    id="r-step"
-                    class="ar-field__input"
-                    inputmode="decimal"
-                    [disabled]="!canManageRules()"
-                    [value]="draft().concessionStepPercent"
-                    (input)="patch('concessionStepPercent', num($any($event.target).value))"
-                  />
-                </label>
+                <div class="field-divider"></div>
+
+                <!-- Rounds Before Final Offer -->
+                <div class="ar-setting-field">
+                  <div class="setting-text">
+                    <label class="setting-title" for="r-rounds">Rounds before a final offer</label>
+                    <span class="setting-desc">Maximum exchange rounds before issuing take-it-or-leave-it offer.</span>
+                  </div>
+                  <div class="ar-input-addon-wrap">
+                    <input
+                      id="r-rounds"
+                      class="ar-field__input ar-input--addon"
+                      inputmode="numeric"
+                      [disabled]="!canManageRules()"
+                      [value]="draft().maxRounds"
+                      (input)="patch('maxRounds', num($any($event.target).value))"
+                    />
+                    <span class="ar-addon-tag">rnd</span>
+                  </div>
+                </div>
+
+                <!-- Concession Per Round -->
+                <div class="ar-setting-field">
+                  <div class="setting-text">
+                    <label class="setting-title" for="r-step">Concession per round (%)</label>
+                    <span class="setting-desc">Incremental percentage yielded by the AI in each counter round.</span>
+                  </div>
+                  <div class="ar-input-addon-wrap">
+                    <input
+                      id="r-step"
+                      class="ar-field__input ar-input--addon"
+                      inputmode="decimal"
+                      [disabled]="!canManageRules()"
+                      [value]="draft().concessionStepPercent"
+                      (input)="patch('concessionStepPercent', num($any($event.target).value))"
+                    />
+                    <span class="ar-addon-tag">%</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Card 2: Approval Limits & Strategy -->
+            <!-- Right Card: Approval Limits & Strategy -->
             <div class="ng__card-section">
               <div class="section-head">
                 <span class="section-icon section-icon--teal">
@@ -590,65 +630,104 @@
               </div>
 
               <div class="section-fields">
-                <label class="ar-field" for="r-limit">
-                  <span class="ar-field__label">Deals above this go to you (₹)</span>
-                  <span class="ar-field__hint">High-value deals require manager sign-off.</span>
-                  <input
-                    id="r-limit"
-                    class="ar-field__input"
-                    inputmode="decimal"
-                    [disabled]="!canManageRules()"
-                    [value]="draft().autoApprovalLimitInPaise / 100"
-                    (input)="patch('autoApprovalLimitInPaise', num($any($event.target).value) * 100)"
-                  />
-                </label>
-
-                <label class="ar-field ng__wide" for="r-strategy">
-                  <span class="ar-field__label">Negotiation Approach</span>
-                  <select
-                    id="r-strategy"
-                    class="ar-field__input"
-                    [disabled]="!canManageRules()"
-                    (change)="patch('strategy', +$any($event.target).value)"
-                  >
-                    @for (st of strategies; track st.value) {
-                      <option [value]="st.value" [selected]="st.value === draft().strategy">
-                        {{ st.label }}
-                      </option>
-                    }
-                  </select>
-                  <span class="ar-field__hint">{{ strategyHint() }}</span>
-                </label>
-
-                <div class="tradeoff-box ng__wide">
-                  <label class="ng__check">
+                <!-- Deals Above Limit -->
+                <div class="ar-setting-field">
+                  <div class="setting-text">
+                    <label class="setting-title" for="r-limit">Deals above this go to you (₹)</label>
+                    <span class="setting-desc">High-value deals require manager sign-off before finalizing.</span>
+                  </div>
+                  <div class="ar-input-addon-wrap ar-input-addon-wrap--prefix">
+                    <span class="ar-addon-tag ar-addon-tag--prefix">₹</span>
                     <input
-                      type="checkbox"
+                      id="r-limit"
+                      class="ar-field__input ar-input--prefix"
+                      inputmode="decimal"
                       [disabled]="!canManageRules()"
-                      [checked]="draft().allowPaymentTermTradeoffs"
-                      (change)="patch('allowPaymentTermTradeoffs', $any($event.target).checked)"
+                      [value]="draft().autoApprovalLimitInPaise / 100"
+                      (input)="patch('autoApprovalLimitInPaise', num($any($event.target).value) * 100)"
                     />
-                    <span>May offer a lower price for advance payment terms</span>
-                  </label>
+                  </div>
+                </div>
 
-                  <label class="ng__check">
-                    <input
-                      type="checkbox"
+                <div class="field-divider"></div>
+
+                <!-- Negotiation Approach -->
+                <div class="ar-setting-field ar-setting-field--stacked">
+                  <div class="setting-text">
+                    <label class="setting-title" for="r-strategy">Negotiation Approach</label>
+                    <span class="setting-desc">Select the algorithmic pricing philosophy executed by the AI.</span>
+                  </div>
+                  <div class="select-container">
+                    <select
+                      id="r-strategy"
+                      class="ar-field__input setting-select"
                       [disabled]="!canManageRules()"
-                      [checked]="draft().allowVolumeCommitmentTradeoffs"
-                      (change)="patch('allowVolumeCommitmentTradeoffs', $any($event.target).checked)"
-                    />
-                    <span>
-                      May offer a lower price for a larger order (at least
+                      (change)="patch('strategy', +$any($event.target).value)"
+                    >
+                      @for (st of strategies; track st.value) {
+                        <option [value]="st.value" [selected]="st.value === draft().strategy">
+                          {{ st.label }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+                  <div class="strategy-hint-pill">
+                    <ar-icon name="sparkle" [size]="12" />
+                    <span>{{ strategyHint() }}</span>
+                  </div>
+                </div>
+
+                <div class="field-divider"></div>
+
+                <!-- Conditional Trade-offs Box -->
+                <div class="conditional-concessions-card">
+                  <div class="concessions-head">
+                    <span class="concessions-title">Conditional Give-and-Get Trade-Offs</span>
+                    <span class="concessions-sub">Optional trade-offs granted only when customer provides commercial value.</span>
+                  </div>
+
+                  <div class="tradeoff-options-list">
+                    <label class="tradeoff-check-item">
                       <input
-                        class="ar-field__input ng__inline-input"
-                        inputmode="numeric"
+                        type="checkbox"
+                        class="tradeoff-checkbox"
                         [disabled]="!canManageRules()"
-                        [value]="draft().minVolumeIncreasePercent"
-                        (input)="patch('minVolumeIncreasePercent', num($any($event.target).value))"
-                      />% more)
-                    </span>
-                  </label>
+                        [checked]="draft().allowPaymentTermTradeoffs"
+                        (change)="patch('allowPaymentTermTradeoffs', $any($event.target).checked)"
+                      />
+                      <div class="check-text">
+                        <strong>Advance payment discount</strong>
+                        <span>Allows the AI to offer a lower price in return for upfront advance terms.</span>
+                      </div>
+                    </label>
+
+                    <label class="tradeoff-check-item">
+                      <input
+                        type="checkbox"
+                        class="tradeoff-checkbox"
+                        [disabled]="!canManageRules()"
+                        [checked]="draft().allowVolumeCommitmentTradeoffs"
+                        (change)="patch('allowVolumeCommitmentTradeoffs', $any($event.target).checked)"
+                      />
+                      <div class="check-text">
+                        <div class="volume-title-row">
+                          <strong>Larger order volume discount</strong>
+                          <span class="volume-input-wrap">
+                            <span>(at least</span>
+                            <input
+                              class="volume-mini-input"
+                              inputmode="numeric"
+                              [disabled]="!canManageRules()"
+                              [value]="draft().minVolumeIncreasePercent"
+                              (input)="patch('minVolumeIncreasePercent', num($any($event.target).value))"
+                            />
+                            <span>% more)</span>
+                          </span>
+                        </div>
+                        <span>Allows the AI to concede unit price in exchange for larger order volume.</span>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -663,7 +742,7 @@
               <div class="footer-left">
                 @if (rulesSavedAt(); as at) {
                   <span class="saved-time">
-                    <ar-icon name="check" [size]="12" />
+                    <ar-icon name="check" [size]="13" />
                     <span>Last saved at {{ time(at) }}</span>
                   </span>
                 }
@@ -686,7 +765,7 @@
       }
 
       @case ('practice') {
-        <!-- Practice Simulation Workspace -->
+        <!-- 1. Practice Simulation Workspace -->
         <div class="ng__practice-container">
           <div class="ng__card-section">
             <div class="section-head">
@@ -701,55 +780,74 @@
               </div>
             </div>
 
-            <form (submit)="$event.preventDefault(); !working() && practise()">
+            <form (submit)="$event.preventDefault(); !working() && practise()" class="practice-form">
               <div class="ng__practice-form-grid">
-                <label class="ar-field" for="p-quote">
-                  <span class="ar-field__label">Quoted price (₹)</span>
-                  <input
-                    id="p-quote"
-                    class="ar-field__input"
-                    inputmode="decimal"
-                    [value]="simQuote()"
-                    (input)="simQuote.set($any($event.target).value)"
-                  />
-                </label>
+                <!-- 1. Quoted Price -->
+                <div class="practice-field-item">
+                  <label class="setting-title" for="p-quote">Quoted price (₹)</label>
+                  <span class="setting-desc">Original quotation total offered to customer.</span>
+                  <div class="ar-input-addon-wrap ar-input-addon-wrap--prefix">
+                    <span class="ar-addon-tag ar-addon-tag--prefix">₹</span>
+                    <input
+                      id="p-quote"
+                      class="ar-field__input ar-input--prefix"
+                      inputmode="decimal"
+                      [value]="simQuote()"
+                      (input)="simQuote.set($any($event.target).value)"
+                    />
+                  </div>
+                </div>
 
-                <label class="ar-field" for="p-cost">
-                  <span class="ar-field__label">Your cost (₹)</span>
-                  <input
-                    id="p-cost"
-                    class="ar-field__input"
-                    inputmode="decimal"
-                    [value]="simCost()"
-                    (input)="simCost.set($any($event.target).value)"
-                  />
-                </label>
+                <!-- 2. Your Cost -->
+                <div class="practice-field-item">
+                  <label class="setting-title" for="p-cost">Your cost (₹)</label>
+                  <span class="setting-desc">Direct cost of goods or manufacturing basis.</span>
+                  <div class="ar-input-addon-wrap ar-input-addon-wrap--prefix">
+                    <span class="ar-addon-tag ar-addon-tag--prefix">₹</span>
+                    <input
+                      id="p-cost"
+                      class="ar-field__input ar-input--prefix"
+                      inputmode="decimal"
+                      [value]="simCost()"
+                      (input)="simCost.set($any($event.target).value)"
+                    />
+                  </div>
+                </div>
 
-                <label class="ar-field" for="p-persona">
-                  <span class="ar-field__label">Customer Persona</span>
-                  <select
-                    id="p-persona"
-                    class="ar-field__input"
-                    (change)="simPersona.set(+$any($event.target).value)"
-                  >
-                    @for (p of personas; track p.value) {
-                      <option [value]="p.value" [selected]="p.value === simPersona()">
-                        {{ p.label }}
-                      </option>
-                    }
-                  </select>
-                </label>
+                <!-- 3. Customer Persona -->
+                <div class="practice-field-item">
+                  <label class="setting-title" for="p-persona">Customer Persona</label>
+                  <span class="setting-desc">Behavioral profile driving counter-demands.</span>
+                  <div class="select-container">
+                    <select
+                      id="p-persona"
+                      class="ar-field__input setting-select"
+                      (change)="simPersona.set(+$any($event.target).value)"
+                    >
+                      @for (p of personas; track p.value) {
+                        <option [value]="p.value" [selected]="p.value === simPersona()">
+                          {{ p.label }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+                </div>
 
-                <label class="ar-field" for="p-demand">
-                  <span class="ar-field__label">Discount customer asks for (%)</span>
-                  <input
-                    id="p-demand"
-                    class="ar-field__input"
-                    inputmode="decimal"
-                    [value]="simDemand()"
-                    (input)="simDemand.set($any($event.target).value)"
-                  />
-                </label>
+                <!-- 4. Discount Demanded -->
+                <div class="practice-field-item">
+                  <label class="setting-title" for="p-demand">Discount customer asks for (%)</label>
+                  <span class="setting-desc">Initial aggressive pushback requested by customer.</span>
+                  <div class="ar-input-addon-wrap">
+                    <input
+                      id="p-demand"
+                      class="ar-field__input ar-input--addon"
+                      inputmode="decimal"
+                      [value]="simDemand()"
+                      (input)="simDemand.set($any($event.target).value)"
+                    />
+                    <span class="ar-addon-tag">%</span>
+                  </div>
+                </div>
               </div>
 
               <div class="ng__practice-form-actions">
@@ -775,31 +873,56 @@
                   <ar-icon name="check" [size]="15" />
                 </span>
                 <div>
-                  <h3 class="section-title">Simulation Results</h3>
-                  <p class="section-sub">Outcome of the simulated negotiation under your active rules.</p>
+                  <h3 class="section-title">Simulation Results & Evaluation</h3>
+                  <p class="section-sub">Autonomous AI counter-offer computed against active margin rules.</p>
                 </div>
               </div>
 
-              <div class="ng__figures-card ng__figures-card--results">
-                <div class="fig-col">
-                  <span class="fig-label">Final Status</span>
-                  <span class="fig-val">{{ statusOf[r.finalStatus].label }}</span>
+              <!-- 5-Metric Structured Evaluation Grid -->
+              <div class="ng__sim-metrics-grid">
+                <!-- 1. Customer Demand -->
+                <div class="sim-metric-card">
+                  <span class="metric-card-lbl">Customer Demand</span>
+                  <span class="metric-card-val metric-card-val--demand">{{ simDemand() }}% off</span>
+                  <span class="metric-card-sub">Initial requested discount</span>
                 </div>
-                <div class="fig-col fig-col--highlight">
-                  <span class="fig-label">Latest Offer</span>
-                  <span class="fig-val fig-val--highlight">{{ money(r.finalAmountInPaise) }}</span>
+
+                <!-- 2. AI Concession -->
+                <div class="sim-metric-card">
+                  <span class="metric-card-lbl">AI Counter-Offer</span>
+                  <span class="metric-card-val metric-card-val--concession">{{ r.finalDiscountPercent }}% off</span>
+                  <span class="metric-card-sub">Conceded under rules</span>
                 </div>
-                <div class="fig-col">
-                  <span class="fig-label">Discount</span>
-                  <span class="fig-val fig-val--discount">{{ r.finalDiscountPercent }}%</span>
+
+                <!-- 3. Final Suggested Price -->
+                <div class="sim-metric-card sim-metric-card--highlight">
+                  <span class="metric-card-lbl">Final Suggested Price</span>
+                  <span class="metric-card-val metric-card-val--price">{{ money(r.finalAmountInPaise) }}</span>
+                  <span class="metric-card-sub">{{ statusOf[r.finalStatus].label }}</span>
                 </div>
-                <div class="fig-col">
-                  <span class="fig-label">Margin Kept</span>
-                  <span class="fig-val fig-val--margin">{{ r.finalMarginPercent }}%</span>
+
+                <!-- 4. Profit & Margin -->
+                <div class="sim-metric-card">
+                  <span class="metric-card-lbl">Profit & Margin</span>
+                  <span class="metric-card-val metric-card-val--profit">{{ simProfit(r) }}</span>
+                  <span class="metric-card-sub">Keeps {{ r.finalMarginPercent }}% margin</span>
+                </div>
+
+                <!-- 5. Rule Compliance -->
+                <div class="sim-metric-card">
+                  <span class="metric-card-lbl">Rule Compliance</span>
+                  <div class="metric-card-val">
+                    <span class="compliance-badge" [class.compliance-badge--pass]="isFloorCompliant(r)" [class.compliance-badge--fail]="!isFloorCompliant(r)">
+                      <ar-icon [name]="isFloorCompliant(r) ? 'check' : 'alert'" [size]="11" />
+                      <span>{{ isFloorCompliant(r) ? 'Within Floor' : 'Breaches Floor' }}</span>
+                    </span>
+                  </div>
+                  <span class="metric-card-sub">Floor limit: {{ draft().floorMarginPercent }}%</span>
                 </div>
               </div>
 
               <div class="ng__sim-summary">
+                <ar-icon name="sparkle" [size]="15" class="summary-sparkle" />
                 <p>{{ r.simulationSummary }}</p>
               </div>
 
@@ -854,56 +977,99 @@
   }
 </div>
 
-<!-- Start a Negotiation Dialog -->
+<!-- 3. Start a Negotiation Dialog (Polished AI Assistant Workflow) -->
 @if (startOpen()) {
-  <ar-dialog title="Start a negotiation" (dismiss)="startOpen.set(false)">
-    <label class="ar-field" for="st-quote">
-      <span class="ar-field__label">Quotation</span>
-      @if (quotes().length) {
-        <select
-          id="st-quote"
-          class="ar-field__input"
-          (change)="startQuoteId.set($any($event.target).value)"
-        >
-          @for (q of quotes(); track q.id) {
-            <option [value]="q.id" [selected]="q.id === startQuoteId()">{{ quoteLabel(q) }}</option>
+  <ar-dialog title="Start a negotiation" (dismiss)="startOpen.set(false)" [width]="'560px'">
+    <div class="modal-intro-banner">
+      <div class="intro-icon">
+        <ar-icon name="sparkle" [size]="16" />
+      </div>
+      <div class="intro-text">
+        <strong>Autonomous AI Negotiation Workflow</strong>
+        <p>The AI analyzes the customer's pushback against your configured margin thresholds and concession curve to draft an optimal counter-offer.</p>
+      </div>
+    </div>
+
+    <div class="modal-form-body">
+      <!-- Quotation Dropdown -->
+      <div class="modal-field-block">
+        <label class="modal-field-label" for="st-quote">Select Issued Quotation</label>
+        @if (quotes().length) {
+          <div class="select-container">
+            <select
+              id="st-quote"
+              class="ar-field__input modal-select"
+              (change)="startQuoteId.set($any($event.target).value)"
+            >
+              @for (q of quotes(); track q.id) {
+                <option [value]="q.id" [selected]="q.id === startQuoteId()">{{ quoteLabel(q) }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Selected Quotation Preview Card -->
+          @if (selectedStartQuote(); as sq) {
+            <div class="quote-preview-pill">
+              <div class="preview-item">
+                <span class="preview-lbl">Quotation Ref</span>
+                <span class="preview-val ar-mono">{{ sq.reference }}</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-lbl">Revision</span>
+                <span class="preview-val">Rev {{ sq.revisionNumber ?? 0 }}</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-lbl">Quoted Value</span>
+                <span class="preview-val preview-val--amount">{{ money(sq.totalInPaise) }}</span>
+              </div>
+            </div>
           }
-        </select>
-      } @else {
-        <p class="ng__note">
-          No issued quotation without a negotiation already open. Issue one from
-          <a routerLink="/quotations">Quotations</a> first.
-        </p>
-      }
-    </label>
-    <label class="ar-field" for="st-msg">
-      <span class="ar-field__label">What the customer asked for</span>
-      <textarea
-        id="st-msg"
-        class="ar-field__input"
-        rows="3"
-        placeholder="e.g. Your price is too high. Can you do 12% less? We can pay 50% advance."
-        [value]="startMessage()"
-        (input)="startMessage.set($any($event.target).value)"
-      ></textarea>
-      <span class="ar-field__hint"
-        >A percentage, a rupee figure or payment terms in their words are all understood.</span
-      >
-    </label>
+        } @else {
+          <div class="empty-quotes-notice">
+            <ar-icon name="alert" [size]="15" />
+            <span>No issued quotations available without an active negotiation. Issue one from <a routerLink="/quotations">Quotations</a> first.</span>
+          </div>
+        }
+      </div>
+
+      <!-- Customer Demand Textarea -->
+      <div class="modal-field-block">
+        <label class="modal-field-label" for="st-msg">What the customer asked for</label>
+        <textarea
+          id="st-msg"
+          class="modal-textarea"
+          rows="3"
+          placeholder="e.g. Your price is too high. Can you do ₹4,40,000 or 12% less? We can pay 50% advance."
+          [value]="startMessage()"
+          (input)="startMessage.set($any($event.target).value)"
+        ></textarea>
+        <span class="modal-field-hint">
+          A percentage discount, a target rupee figure, or payment terms in their own words are all parsed and understood.
+        </span>
+      </div>
+    </div>
+
     @if (dialogError(); as e) {
-      <p class="ng__err" role="alert">{{ e }}</p>
+      <div class="modal-error-banner" role="alert">
+        <ar-icon name="alert" [size]="14" />
+        <span>{{ e }}</span>
+      </div>
     }
-    <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="startOpen.set(false)">Cancel</button>
+
+    <div dialogActions class="modal-actions-bar">
+      <button ar-button type="button" variant="ghost" (click)="startOpen.set(false)" [disabled]="working() === 'start'">
+        Cancel
+      </button>
       <button
         ar-button
         type="button"
         variant="primary"
         icon="sparkle"
-        [disabled]="!!working() || !quotes().length"
+        [disabled]="!!working() || !quotes().length || !startMessage().trim()"
         (click)="start()"
+        class="btn-start-reply"
       >
-        {{ working() === 'start' ? 'Working out a reply…' : 'Start and work out a reply' }}
+        {{ working() === 'start' ? 'Working out reply…' : 'Start and work out a reply' }}
       </button>
     </div>
   </ar-dialog>
@@ -911,7 +1077,7 @@
 
 <!-- Take Over Dialog -->
 @if (takeOverOpen() && selected(); as s) {
-  <ar-dialog [title]="'Take over ' + s.sessionCode" (dismiss)="takeOverOpen.set(false)">
+  <ar-dialog [title]="'Take over ' + s.sessionCode" (dismiss)="takeOverOpen.set(false)" [width]="'540px'">
     <label class="ar-field" for="to-action">
       <span class="ar-field__label">Your decision</span>
       <select
