@@ -468,31 +468,34 @@
 
                     <!-- Quick Action Bar -->
                     <div class="project-card__actions">
-                      <a
-                        class="card-act-btn card-act-btn--view"
-                        [routerLink]="['/projects', p.id]"
-                        title="View project details"
-                      >
-                        <ar-icon name="document" [size]="12" />
-                        <span>View</span>
-                      </a>
-
-                      @if (canUpdate()) {
+                      <div class="card-act-tools">
                         <a
-                          class="card-act-btn card-act-btn--edit"
-                          [routerLink]="['/projects', p.id, 'edit']"
-                          title="Edit project"
+                          class="card-act-btn card-act-btn--view"
+                          [routerLink]="['/projects', p.id]"
+                          title="View project details"
                         >
-                          <ar-icon name="edit" [size]="12" />
+                          <ar-icon name="document" [size]="12" />
+                          <span>View</span>
                         </a>
-                      }
+
+                        @if (canUpdate()) {
+                          <a
+                            class="card-act-btn card-act-btn--edit"
+                            [routerLink]="['/projects', p.id, 'edit']"
+                            title="Edit project"
+                          >
+                            <ar-icon name="edit" [size]="12" />
+                            <span>Edit</span>
+                          </a>
+                        }
+                      </div>
 
                       @if (canUpdate() && p.stage !== ProjectStage.Closed) {
                         <button
                           type="button"
                           class="card-act-btn card-act-btn--advance"
                           (click)="advanceStage(p, $event)"
-                          [title]="nextStageTooltip(p.stage)"
+                          [title]="'Advance ' + p.name + ' to next stage'"
                         >
                           <span>{{ nextStageLabel(p.stage) }}</span>
                           <ar-icon name="chevron" [size]="11" />

@@ -347,30 +347,13 @@ export class ArProjectsPage {
   protected nextStageLabel(s: ProjectStage): string {
     switch (s) {
       case ProjectStage.Identified:
-        return 'To Design';
-      case ProjectStage.Design:
-        return 'To Specified';
-      case ProjectStage.Specified:
-        return 'To Tender';
-      case ProjectStage.Tender:
-        return 'To Awarded';
-      case ProjectStage.Awarded:
-        return 'Close';
-      default:
-        return '';
-    }
-  }
-
-  protected nextStageTooltip(s: ProjectStage): string {
-    switch (s) {
-      case ProjectStage.Identified:
         return 'Advance to Design';
       case ProjectStage.Design:
         return 'Advance to Specified';
       case ProjectStage.Specified:
         return 'Advance to Tender';
       case ProjectStage.Tender:
-        return 'Mark Awarded';
+        return 'Mark as Awarded';
       case ProjectStage.Awarded:
         return 'Close Project';
       default:
