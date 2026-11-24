@@ -335,56 +335,56 @@
         }
       </div>
       } @else {
-      <ejs-grid arGrid="forecast-by-person" [arGridSearch]="false" [dataSource]="ownerRows()"
+      <ejs-grid arGrid="forecast-by-person" [arGridTools]="false" [arGridSearch]="false" [allowFiltering]="false" [dataSource]="ownerRows()"
         aria-label="Forecast by Person Table">
         <e-columns>
           <!-- 1. Owner / Salesperson -->
-          <e-column field="name" headerText="Salesperson" width="180">
+          <e-column field="name" headerText="Salesperson" width="190">
             <ng-template #template let-r>
               <div class="cell-owner">
-                <ar-avatar [name]="r.name" [size]="22" />
+                <ar-avatar [name]="r.name" [size]="24" />
                 <span class="owner-name" [class.owner-unassigned]="r.isUnassigned">{{ r.name }}</span>
               </div>
             </ng-template>
           </e-column>
 
           <!-- 2. Target -->
-          <e-column field="target" headerText="Target" type="number" textAlign="Right" width="120">
+          <e-column field="target" headerText="Target" type="number" textAlign="Right" width="125">
             <ng-template #template let-r>
               <span class="val-num">{{ r.target ? money(r.target) : '—' }}</span>
             </ng-template>
           </e-column>
 
           <!-- 3. Closed (Won) -->
-          <e-column field="closed" headerText="Closed" type="number" textAlign="Right" width="120">
+          <e-column field="closed" headerText="Closed" type="number" textAlign="Right" width="125">
             <ng-template #template let-r>
               <strong class="val-num val-num--closed">{{ money(r.closed) }}</strong>
             </ng-template>
           </e-column>
 
           <!-- 4. Expected -->
-          <e-column field="expected" headerText="Expected" type="number" textAlign="Right" width="120">
+          <e-column field="expected" headerText="Expected" type="number" textAlign="Right" width="125">
             <ng-template #template let-r>
               <span class="val-num val-num--exp">{{ money(r.expected) }}</span>
             </ng-template>
           </e-column>
 
           <!-- 5. Commit -->
-          <e-column field="commit" headerText="Commit" type="number" textAlign="Right" width="120">
+          <e-column field="commit" headerText="Commit" type="number" textAlign="Right" width="125">
             <ng-template #template let-r>
               <span class="val-num">{{ money(r.commit) }}</span>
             </ng-template>
           </e-column>
 
           <!-- 6. Best Case -->
-          <e-column field="bestCase" headerText="Best Case" type="number" textAlign="Right" width="120">
+          <e-column field="bestCase" headerText="Best Case" type="number" textAlign="Right" width="125">
             <ng-template #template let-r>
-              <span class="val-num">{{ money(r.bestCase) }}</span>
+              <span class="val-num val-num--best">{{ money(r.bestCase) }}</span>
             </ng-template>
           </e-column>
 
           <!-- 7. Attainment Progress -->
-          <e-column field="projected" headerText="Attainment" type="number" textAlign="Right" width="140">
+          <e-column field="projected" headerText="Attainment" type="number" textAlign="Right" width="145">
             <ng-template #template let-r>
               @if (r.projected != null) {
               <div class="cell-attainment">
@@ -401,7 +401,7 @@
           </e-column>
 
           <!-- 8. Remaining Target -->
-          <e-column field="remaining" headerText="Remaining" type="number" textAlign="Right" width="120">
+          <e-column field="remaining" headerText="Remaining" type="number" textAlign="Right" width="125">
             <ng-template #template let-r>
               <span class="val-num" [class.val-num--gap]="r.remaining > 0">{{ r.target ? money(r.remaining) : '—'
                 }}</span>
@@ -409,7 +409,7 @@
           </e-column>
 
           <!-- 9. Open Deals Count -->
-          <e-column field="deals" headerText="Deals" type="number" textAlign="Right" width="80">
+          <e-column field="deals" headerText="Deals" type="number" textAlign="Right" width="90">
             <ng-template #template let-r>
               <span class="deals-badge">{{ r.deals }}</span>
             </ng-template>
@@ -448,10 +448,10 @@
         }
       </div>
       } @else {
-      <ejs-grid arGrid="forecast-deals" [dataSource]="dealRows()" aria-label="Deals Due This Period Table">
+      <ejs-grid arGrid="forecast-deals" [arGridTools]="dealRows().length > 10" [arGridSearch]="false" [allowFiltering]="false" [dataSource]="dealRows()" aria-label="Deals Due This Period Table">
         <e-columns>
           <!-- 1. Deal Title & Reference -->
-          <e-column field="title" headerText="Deal & Customer" width="280">
+          <e-column field="title" headerText="Deal & Customer" width="290">
             <ng-template #template let-r>
               <div class="cell-deal-info">
                 <div class="deal-ref-row">
@@ -475,14 +475,14 @@
           </e-column>
 
           <!-- 2. Owner -->
-          <e-column field="owner" headerText="Owner" width="130">
+          <e-column field="owner" headerText="Owner" width="135">
             <ng-template #template let-r>
               <span class="deal-owner">{{ r.owner }}</span>
             </ng-template>
           </e-column>
 
           <!-- 3. Stage -->
-          <e-column field="stage" headerText="Stage" width="120">
+          <e-column field="stage" headerText="Stage" width="125">
             <ng-template #template let-r>
               <ar-chip [tone]="stageTone(r.stageIndex)" class="stage-chip">
                 {{ r.stage }}
@@ -491,7 +491,7 @@
           </e-column>
 
           <!-- 4. Due Date -->
-          <e-column field="due" headerText="Due Date" type="date" format="d MMM yyyy" width="120">
+          <e-column field="due" headerText="Due Date" type="date" format="d MMM yyyy" width="130">
             <ng-template #template let-r>
               <div class="cell-date">
                 <ar-icon name="clock" [size]="10" />
@@ -501,7 +501,7 @@
           </e-column>
 
           <!-- 5. Value & Source -->
-          <e-column field="value" headerText="Deal Value" type="number" textAlign="Right" width="140">
+          <e-column field="value" headerText="Deal Value" type="number" textAlign="Right" width="145">
             <ng-template #template let-r>
               <div class="cell-value-stack">
                 <span class="val-amount">{{ money(r.value) }}</span>
@@ -513,7 +513,7 @@
           </e-column>
 
           <!-- 6. Win Chance (%) -->
-          <e-column field="chance" headerText="Win Chance" type="number" textAlign="Right" width="120">
+          <e-column field="chance" headerText="Win Chance" type="number" textAlign="Right" width="140">
             <ng-template #template let-r>
               <div class="cell-chance">
                 <span class="chance-pct">{{ r.chance }}%</span>
@@ -525,14 +525,14 @@
           </e-column>
 
           <!-- 7. Weighted Value -->
-          <e-column field="weighted" headerText="Weighted (Exp.)" type="number" textAlign="Right" width="140">
+          <e-column field="weighted" headerText="Weighted (Exp.)" type="number" textAlign="Right" width="155">
             <ng-template #template let-r>
               <strong class="val-weighted">{{ money(r.weighted) }}</strong>
             </ng-template>
           </e-column>
 
           <!-- 8. Actions -->
-          <e-column headerText="Actions" width="90" textAlign="Center">
+          <e-column headerText="Actions" width="95" textAlign="Center">
             <ng-template #template let-r>
               @if (r.enquiryId) {
               <a class="cell-act-link" [routerLink]="['/enquiries', r.enquiryId]" title="Open enquiry details">
