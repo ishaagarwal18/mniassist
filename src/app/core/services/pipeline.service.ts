@@ -101,6 +101,8 @@ export interface Quotation {
   validUntil?: string;
   nextFollowUpAt?: string;
   daysSinceIssue: number;
+  enquiryId?: string;
+  contactId?: string;
 }
 export interface EnquiryEvent {
   kind: string;
@@ -226,6 +228,8 @@ function quotation(q: QuotationDto): Quotation {
     state: q.state != null ? QSTATE[q.state] : 'draft',
     totalInPaise: q.totalInPaise ?? 0,
     taxInPaise: q.taxInPaise ?? 0,
+    enquiryId: q.enquiryId ?? undefined,
+    contactId: q.contactId ?? undefined,
     taxBreakdown: (q.taxBreakdown ?? []).map((t) => ({
       ratePercent: (t.rateBasisPoints ?? 0) / 100,
       taxInPaise: t.taxInPaise ?? 0,
@@ -366,7 +370,7 @@ export class PipelineStore {
     params: () => ({ tick: this.tick() }),
     stream: () =>
       this.quotationApi
-        .getList({ skipCount: 0, maxResultCount: 100 })
+        .getList({ skipCount: 0, maxResultCount: 500 })
         .pipe(map((p) => (p.items ?? []).map(quotation))),
     defaultValue: [],
   });

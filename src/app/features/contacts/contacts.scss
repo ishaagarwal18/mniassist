@@ -4,6 +4,7 @@
   height: 100%;
   min-height: 0;
 }
+
 .contacts-loading {
   display: flex;
   align-items: center;
@@ -12,6 +13,7 @@
   min-height: 180px;
   color: var(--ar-ink-500);
 }
+
 .contacts-loading__spinner {
   width: 24px;
   height: 24px;
@@ -20,16 +22,19 @@
   border-radius: 50%;
   animation: contacts-spin 0.8s linear infinite;
 }
+
 @keyframes contacts-spin {
   to {
     transform: rotate(360deg);
   }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .contacts-loading__spinner {
     animation: none;
   }
 }
+
 .contacts {
   flex: 1;
   min-height: 0;
@@ -50,6 +55,7 @@
   position: relative;
   z-index: 10;
 }
+
 .segs__top {
   display: flex;
   align-items: center;
@@ -57,21 +63,25 @@
   gap: 6px;
   margin-bottom: 4px;
 }
+
 .segs__head {
   margin: 0;
 }
+
 .segs--collapsed {
   width: 58px;
   padding: 14px 0 16px;
   align-items: center;
   overflow: visible;
 }
+
 .segs--collapsed .segs__top {
   width: 100%;
   padding: 0 8px;
   justify-content: center;
   gap: 4px;
 }
+
 .segs__collapsed-tag {
   display: flex;
   align-items: center;
@@ -80,6 +90,7 @@
   height: 20px;
   color: var(--ar-ink-400);
 }
+
 .segs--collapsed .segs__toggle ar-icon {
   transform: none;
 }
@@ -96,9 +107,11 @@
   color: var(--ar-ink-400);
   transition: color var(--ar-ease);
 }
+
 .seg--on .seg__icon {
   color: var(--ar-primary);
 }
+
 .seg__icon--muted {
   color: var(--ar-ink-400);
   opacity: 0.8;
@@ -223,7 +236,7 @@
 }
 
 .seg-mini-wrap:hover .seg-mini__flyout,
-.seg-mini:focus-visible + .seg-mini__flyout {
+.seg-mini:focus-visible+.seg-mini__flyout {
   opacity: 1;
   visibility: visible;
   transform: translateY(-50%) translateX(0);
@@ -280,11 +293,13 @@
   border-radius: var(--ar-radius-card);
   background: var(--ar-bg-50);
 }
+
 .fill__label {
   font: 500 12px var(--ar-font-sans);
   color: var(--ar-ink-500);
   margin-right: 2px;
 }
+
 .fill__btn {
   position: relative;
   display: inline-flex;
@@ -298,25 +313,30 @@
   color: var(--ar-ink-700);
   cursor: pointer;
 }
+
 .fill__btn:hover {
   border-color: var(--ar-primary);
   color: var(--ar-primary);
 }
+
 .fill__btn--busy {
   opacity: 0.7;
   cursor: progress;
 }
+
 .fill__btn input {
   position: absolute;
   inset: 0;
   opacity: 0;
   cursor: pointer;
 }
+
 .fill__note {
   margin: 0;
   font: 400 12px/1.5 var(--ar-font-sans);
   color: var(--ar-teal-600);
 }
+
 .segs__rule {
   height: 1px;
   border: 0;
@@ -324,6 +344,7 @@
   margin: 12px 0;
   width: 100%;
 }
+
 .seg {
   display: flex;
   align-items: center;
@@ -336,12 +357,15 @@
   background: transparent;
   cursor: pointer;
 }
+
 .seg--static {
   cursor: default;
 }
+
 .seg:not(.seg--static):hover {
   background: var(--ar-bg-100);
 }
+
 .seg__name {
   flex: 1;
   font: 400 12.5px var(--ar-font-sans);
@@ -350,17 +374,21 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .seg__count {
   font-size: 11px;
   color: var(--ar-ink-400);
 }
+
 .seg--on {
   background: var(--ar-blue-100);
 }
+
 .seg--on .seg__name {
   font-weight: 500;
   color: var(--ar-ink-900);
 }
+
 .seg--on .seg__count {
   color: var(--ar-blue-600);
 }
@@ -374,75 +402,200 @@
   overflow: hidden;
 }
 
-/* 1. Topbar Actions */
+/* 1. Topbar Navigation & Actions */
 .contacts-topbar-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-/* 2. Compact Integrated KPI Summary Strip (Linear / HubSpot style) */
-.kpi-strip {
-  display: flex;
+.topbar-action-btn {
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
-  padding: 10px 24px;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &--primary {
+    background: #2563EB !important;
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.24);
+
+    &:hover {
+      background: #1D4ED8 !important;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.32);
+    }
+  }
+}
+
+/* 2. Modern Enterprise KPI Cards Grid */
+.contacts-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 16px 24px;
   background: #FFFFFF;
   border-bottom: 1px solid #E2E8F0;
-  gap: 20px;
+  animation: fadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
-  &__item {
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(17, 28, 48, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 94px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(17, 28, 48, 0.06);
+    border-color: #CBD5E1;
+  }
+
+  &__top {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    margin-bottom: 8px;
   }
 
   &__label {
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 11.5px;
+    font-weight: 600;
     color: #64748B;
-    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
-  &__val {
-    font-size: 14px;
+  &__icon-box {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__value {
+    font-size: 22px;
     font-weight: 700;
     color: #111C30;
+    line-height: 1.1;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
   }
 
-  &__sep {
-    width: 1px;
-    height: 18px;
-    background: #E2E8F0;
-  }
-
-  &__inline {
-    display: inline-flex;
+  &__bottom {
+    display: flex;
     align-items: center;
     gap: 8px;
+    margin-top: 2px;
+  }
+
+  &__hint {
+    font-size: 11.5px;
+    color: #64748B;
+  }
+
+  &--blue {
+    .kpi-card__icon-box {
+      background: #EFF6FF;
+      color: #2563EB;
+      border: 1px solid #DBEAFE;
+    }
+    &:hover {
+      border-color: #93C5FD;
+    }
+  }
+
+  &--indigo {
+    .kpi-card__icon-box {
+      background: #EEF2FF;
+      color: #4F46E5;
+      border: 1px solid #E0E7FF;
+    }
+    &:hover {
+      border-color: #A5B4FC;
+    }
+  }
+
+  &--emerald {
+    .kpi-card__icon-box {
+      background: #ECFDF5;
+      color: #059669;
+      border: 1px solid #A7F3D0;
+    }
+    &:hover {
+      border-color: #6EE7B7;
+    }
+  }
+
+  &--amber {
+    .kpi-card__icon-box {
+      background: #FFFBEB;
+      color: #D97706;
+      border: 1px solid #FDE68A;
+    }
+    &:hover {
+      border-color: #FCD34D;
+    }
   }
 }
 
-.kpi-badge {
+.kpi-pill {
   display: inline-flex;
   align-items: center;
-  padding: 2px 7px;
-  border-radius: 6px;
+  padding: 1.5px 7px;
+  border-radius: 5px;
   font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
 
-  &--mint {
+  &--blue {
+    background: #EFF6FF;
+    color: #1D4ED8;
+    border: 1px solid #BFDBFE;
+  }
+
+  &--indigo {
+    background: #EEF2FF;
+    color: #4338CA;
+    border: 1px solid #C7D2FE;
+  }
+
+  &--emerald {
     background: #ECFDF5;
-    color: #059669;
+    color: #047857;
     border: 1px solid #A7F3D0;
   }
 
-  &--lavender {
-    background: #F4F0FF;
-    color: #6D28D9;
-    border: 1px solid #DDD6FE;
+  &--amber {
+    background: #FFFBEB;
+    color: #B45309;
+    border: 1px solid #FDE68A;
   }
 }
 
@@ -612,11 +765,11 @@
   }
 }
 
-/* 5. Prominent Directory Table Card & Content */
+/* 5. Modern Directory Table Card & Content */
 .directory-table-card {
   flex: 1;
   min-height: 0;
-  margin: 16px 24px 20px;
+  margin: 16px 24px 8px;
   padding: 0;
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
@@ -625,10 +778,54 @@
   display: flex;
   flex-direction: column;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+
+  ejs-grid,
+  .e-grid.ar-grid {
+    min-width: 1260px;
+    width: 100%;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+
+    .e-gridheader {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #F8FAFC;
+      border-bottom: 1px solid #E2E8F0;
+    }
+
+    .e-headercell {
+      background: #F8FAFC;
+      padding: 10px 12px;
+    }
+
+    .e-row {
+      transition: background 0.15s ease;
+
+      &:nth-child(even) {
+        background: #FAFBFC;
+      }
+
+      &:hover {
+        background: #F0F4FF !important;
+      }
+    }
+
+    .e-rowcell {
+      padding: 10px 12px;
+      border-color: #F1F5F9;
+      vertical-align: middle;
+    }
+  }
 }
 
 .table-pane__foot {
-  margin: 12px 16px;
+  flex: none;
+  margin: 4px 24px 14px;
   font: 400 12px var(--ar-font-sans);
   color: #64748B;
 }
@@ -802,6 +999,7 @@
   &:nth-child(2) {
     height: 7.5px;
   }
+
   &:nth-child(3) {
     height: 10px;
   }
@@ -932,9 +1130,17 @@
 }
 
 @keyframes skeletonPulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
+  0% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.6;
+  }
 }
 
 /* 6. Floating Bulk Actions Bar (Linear / HubSpot style) */
@@ -1255,6 +1461,7 @@
     &--high {
       background: #059669;
     }
+
     &--mid {
       background: #D97706;
     }
@@ -1312,15 +1519,58 @@
   background: #FFFFFF;
 }
 
+.drawer-card-foot {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #F1F5F9;
+}
+
+.drawer-link-history {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2563EB;
+  text-decoration: none;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: #1D4ED8;
+    text-decoration: underline;
+  }
+}
+
 /* Keyframe Animations */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
 }
 
 @keyframes floatUp {
@@ -1328,6 +1578,7 @@
     opacity: 0;
     transform: translate(-50%, 16px);
   }
+
   to {
     opacity: 1;
     transform: translate(-50%, 0);
@@ -1335,6 +1586,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .preview-drawer,
   .filter-drawer,
   .drawer-overlay,
