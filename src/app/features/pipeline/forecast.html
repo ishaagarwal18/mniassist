@@ -256,10 +256,13 @@
             money(forecast().overdueValueInPaise) }})</strong>
         </div>
         <p class="fc-alert-desc">
-          Expected close date has already passed. These deals are excluded from the current forecast until their dates
-          are rescheduled.
+          Expected close date has already passed. Reschedule their dates in Enquiries to include them in active forecasts.
         </p>
       </div>
+      <a ar-button variant="ghost" class="fc-alert-btn fc-alert-btn--danger" routerLink="/enquiries">
+        <span>Reschedule</span>
+        <ar-icon name="chevron" [size]="11" />
+      </a>
     </div>
     }
     @if ((forecast().unvaluedDeals ?? 0) > 0) {
@@ -273,15 +276,19 @@
             value</strong>
         </div>
         <p class="fc-alert-desc">
-          No issued quotation or commercial estimate recorded. They add ₹0 to probability weighting.
+          No issued quotation or commercial estimate recorded. Add values in Enquiries to contribute to projections.
         </p>
       </div>
+      <a ar-button variant="ghost" class="fc-alert-btn fc-alert-btn--warn" routerLink="/enquiries">
+        <span>Add values</span>
+        <ar-icon name="chevron" [size]="11" />
+      </a>
     </div>
     }
     @if ((forecast().unscheduledDeals ?? 0) > 0) {
     <div class="fc-alert-item fc-alert-item--info">
       <div class="fc-alert-icon">
-        <ar-icon name="getting-started" [size]="14" />
+        <ar-icon name="clock" [size]="14" />
       </div>
       <div class="fc-alert-body">
         <div class="fc-alert-title">
@@ -289,9 +296,13 @@
             ({{ money(forecast().unscheduledValueInPaise) }})</strong>
         </div>
         <p class="fc-alert-desc">
-          Missing an expected close date. Add an expected close date to include them in period projections.
+          Missing an expected close date. Set a close date in Enquiries to include {{ forecast().unscheduledDeals === 1 ? 'this deal' : 'these deals' }} in {{ periodLabel() }} projections.
         </p>
       </div>
+      <a ar-button variant="ghost" class="fc-alert-btn fc-alert-btn--info" routerLink="/enquiries">
+        <span>Set close date</span>
+        <ar-icon name="chevron" [size]="11" />
+      </a>
     </div>
     }
   </section>
@@ -310,8 +321,18 @@
       @if (owners().length === 0) {
       <div class="fc-empty-state">
         <ar-icon name="user" [size]="24" class="empty-icon" />
-        <p class="empty-title">No salesperson data</p>
+        <p class="empty-title">No salesperson attainment for {{ periodLabel() }}</p>
+        @if ((forecast().unscheduledDeals ?? 0) > 0) {
+        <p class="empty-desc">
+          You have <strong>{{ forecast().unscheduledDeals }} deal ({{ money(forecast().unscheduledValueInPaise) }})</strong> in your pipeline without a close date. Assign an expected close date in Enquiries to allocate it to a salesperson's period quota.
+        </p>
+        <a ar-button variant="ghost" class="empty-action-btn" routerLink="/enquiries">
+          <ar-icon name="link" [size]="12" />
+          <span>Open Enquiries</span>
+        </a>
+        } @else {
         <p class="empty-desc">No deals due, won, or targeted for this period.</p>
+        }
       </div>
       } @else {
       <ejs-grid arGrid="forecast-by-person" [arGridSearch]="false" [dataSource]="ownerRows()"
@@ -413,8 +434,18 @@
       @if (deals().length === 0) {
       <div class="fc-empty-state">
         <ar-icon name="document" [size]="24" class="empty-icon" />
-        <p class="empty-title">No deals due</p>
+        <p class="empty-title">No deals scheduled for {{ periodLabel() }}</p>
+        @if ((forecast().unscheduledDeals ?? 0) > 0) {
+        <p class="empty-desc">
+          You have <strong>{{ forecast().unscheduledDeals }} open deal ({{ money(forecast().unscheduledValueInPaise) }})</strong> in your pipeline without an expected close date. Add a close date to include it in this table and your forecast numbers.
+        </p>
+        <a ar-button variant="primary" class="empty-action-btn" routerLink="/enquiries">
+          <ar-icon name="link" [size]="13" />
+          <span>Open Enquiries to Set Close Date</span>
+        </a>
+        } @else {
         <p class="empty-desc">No open opportunities have an expected close date in this period.</p>
+        }
       </div>
       } @else {
       <ejs-grid arGrid="forecast-deals" [dataSource]="dealRows()" aria-label="Deals Due This Period Table">
