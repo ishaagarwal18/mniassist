@@ -689,91 +689,247 @@
 
 <!-- Modal: Set Quotas Dialog -->
 @if (quotaOpen()) {
-<ar-dialog [title]="'Quotas · ' + forecast().label" (dismiss)="quotaOpen.set(false)">
-  <p class="dlg__text">
-    Targets in rupees for this {{ kind() === Kind.Month ? 'month' : 'quarter' }}. Leave blank for
-    none. A quarter with no quota of its own uses the sum of its months.
-  </p>
-  <div class="qt">
-    @for (r of quotaRows(); track r.userId ?? 'team'; let i = $index) {
-    <label class="qt__row">
-      <span class="qt__name">{{ r.name }}</span>
-      <span class="qt__rs">₹</span>
-      <input class="ar-field__input qt__in" inputmode="numeric" placeholder="none" [value]="r.rupees"
-        (input)="setRupees(i, $any($event.target).value)" [attr.aria-label]="'Target for ' + r.name" />
-    </label>
-    }
-  </div>
-  @if (error()) {
-  <p class="fc__err">{{ error() }}</p>
-  }
-  <div dialogActions>
-    <button ar-button variant="ghost" (click)="quotaOpen.set(false)">Cancel</button>
-    <button ar-button variant="primary" [disabled]="busy()" (click)="saveQuotas()">
-      {{ busy() ? 'Saving…' : 'Save quotas' }}
-    </button>
-  </div>
-</ar-dialog>
+  <ar-dialog
+    [title]="'Set Quotas · ' + (forecast().label || periodLabel())"
+    width="min(560px, calc(100vw - 32px))"
+    (dismiss)="quotaOpen.set(false)"
+  >
+    <div class="modal-body-container">
+      <p class="modal-lead-desc">
+        Define sales targets in rupees for this {{ kind() === Kind.Month ? 'month' : 'quarter' }}. Leave any field blank for no quota. Quotas update team attainment and pacing in real time.
+      </p>
+
+      <!-- Whole Team Target (Highlighted Top Card) -->
+      @if (teamQuotaRow(); as team) {
+        <div class="modal-team-quota-card">
+          <div class="team-quota-header">
+            <div class="team-quota-icon">
+              <ar-icon name="workspaces" [size]="15" />
+            </div>
+            <div class="team-quota-info">
+              <h3 class="team-quota-title">Whole Team Target</h3>
+              <p class="team-quota-sub">Overrides the sum of individual targets when set. Leave blank to sum member quotas.</p>
+            </div>
+          </div>
+          <div class="quota-input-col">
+            <div class="currency-input-group">
+              <span class="currency-addon">₹</span>
+              <input
+                class="ar-field__input currency-input"
+                inputmode="numeric"
+                placeholder="Auto-sum members"
+                [value]="team.rupees"
+                (input)="setTeamRupees($any($event.target).value)"
+                aria-label="Target for Whole Team"
+              />
+            </div>
+            @if (formatRupeesPreview(team.rupees); as preview) {
+              <span class="currency-preview-tag">{{ preview }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Visual Section Divider -->
+      <div class="modal-section-divider">
+        <span class="divider-line"></span>
+        <span class="divider-text">OR ALLOCATE BY SALES REP ({{ memberQuotaRows().length }})</span>
+        <span class="divider-line"></span>
+      </div>
+
+      <!-- Member Quotas List (Internally Scrollable) -->
+      <div class="modal-members-list-container">
+        @for (r of memberQuotaRows(); track r.userId ?? $index; let i = $index) {
+          <div class="modal-member-quota-row">
+            <div class="member-info-col">
+              <ar-avatar [name]="r.name" [size]="26" />
+              <div class="member-name-wrap">
+                <span class="member-name">{{ r.name }}</span>
+                <span class="member-role">Sales Representative</span>
+              </div>
+            </div>
+
+            <div class="quota-input-col">
+              <div class="currency-input-group">
+                <span class="currency-addon">₹</span>
+                <input
+                  class="ar-field__input currency-input"
+                  inputmode="numeric"
+                  placeholder="No quota"
+                  [value]="r.rupees"
+                  (input)="setMemberRupees(i, $any($event.target).value)"
+                  [attr.aria-label]="'Target for ' + r.name"
+                />
+              </div>
+              @if (formatRupeesPreview(r.rupees); as preview) {
+                <span class="currency-preview-tag">{{ preview }}</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (error()) {
+        <div class="modal-error-banner">
+          <ar-icon name="alert" [size]="14" />
+          <span>{{ error() }}</span>
+        </div>
+      }
+    </div>
+
+    <div dialogActions class="modal-footer-actions">
+      <button ar-button variant="ghost" (click)="quotaOpen.set(false)">Cancel</button>
+      <button ar-button variant="primary" [disabled]="busy()" (click)="saveQuotas()">
+        <ar-icon name="check" [size]="13" />
+        <span>{{ busy() ? 'Saving…' : 'Save Quotas' }}</span>
+      </button>
+    </div>
+  </ar-dialog>
 }
 
 <!-- Modal: Forecast Assumptions Dialog -->
 @if (assumptionsOpen()) {
-<ar-dialog title="Forecast assumptions" (dismiss)="assumptionsOpen.set(false)">
-  <label class="ar-field">
-    <span class="ar-field__label">Financial year starts in</span>
-    <select required class="ar-field__input" (change)="fiscalStart.set(+$any($event.target).value)">
-      @for (m of months; track m; let i = $index) {
-      <option [value]="i + 1" [selected]="i + 1 === fiscalStart()">{{ m }}</option>
+  <ar-dialog
+    title="Forecast Assumptions"
+    width="min(580px, calc(100vw - 32px))"
+    (dismiss)="assumptionsOpen.set(false)"
+  >
+    <div class="modal-body-container">
+      <p class="modal-lead-desc">
+        Configure financial period alignment, automatic machine learning from deal wins, and baseline stage win chances.
+      </p>
+
+      <!-- Section 1: Financial Year & Calibration -->
+      <div class="modal-setting-section">
+        <h3 class="setting-section-title">1. Financial Period & Learning</h3>
+
+        <div class="modal-fields-row">
+          <label class="modal-field-block">
+            <span class="modal-field-label">
+              Financial Year Starts In <span class="required-star">*</span>
+            </span>
+            <div class="modal-select-wrap">
+              <ar-icon name="clock" [size]="13" class="select-icon" />
+              <select
+                required
+                class="ar-field__input modal-select"
+                (change)="fiscalStart.set(+$any($event.target).value)"
+              >
+                @for (m of months; track m; let i = $index) {
+                  <option [value]="i + 1" [selected]="i + 1 === fiscalStart()">{{ m }}</option>
+                }
+              </select>
+            </div>
+          </label>
+        </div>
+
+        <!-- Custom Checkbox Card -->
+        <label class="modal-checkbox-card" [class.checked]="learn()">
+          <input
+            type="checkbox"
+            class="modal-native-checkbox"
+            [checked]="learn()"
+            (change)="learn.set($any($event.target).checked)"
+          />
+          <div class="checkbox-card-body">
+            <span class="checkbox-card-title">Learn win rates from historical closed deals</span>
+            <span class="checkbox-card-desc">
+              Dynamically calibrates stage win probabilities based on deals closed in the past 12 months. When closed volume is small, probabilities remain anchored to baseline settings below.
+            </span>
+          </div>
+        </label>
+      </div>
+
+      <!-- Section 2: Pipeline Scope -->
+      <div class="modal-setting-section">
+        <div class="setting-section-header">
+          <h3 class="setting-section-title">2. Pipeline Scope</h3>
+          @if (scopeHasOverride()) {
+            <span class="override-pill">Custom Pipeline Overrides</span>
+          }
+        </div>
+
+        <label class="modal-field-block">
+          <span class="modal-field-label">Configure stage probabilities for:</span>
+          <div class="modal-select-wrap">
+            <ar-icon name="filter" [size]="13" class="select-icon" />
+            <select class="ar-field__input modal-select" (change)="setScope($any($event.target).value)">
+              <option value="" [selected]="!scope()">Every pipeline (workspace default)</option>
+              @for (p of pipelines(); track p.id) {
+                <option [value]="p.id" [selected]="p.id === scope()">
+                  {{ p.name }}{{ overrides()[p.id!] ? ' · Custom chances set' : '' }}
+                </option>
+              }
+            </select>
+          </div>
+        </label>
+
+        @if (scopeHasOverride()) {
+          <div class="override-action-strip">
+            <span>This pipeline is currently using its own distinct win probabilities.</span>
+            <button type="button" class="revert-btn" (click)="useWorkspaceChances()">
+              <ar-icon name="refresh" [size]="12" />
+              <span>Revert to workspace defaults</span>
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Section 3: Stage Baseline Probabilities -->
+      <div class="modal-setting-section">
+        <h3 class="setting-section-title">3. Baseline Stage Win Probabilities (0% – 100%)</h3>
+        <p class="setting-section-sub">
+          Baseline likelihood of winning a deal at each stage. Note: Later pipeline stages cannot have lower probability than earlier stages.
+        </p>
+
+        <div class="modal-stage-inputs-list">
+          @for (w of weightRows; track w.key) {
+            <div class="modal-stage-input-row">
+              <div class="stage-info-col">
+                <div class="stage-name-line">
+                  <span class="stage-dot stage-dot--{{ w.stageIndex }}"></span>
+                  <span class="stage-label">{{ w.label }}</span>
+                </div>
+                <span class="stage-desc">{{ w.desc }}</span>
+              </div>
+
+              <!-- Visual Mini Progress Track -->
+              <div class="stage-progress-preview" title="{{ shownWeights()[w.key] }}% win probability">
+                <div class="stage-progress-bar stage-dot--{{ w.stageIndex }}" [style.width.%]="shownWeights()[w.key]"></div>
+              </div>
+
+              <!-- Number Input with % Addon -->
+              <div class="percent-input-group">
+                <input
+                  class="ar-field__input percent-input"
+                  type="number"
+                  min="0"
+                  max="100"
+                  [value]="shownWeights()[w.key]"
+                  (change)="setWeight(w.key, $any($event.target).value)"
+                  [attr.aria-label]="'Chance of winning at ' + w.label"
+                />
+                <span class="percent-addon">%</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (error()) {
+        <div class="modal-error-banner">
+          <ar-icon name="alert" [size]="14" />
+          <span>{{ error() }}</span>
+        </div>
       }
-    </select>
-  </label>
-  <label class="fc__check">
-    <input type="checkbox" [checked]="learn()" (change)="learn.set($any($event.target).checked)" />
-    Learn the chances from closed deals (your figures below are the starting point)
-  </label>
-  <label class="ar-field">
-    <span class="ar-field__label">Chances for</span>
-    <select class="ar-field__input" (change)="setScope($any($event.target).value)">
-      <option value="" [selected]="!scope()">Every pipeline (the default)</option>
-      @for (p of pipelines(); track p.id) {
-      <option [value]="p.id" [selected]="p.id === scope()">
-        {{ p.name }}{{ overrides()[p.id!] ? ' · own chances' : '' }}
-      </option>
-      }
-    </select>
-  </label>
-  <p class="dlg__text">
-    Chance of winning a deal in each stage, as a percentage. Expected weights each open deal by
-    its stage. A later stage cannot be lower than an earlier one.
-    @if (scope() && !scopeHasOverride()) {
-    This pipeline currently uses the default chances; changing a figure gives it its own.
-    }
-  </p>
-  @if (scopeHasOverride()) {
-  <p class="dlg__text">
-    <button ar-button variant="ghost" (click)="useWorkspaceChances()">
-      Use the default chances for this pipeline
-    </button>
-  </p>
-  }
-  <div class="qt">
-    @for (w of weightRows; track w.key) {
-    <label class="qt__row">
-      <span class="qt__name">{{ w.label }}</span>
-      <input class="ar-field__input qt__in" type="number" min="0" max="100" [value]="shownWeights()[w.key]"
-        (change)="setWeight(w.key, $any($event.target).value)" [attr.aria-label]="'Chance of winning at ' + w.label" />
-      <span class="qt__rs">%</span>
-    </label>
-    }
-  </div>
-  @if (error()) {
-  <p class="fc__err">{{ error() }}</p>
-  }
-  <div dialogActions>
-    <button ar-button variant="ghost" (click)="assumptionsOpen.set(false)">Cancel</button>
-    <button ar-button variant="primary" [disabled]="busy()" (click)="saveAssumptions()">
-      {{ busy() ? 'Saving…' : 'Save' }}
-    </button>
-  </div>
-</ar-dialog>
+    </div>
+
+    <div dialogActions class="modal-footer-actions">
+      <button ar-button variant="ghost" (click)="assumptionsOpen.set(false)">Cancel</button>
+      <button ar-button variant="primary" [disabled]="busy()" (click)="saveAssumptions()">
+        <ar-icon name="check" [size]="13" />
+        <span>{{ busy() ? 'Saving…' : 'Save Assumptions' }}</span>
+      </button>
+    </div>
+  </ar-dialog>
 }

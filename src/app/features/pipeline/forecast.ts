@@ -208,13 +208,40 @@ export class ArForecast {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  protected readonly weightRows: { key: keyof StageWeightsDto; label: string }[] = [
-    { key: 'new', label: 'New' },
-    { key: 'qualified', label: 'Qualified' },
-    { key: 'siteVisit', label: 'Site visit' },
-    { key: 'quoted', label: 'Quoted' },
-    { key: 'negotiation', label: 'Negotiation' },
+  protected readonly weightRows: {
+    key: keyof StageWeightsDto;
+    label: string;
+    desc: string;
+    stageIndex: number;
+  }[] = [
+    { key: 'new', label: 'New', desc: 'First contact or enquiry logged', stageIndex: 0 },
+    { key: 'qualified', label: 'Qualified', desc: 'Commercial need and buyer verified', stageIndex: 1 },
+    { key: 'siteVisit', label: 'Site visit', desc: 'Technical inspection or discovery visit done', stageIndex: 2 },
+    { key: 'quoted', label: 'Quoted', desc: 'Formal commercial quotation submitted', stageIndex: 3 },
+    { key: 'negotiation', label: 'Negotiation', desc: 'Terms and pricing under final review', stageIndex: 4 },
   ];
+
+  protected readonly teamQuotaRow = computed(() => this.quotaRows()[0] ?? null);
+  protected readonly memberQuotaRows = computed(() => this.quotaRows().slice(1));
+
+  protected setTeamRupees(value: string): void {
+    const digits = value.replace(/[^\d]/g, '');
+    this.quotaRows.update((rows) => rows.map((r, at) => (at === 0 ? { ...r, rupees: digits } : r)));
+  }
+
+  protected setMemberRupees(memberIndex: number, value: string): void {
+    const digits = value.replace(/[^\d]/g, '');
+    this.quotaRows.update((rows) =>
+      rows.map((r, at) => (at === memberIndex + 1 ? { ...r, rupees: digits } : r)),
+    );
+  }
+
+  protected formatRupeesPreview(rupees: string | null | undefined): string {
+    if (!rupees || rupees === '') return '';
+    const num = Number(rupees);
+    if (isNaN(num) || num <= 0) return '';
+    return inrCompact(num);
+  }
 
   protected money(paise: number | null | undefined): string {
     return inrCompact((paise ?? 0) / 100);
