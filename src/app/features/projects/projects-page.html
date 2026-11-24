@@ -1,127 +1,335 @@
 <ar-topbar
   title="Projects"
-  [subtitle]="total() + ' projects'"
-  help="A plant or line followed from first news to the order: every company with a say in it, the people at each, the stage and the key dates. Drag a card to move its stage. Without 'see all projects' you see the projects you own or are on the team of."
+  [subtitle]="total() + ' projects in pipeline · ' + rupees(totalProjectsValue()) + ' scope value'"
+  help="Industrial and commercial project tracking. Follow capital equipment and plant packages across specification, design, tendering, and award. Drag a card or use one-click advancement to progress project stages."
 >
-  <div class="pj__toggle" role="group" aria-label="View">
-    <button type="button" [class.on]="view() === 'board'" (click)="setView('board')">Board</button>
-    <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">List</button>
+  <div actions class="projects-topbar-actions">
+    <!-- Board / List Toggle -->
+    <div class="view-toggle" role="group" aria-label="View switch">
+      <button
+        type="button"
+        class="view-toggle__btn"
+        [class.on]="view() === 'board'"
+        (click)="setView('board')"
+        title="Kanban Board view"
+      >
+        <ar-icon name="workspaces" [size]="13" />
+        <span>Board</span>
+      </button>
+      <button
+        type="button"
+        class="view-toggle__btn"
+        [class.on]="view() === 'list'"
+        (click)="setView('list')"
+        title="Data Table view"
+      >
+        <ar-icon name="document" [size]="13" />
+        <span>List</span>
+      </button>
+    </div>
+
+    @if (canSeeAll()) {
+      <a ar-button variant="ghost" class="topbar-action-btn" routerLink="/projects/report">
+        <ar-icon name="analytics" [size]="13" />
+        <span>Report</span>
+      </a>
+    }
+    @if (canManage()) {
+      <a ar-button variant="ghost" class="topbar-action-btn" routerLink="/projects/tender-feed">
+        <ar-icon name="sparkle" [size]="13" />
+        <span>Tender feed</span>
+      </a>
+      <a ar-button variant="ghost" class="topbar-action-btn" routerLink="/projects/competitors">
+        <ar-icon name="link" [size]="13" />
+        <span>Competitors</span>
+      </a>
+    }
+    @if (canCreate()) {
+      <a ar-button variant="primary" class="topbar-action-btn topbar-action-btn--primary" routerLink="/projects/new">
+        <ar-icon name="plus" [size]="14" />
+        <span>New project</span>
+      </a>
+    }
   </div>
-  @if (canSeeAll()) {
-    <a ar-button variant="ghost" routerLink="/projects/report">Report</a>
-  }
-  @if (canManage()) {
-    <a ar-button variant="ghost" routerLink="/projects/tender-feed">Tender feed</a>
-    <a ar-button variant="ghost" routerLink="/projects/competitors">Competitor brands</a>
-  }
-  @if (canCreate()) {
-    <a ar-button variant="primary" icon="plus" routerLink="/projects/new">New project</a>
-  }
 </ar-topbar>
 
-<div class="pj ar-scroll">
+<div class="pj-container">
   @if (error(); as e) {
-    <ar-banner tone="bad">{{ e }}</ar-banner>
+    <ar-banner tone="bad" class="pj-banner">{{ e }}</ar-banner>
   }
 
-  <div class="pj__bar">
-    <input
-      class="ar-field__input pj__search"
-      type="search"
-      placeholder="Search name, reference, site or city"
-      aria-label="Search projects"
-      [value]="filter()"
-      (input)="filter.set($any($event.target).value)"
-      (keyup.enter)="load()"
-    />
-    @if (view() === 'list') {
-      <select
-        class="ar-field__input pj__select"
-        aria-label="Stage"
-        (change)="
-          stage.set($any($event.target).value === '' ? null : +$any($event.target).value); load()
-        "
-      >
-        <option value="">Any stage</option>
-        @for (s of STAGES; track s) {
-          <option [value]="s">{{ STAGE_TEXT[s] }}</option>
-        }
-      </select>
-    }
-    <select
-      class="ar-field__input pj__select"
-      aria-label="Sector"
-      (change)="sector.set($any($event.target).value); load()"
+  <!-- 1. Compact KPI Section (6 Cards in a Single Row) -->
+  <section class="kpi-grid" aria-label="Projects KPI Metrics">
+    <!-- Card 1: Total Projects -->
+    <div
+      class="kpi-card"
+      [class.kpi-card--active]="stage() === null"
+      (click)="filterByStage(null)"
+      role="button"
+      tabindex="0"
+      title="Click to view all projects"
     >
-      <option value="">Any sector</option>
-      @for (s of SECTORS(); track s) {
-        <option [value]="s">{{ s }}</option>
-      }
-    </select>
-    <label class="pj__check">
-      <input
-        type="checkbox"
-        [checked]="soon()"
-        (change)="soon.set($any($event.target).checked); load()"
-      />
-      Key date in the next 30 days
-    </label>
-    @if (view() === 'list') {
-      <label class="pj__check">
-        <input
-          type="checkbox"
-          [checked]="openOnly()"
-          (change)="openOnly.set($any($event.target).checked); load()"
-        />
-        Open only
-      </label>
-    }
-    <button ar-button type="button" variant="ghost" (click)="load()">Search</button>
-  </div>
+      <div class="kpi-card__top">
+        <span class="kpi-card__icon kpi-card__icon--blue">
+          <ar-icon name="workspaces" [size]="14" />
+        </span>
+        <span class="kpi-card__label">TOTAL PROJECTS</span>
+      </div>
+      <div class="kpi-card__num">{{ totalProjectsCount() }}</div>
+      <div class="kpi-card__sub">Across all 6 stages</div>
+    </div>
 
-  @if (view() === 'board') {
-    <div class="pj__board">
-      @if (suggestions().length) {
-        <section class="pj__col pj__col--suggested" aria-label="Suggested from tenders">
-          <header class="pj__col-head">
-            <b>Suggested</b>
-            <span class="pj__muted">{{ suggestions().length }} from the tender feed</span>
-            <span class="pj__muted pj__decider">Choose: make a project, or not relevant</span>
-          </header>
+    <!-- Card 2: Identified -->
+    <div
+      class="kpi-card"
+      [class.kpi-card--active]="stage() === ProjectStage.Identified"
+      (click)="filterByStage(ProjectStage.Identified)"
+      role="button"
+      tabindex="0"
+      title="Filter Identified projects"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__icon kpi-card__icon--slate">
+          <ar-icon name="search" [size]="14" />
+        </span>
+        <span class="kpi-card__label">IDENTIFIED</span>
+      </div>
+      <div class="kpi-card__num">{{ identifiedCount() }}</div>
+      <div class="kpi-card__sub">Early discovery</div>
+    </div>
+
+    <!-- Card 3: Active Projects -->
+    <div
+      class="kpi-card"
+      [class.kpi-card--active]="stage() === ProjectStage.Design || stage() === ProjectStage.Specified"
+      (click)="filterByStage(ProjectStage.Design)"
+      role="button"
+      tabindex="0"
+      title="Filter Design & Specified projects"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__icon kpi-card__icon--indigo">
+          <ar-icon name="edit" [size]="14" />
+        </span>
+        <span class="kpi-card__label">DESIGN &amp; SPEC</span>
+      </div>
+      <div class="kpi-card__num">{{ activeCount() }}</div>
+      <div class="kpi-card__sub">Engineering pipeline</div>
+    </div>
+
+    <!-- Card 4: In Tender -->
+    <div
+      class="kpi-card"
+      [class.kpi-card--active]="stage() === ProjectStage.Tender"
+      (click)="filterByStage(ProjectStage.Tender)"
+      role="button"
+      tabindex="0"
+      title="Filter projects in Tender"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__icon kpi-card__icon--amber">
+          <ar-icon name="clock" [size]="14" />
+        </span>
+        <span class="kpi-card__label">IN TENDER</span>
+      </div>
+      <div class="kpi-card__num">{{ inTenderCount() }}</div>
+      <div class="kpi-card__sub">Bidding in progress</div>
+    </div>
+
+    <!-- Card 5: Awarded -->
+    <div
+      class="kpi-card"
+      [class.kpi-card--active]="stage() === ProjectStage.Awarded"
+      (click)="filterByStage(ProjectStage.Awarded)"
+      role="button"
+      tabindex="0"
+      title="Filter Awarded projects"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__icon kpi-card__icon--emerald">
+          <ar-icon name="check" [size]="14" />
+        </span>
+        <span class="kpi-card__label">AWARDED</span>
+      </div>
+      <div class="kpi-card__num">{{ awardedCount() }}</div>
+      <div class="kpi-card__sub">Won packages</div>
+    </div>
+
+    <!-- Card 6: Total Value -->
+    <div
+      class="kpi-card"
+      (click)="filterByStage(null)"
+      role="button"
+      tabindex="0"
+      title="Total scope value"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__icon kpi-card__icon--teal">
+          <ar-icon name="billing" [size]="14" />
+        </span>
+        <span class="kpi-card__label">TOTAL SCOPE VALUE</span>
+      </div>
+      <div class="kpi-card__num kpi-card__num--value">{{ rupees(totalProjectsValue()) }}</div>
+      <div class="kpi-card__sub">Combined estimate</div>
+    </div>
+  </section>
+
+  <!-- 2. Single Search & Filter Toolbar -->
+  <section class="toolbar-card" aria-label="Search and Filter Controls">
+    <div class="toolbar-main">
+      <!-- Search Field -->
+      <div class="search-box">
+        <ar-icon name="search" [size]="15" class="search-box__icon" />
+        <input
+          type="text"
+          class="search-box__input"
+          placeholder="Search by project name, reference, site, or city..."
+          [value]="filter()"
+          (input)="filter.set($any($event.target).value)"
+          (keyup.enter)="load()"
+        />
+        @if (filter()) {
+          <button
+            type="button"
+            class="search-box__clear"
+            title="Clear search"
+            (click)="filter.set(''); load()"
+          >
+            <ar-icon name="close" [size]="12" />
+          </button>
+        }
+      </div>
+
+      <!-- Filters Group -->
+      <div class="filters-group">
+        <!-- Stage Dropdown -->
+        <div class="filter-select-wrap">
+          <label for="filter-stage" class="visually-hidden">Filter Stage</label>
+          <select
+            id="filter-stage"
+            class="filter-select"
+            [value]="stage() ?? ''"
+            (change)="stage.set($any($event.target).value === '' ? null : +$any($event.target).value); load()"
+          >
+            <option value="">All stages</option>
+            @for (s of STAGES; track s) {
+              <option [value]="s" [selected]="stage() === s">{{ STAGE_TEXT[s] }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Sector Dropdown -->
+        <div class="filter-select-wrap">
+          <label for="filter-sector" class="visually-hidden">Filter Sector</label>
+          <select
+            id="filter-sector"
+            class="filter-select"
+            [value]="sector()"
+            (change)="sector.set($any($event.target).value); load()"
+          >
+            <option value="">All sectors</option>
+            @for (s of SECTORS(); track s) {
+              <option [value]="s" [selected]="sector() === s">{{ s }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Key Date Checkbox -->
+        <label class="filter-toggle-pill">
+          <input
+            type="checkbox"
+            [checked]="soon()"
+            (change)="soon.set($any($event.target).checked); load()"
+          />
+          <ar-icon name="clock" [size]="12" />
+          <span>Key date $\le$ 30d</span>
+        </label>
+
+        <!-- Open Only Checkbox -->
+        <label class="filter-toggle-pill">
+          <input
+            type="checkbox"
+            [checked]="openOnly()"
+            (change)="openOnly.set($any($event.target).checked); load()"
+          />
+          <span>Open projects only</span>
+        </label>
+      </div>
+
+      <!-- Action Utilities -->
+      <div class="toolbar-actions">
+        @if (activeFiltersCount() > 0) {
+          <button
+            type="button"
+            class="clear-btn"
+            title="Clear all active filters"
+            (click)="clearFilters()"
+          >
+            <ar-icon name="close" [size]="11" />
+            <span>Clear filters ({{ activeFiltersCount() }})</span>
+          </button>
+        }
+
+        <button
+          type="button"
+          class="apply-btn"
+          title="Apply search and filters"
+          (click)="load()"
+        >
+          <ar-icon name="search" [size]="12" />
+          <span>Apply</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Collapsible Tender Alerts Strip -->
+  @if (suggestions().length) {
+    <section class="tender-strip" aria-label="Tender Suggestions">
+      <div class="tender-strip__head" (click)="toggleSuggestions()">
+        <div class="tender-strip__title">
+          <span class="sparkle-icon"><ar-icon name="sparkle" [size]="14" /></span>
+          <strong>{{ suggestions().length }} Tender Alerts Matched</strong>
+          <span class="tender-strip__hint">High-value industrial opportunities matching your project keywords</span>
+        </div>
+        <div class="tender-strip__toggle">
+          <span>{{ suggestionsExpanded() ? 'Hide alerts' : 'Review alerts' }}</span>
+          <ar-icon [name]="suggestionsExpanded() ? 'chevdown' : 'chevron'" [size]="12" />
+        </div>
+      </div>
+
+      @if (suggestionsExpanded()) {
+        <div class="tender-strip__cards-scroll">
           @for (t of suggestions(); track t.id) {
-            <div class="pj__card pj__card--tender">
-              <span class="pj__card-name" translate="no">{{ t.title || t.subject }}</span>
-              <span class="pj__muted" translate="no"
-                >{{ t.buyer }}{{ t.location ? ' · ' + t.location : '' }}</span
-              >
-              <span class="pj__card-row">
-                <b>{{ t.estimatedValueInPaise ? rupees(t.estimatedValueInPaise) : '' }}</b>
+            <div class="tender-card">
+              <div class="tender-card__title">{{ t.title || t.subject }}</div>
+              <div class="tender-card__buyer">{{ t.buyer }}{{ t.location ? ' · ' + t.location : '' }}</div>
+              <div class="tender-card__meta">
+                <span class="tender-val">{{ t.estimatedValueInPaise ? rupees(t.estimatedValueInPaise) : 'Value pending' }}</span>
                 @if (t.closingOn) {
-                  <span class="pj__muted">Closes {{ t.closingOn | date: 'd MMM' }}</span>
+                  <span class="tender-closing">Closes {{ t.closingOn | date: 'd MMM' }}</span>
                 }
-              </span>
-              <span class="pj__chips">
+              </div>
+              <div class="tender-card__chips">
                 <ar-chip tone="teal">Score {{ t.score }}</ar-chip>
                 @for (w of t.matchedWords; track w) {
-                  <ar-chip tone="neutral"
-                    ><span translate="no">{{ w }}</span></ar-chip
-                  >
+                  <ar-chip tone="neutral">{{ w }}</ar-chip>
                 }
-                @if (t.seenCount > 1) {
-                  <ar-chip tone="neutral">In {{ t.seenCount }} alerts</ar-chip>
-                }
-              </span>
+              </div>
               @if (t.documentsUrl) {
-                <a class="pj__link" [href]="t.documentsUrl" target="_blank" rel="noopener"
-                  >Tender documents</a
-                >
+                <a class="tender-doc-link" [href]="t.documentsUrl" target="_blank" rel="noopener">
+                  <ar-icon name="document" [size]="12" />
+                  <span>Tender documents</span>
+                </a>
               }
-              <span class="pj__card-actions">
+              <div class="tender-card__actions">
                 @if (canCreate()) {
                   <button
                     ar-button
                     type="button"
                     variant="primary"
+                    size="sm"
+                    class="tender-btn tender-btn--primary"
                     [disabled]="deciding() === t.id"
                     (click)="createFromTender(t)"
                   >
@@ -133,130 +341,321 @@
                     ar-button
                     type="button"
                     variant="ghost"
+                    size="sm"
+                    class="tender-btn"
                     [disabled]="deciding() === t.id"
                     (click)="notRelevant(t)"
                   >
                     Not relevant
                   </button>
                 }
-              </span>
+              </div>
             </div>
           }
-        </section>
+        </div>
       }
-      @for (c of board(); track c.stage) {
-        <section
-          class="pj__col"
-          [attr.aria-label]="STAGE_TEXT[c.stage]"
-          (dragover)="allowDrop($event)"
-          (drop)="drop($event, c.stage)"
-        >
-          <header class="pj__col-head">
-            <b>{{ STAGE_TEXT[c.stage] }}</b>
-            <span class="pj__muted">{{ c.items.length }} · {{ rupees(c.totalValueInPaise) }}</span>
-            <span class="pj__muted pj__decider">{{ STAGE_DECIDER[c.stage] }}</span>
-          </header>
-          @for (p of c.items; track p.id) {
-            <a
-              class="pj__card"
-              [routerLink]="['/projects', p.id]"
-              [attr.draggable]="canUpdate()"
-              (dragstart)="dragStart($event, p)"
+    </section>
+  }
+
+  <!-- 4. Main Content: Kanban Board or List View -->
+  @if (view() === 'board') {
+    <!-- KANBAN BOARD VIEW -->
+    <div class="board-container">
+      <div class="kanban-grid" [class.has-filter]="stage() !== null">
+        @for (c of board(); track c.stage) {
+          @if (stage() === null || stage() === c.stage) {
+            <section
+              class="stage-col stage-col--{{ c.stage }}"
+              [attr.aria-label]="STAGE_TEXT[c.stage]"
+              (dragover)="allowDrop($event)"
+              (drop)="drop($event, c.stage)"
             >
-              <span class="pj__card-name" translate="no">{{ p.name }}</span>
-              <span class="pj__muted" translate="no"
-                >{{ p.endUserName }}{{ p.siteCity ? ' · ' + p.siteCity : '' }}</span
-              >
-              <span class="pj__card-row">
-                <b>{{ rupees(p.ourScopeValueInPaise) }}</b>
-                <span class="pj__muted">{{ p.daysInStage }} d in stage</span>
-              </span>
-              @if (p.consultantName) {
-                <span class="pj__muted" translate="no">Consultant: {{ p.consultantName }}</span>
-              }
-              @if (p.specSummary) {
-                <ar-chip [tone]="(p.specifiedInRate ?? 0) >= 0.5 ? 'good' : 'amber'">{{
-                  p.specSummary
-                }}</ar-chip>
-              }
-              @if (p.needsSpecWriter) {
-                <ar-chip tone="warn">Who is writing the spec?</ar-chip>
-              }
-              @if (p.hasBlocker) {
-                <ar-chip tone="bad">Blocker who decides</ar-chip>
-              }
-              @if (p.goingCold) {
-                <ar-chip tone="amber">Going cold: nothing in 60 days</ar-chip>
-              }
-              @if (p.outcome !== Outcome.None) {
-                <ar-chip [tone]="p.outcome === Outcome.Won ? 'good' : 'neutral'">{{
-                  OUTCOME_TEXT[p.outcome]
-                }}</ar-chip>
-              }
-              @if (p.nextKeyDate) {
-                <span class="pj__muted"
-                  >{{ p.nextKeyDateWhat }}: {{ p.nextKeyDate | date: 'd MMM' }}</span
-                >
-              }
-            </a>
-          } @empty {
-            <p class="pj__empty">Nothing here.</p>
+              <!-- Column Header -->
+              <header class="stage-col__header">
+                <div class="stage-col__title-row">
+                  <div class="stage-col__title">
+                    <span class="stage-accent-dot"></span>
+                    <span class="stage-name">{{ STAGE_TEXT[c.stage] }}</span>
+                  </div>
+                  <span class="stage-count-badge">{{ c.items.length }}</span>
+                </div>
+                <div class="stage-col__value-row">
+                  <span class="stage-value">{{ rupees(c.totalValueInPaise) }}</span>
+                  <span class="stage-decider" [title]="'Decider: ' + STAGE_DECIDER[c.stage]">{{ STAGE_DECIDER[c.stage] }}</span>
+                </div>
+              </header>
+
+              <!-- Column Cards Scrollable Body -->
+              <div class="stage-col__body">
+                @for (p of c.items; track p.id) {
+                  <div
+                    class="project-card"
+                    [attr.draggable]="canUpdate()"
+                    (dragstart)="dragStart($event, p)"
+                  >
+                    <!-- Card Top Row: Reference + Days in stage -->
+                    <div class="project-card__top">
+                      <span class="project-ref ar-mono">{{ p.reference }}</span>
+                      <span class="stage-age" title="Days in current stage">
+                        <ar-icon name="clock" [size]="10" />
+                        <span>{{ p.daysInStage }}d in stage</span>
+                      </span>
+                    </div>
+
+                    <!-- Project Title -->
+                    <a
+                      class="project-card__name"
+                      [routerLink]="['/projects', p.id]"
+                      title="View project workspace"
+                    >
+                      {{ p.name }}
+                    </a>
+
+                    <!-- Customer / Location -->
+                    <div class="project-card__customer">
+                      <span class="customer-name" [title]="p.endUserName || 'Customer not set'">
+                        {{ p.endUserName || 'Direct End-User' }}
+                      </span>
+                      @if (p.siteCity) {
+                        <span class="site-location">· {{ p.siteCity }}</span>
+                      }
+                    </div>
+
+                    <!-- Consultant (if present) -->
+                    @if (p.consultantName) {
+                      <div class="project-card__consultant" title="Project Consultant">
+                        <ar-icon name="user" [size]="11" />
+                        <span>Consultant: {{ p.consultantName }}</span>
+                      </div>
+                    }
+
+                    <!-- Financial Value -->
+                    <div class="project-card__value-row">
+                      <div class="scope-val">
+                        <span class="val-label">SCOPE VALUE</span>
+                        <span class="val-amount">{{ rupees(p.ourScopeValueInPaise) }}</span>
+                      </div>
+                      @if (p.nextKeyDate) {
+                        <div class="key-date-chip" [title]="p.nextKeyDateWhat || 'Next Key Milestone'">
+                          <ar-icon name="clock" [size]="10" />
+                          <span>{{ p.nextKeyDate | date: 'd MMM' }}</span>
+                        </div>
+                      }
+                    </div>
+
+                    <!-- Status Chips & Indicators -->
+                    <div class="project-card__chips">
+                      @if (p.specSummary) {
+                        <ar-chip [tone]="(p.specifiedInRate ?? 0) >= 0.5 ? 'good' : 'amber'" class="card-chip">
+                          {{ p.specSummary }}
+                        </ar-chip>
+                      }
+                      @if (p.needsSpecWriter) {
+                        <ar-chip tone="warn" class="card-chip">No spec writer</ar-chip>
+                      }
+                      @if (p.hasBlocker) {
+                        <ar-chip tone="bad" class="card-chip">Blocker</ar-chip>
+                      }
+                      @if (p.goingCold) {
+                        <ar-chip tone="amber" class="card-chip">Going cold</ar-chip>
+                      }
+                      @if (p.outcome !== Outcome.None) {
+                        <ar-chip [tone]="p.outcome === Outcome.Won ? 'good' : 'neutral'" class="card-chip">
+                          {{ OUTCOME_TEXT[p.outcome] }}
+                        </ar-chip>
+                      }
+                    </div>
+
+                    <!-- Quick Action Bar -->
+                    <div class="project-card__actions">
+                      <a
+                        class="card-act-btn card-act-btn--view"
+                        [routerLink]="['/projects', p.id]"
+                        title="View project details"
+                      >
+                        <ar-icon name="document" [size]="12" />
+                        <span>View</span>
+                      </a>
+
+                      @if (canUpdate()) {
+                        <a
+                          class="card-act-btn card-act-btn--edit"
+                          [routerLink]="['/projects', p.id, 'edit']"
+                          title="Edit project"
+                        >
+                          <ar-icon name="edit" [size]="12" />
+                        </a>
+                      }
+
+                      @if (canUpdate() && p.stage !== ProjectStage.Closed) {
+                        <button
+                          type="button"
+                          class="card-act-btn card-act-btn--advance"
+                          (click)="advanceStage(p, $event)"
+                          [title]="nextStageTooltip(p.stage)"
+                        >
+                          <span>{{ nextStageLabel(p.stage) }}</span>
+                          <ar-icon name="chevron" [size]="11" />
+                        </button>
+                      }
+                    </div>
+                  </div>
+                } @empty {
+                  <div class="stage-col__empty">
+                    <div class="empty-icon-wrap">
+                      <ar-icon name="workspaces" [size]="18" />
+                    </div>
+                    <p class="empty-title">No projects</p>
+                    <p class="empty-desc">Drop cards here or create a project.</p>
+                  </div>
+                }
+              </div>
+            </section>
           }
-        </section>
-      }
+        }
+      </div>
     </div>
   } @else {
-    <ejs-grid arGrid="projects" [dataSource]="items()" aria-label="Projects">
-      <e-columns>
-        <e-column field="name" headerText="Project" width="240">
-          <ng-template #template let-p>
-            <a class="pj__link" [routerLink]="['/projects', p.id]" translate="no">{{ p.name }}</a>
-            <div class="pj__muted" translate="no">{{ p.reference }}</div>
-          </ng-template>
-        </e-column>
-        <e-column field="endUserName" headerText="End-user" width="170">
-          <ng-template #template let-p
-            ><span translate="no">{{ p.endUserName }}</span></ng-template
-          >
-        </e-column>
-        <e-column field="siteCity" headerText="Site city" width="120" />
-        <e-column field="stage" headerText="Stage" width="120">
-          <ng-template #template let-p>
-            {{ stageText(p.stage) }}
-            @if (p.outcome) {
-              <span class="pj__muted">· {{ outcomeText(p.outcome) }}</span>
-            }
-          </ng-template>
-        </e-column>
-        <e-column field="ourScopeValueInPaise" headerText="Our scope" width="110" textAlign="Right">
-          <ng-template #template let-p>{{ rupees(p.ourScopeValueInPaise) }}</ng-template>
-        </e-column>
-        <e-column field="nextKeyDate" headerText="Next key date" width="150">
-          <ng-template #template let-p>
-            @if (p.nextKeyDate) {
-              {{ p.nextKeyDate | date: 'd MMM y' }}
-              <div class="pj__muted">{{ p.nextKeyDateWhat }}</div>
-            }
-          </ng-template>
-        </e-column>
-        <e-column field="specifiedInRate" headerText="Specified-in" width="150">
-          <ng-template #template let-p>
-            {{ p.specSummary || '—' }}
-          </ng-template>
-        </e-column>
-        <e-column field="openEnquiries" headerText="Open enquiries" width="110" textAlign="Right" />
-        <e-column field="ownerName" headerText="Owner" width="130" />
-        <e-column headerText="Watch" width="170">
-          <ng-template #template let-p>
-            @if (p.needsSpecWriter) {
-              <ar-chip tone="warn">No spec writer</ar-chip>
-            }
-            @if (p.hasBlocker) {
-              <ar-chip tone="bad">Blocker</ar-chip>
-            }
-          </ng-template>
-        </e-column>
-      </e-columns>
-    </ejs-grid>
+    <!-- LIST VIEW (GRID) -->
+    <div class="list-container">
+      <ejs-grid
+        arGrid="projects"
+        [arGridSearch]="false"
+        [arGridPageSize]="20"
+        arGridEmpty="No projects match your filter criteria."
+        [dataSource]="items()"
+        aria-label="Projects Table"
+      >
+        <e-columns>
+          <!-- 1. Project Reference -->
+          <e-column field="reference" headerText="Reference" width="130">
+            <ng-template #template let-p>
+              <a class="grid-link ar-mono" [routerLink]="['/projects', p.id]">
+                {{ p.reference }}
+              </a>
+            </ng-template>
+          </e-column>
+
+          <!-- 2. Project Name -->
+          <e-column field="name" headerText="Project Name" width="220">
+            <ng-template #template let-p>
+              <div class="cell-project-name">
+                <a class="project-title-link" [routerLink]="['/projects', p.id]">
+                  {{ p.name }}
+                </a>
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 3. Customer / End-User -->
+          <e-column field="endUserName" headerText="Customer / End-User" width="180">
+            <ng-template #template let-p>
+              <div class="cell-customer">
+                <span class="cust-name">{{ p.endUserName || '—' }}</span>
+                @if (p.consultantName) {
+                  <span class="consultant-sub">Consultant: {{ p.consultantName }}</span>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 4. Sector -->
+          <e-column field="sector" headerText="Sector" width="120">
+            <ng-template #template let-p>
+              <span class="sector-tag">{{ p.sector || 'General' }}</span>
+            </ng-template>
+          </e-column>
+
+          <!-- 5. Location (City) -->
+          <e-column field="siteCity" headerText="Location" width="120">
+            <ng-template #template let-p>
+              <span>{{ p.siteCity || '—' }}</span>
+            </ng-template>
+          </e-column>
+
+          <!-- 6. Stage -->
+          <e-column field="stage" headerText="Stage" width="130">
+            <ng-template #template let-p>
+              <div class="cell-stage">
+                <span class="stage-pill stage-pill--{{ p.stage }}">{{ stageText(p.stage) }}</span>
+                @if (p.outcome) {
+                  <span class="outcome-sub">· {{ outcomeText(p.outcome) }}</span>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 7. Estimated Scope Value -->
+          <e-column field="ourScopeValueInPaise" headerText="Estimated Scope" width="130" textAlign="Right">
+            <ng-template #template let-p>
+              <span class="scope-val-num">{{ rupees(p.ourScopeValueInPaise) }}</span>
+            </ng-template>
+          </e-column>
+
+          <!-- 8. Owner -->
+          <e-column field="ownerName" headerText="Owner" width="130">
+            <ng-template #template let-p>
+              <span class="owner-text">{{ p.ownerName || 'Unassigned' }}</span>
+            </ng-template>
+          </e-column>
+
+          <!-- 9. Next Key Date -->
+          <e-column field="nextKeyDate" headerText="Key Date" width="140">
+            <ng-template #template let-p>
+              @if (p.nextKeyDate) {
+                <div class="cell-date">
+                  <span class="date-val">{{ p.nextKeyDate | date: 'd MMM y' }}</span>
+                  <span class="date-milestone">{{ p.nextKeyDateWhat }}</span>
+                </div>
+              } @else {
+                <span class="muted">—</span>
+              }
+            </ng-template>
+          </e-column>
+
+          <!-- 10. Watch / Flags -->
+          <e-column headerText="Watch / Health" width="150">
+            <ng-template #template let-p>
+              <div class="cell-flags">
+                @if (p.needsSpecWriter) {
+                  <ar-chip tone="warn" class="grid-chip">No spec writer</ar-chip>
+                }
+                @if (p.hasBlocker) {
+                  <ar-chip tone="bad" class="grid-chip">Blocker</ar-chip>
+                }
+                @if (p.goingCold) {
+                  <ar-chip tone="amber" class="grid-chip">Going cold</ar-chip>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+
+          <!-- 11. Actions -->
+          <e-column headerText="Actions" width="160" textAlign="Right">
+            <ng-template #template let-p>
+              <div class="grid-actions">
+                <a
+                  class="tbl-act-btn"
+                  [routerLink]="['/projects', p.id]"
+                  title="View workspace"
+                >
+                  <ar-icon name="document" [size]="12" />
+                  <span>View</span>
+                </a>
+                @if (canUpdate()) {
+                  <a
+                    class="tbl-act-btn"
+                    [routerLink]="['/projects', p.id, 'edit']"
+                    title="Edit project"
+                  >
+                    <ar-icon name="edit" [size]="12" />
+                  </a>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+        </e-columns>
+      </ejs-grid>
+    </div>
   }
 </div>
