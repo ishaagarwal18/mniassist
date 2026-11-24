@@ -31,7 +31,7 @@ import {
   NegotiationStrategy,
   OfferSender,
 } from '../../../proxy/pipeline/negotiation-enums';
-import { ArBanner, ArButton, ArCard, ArChip, ArDialog } from '../../../ui';
+import { ArBanner, ArButton, ArCard, ArChip, ArDialog, ArIcon } from '../../../ui';
 import {
   ACTION_LABEL,
   PERSONAS,
@@ -87,6 +87,7 @@ const DEFAULT_RULES = {
     ArChip,
     ArDialog,
     ArBanner,
+    ArIcon,
     RouterLink,
     ArCounterOfferCheck,
   ],
