@@ -24,7 +24,7 @@ import {
   ProjectionScenario,
   ScenarioAnalysisResultDto,
 } from '../../../proxy/projections';
-import { ArBanner, ArButton, ArCard, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArBanner, ArButton, ArChip, ArDialog, ArIcon, ChipTone } from '../../../ui';
 import {
   PlanRow,
   fiscalYearOf,
@@ -69,7 +69,7 @@ const ITEM_STATUS: Record<ProjectionItemStatus, { label: string; tone: ChipTone 
  */
 @Component({
   selector: 'ar-projection-plan',
-  imports: [ArTopbar, ArButton, ArCard, ArChip, ArDialog, ArBanner],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArBanner, ArIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './projection-plan.html',
   styleUrl: './projection-plan.scss',
