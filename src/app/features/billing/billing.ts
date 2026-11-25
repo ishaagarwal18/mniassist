@@ -2,10 +2,10 @@ import { grantedPolicy } from '../../core/auth/permission';
 import { PermissionService } from '@abp/ng.core';
 import { ArAutoTopUpCard } from './auto-top-up-card';
 import { ArRateHistoryCard } from './rate-history-card';
-import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom, forkJoin, map } from 'rxjs';
 import {
   BillingService,
@@ -94,7 +94,7 @@ const EMPTY = {
     DecimalPipe,
     ArGrid,
     GridModule,
-    NgTemplateOutlet,
+    RouterLink,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './billing.html',
@@ -137,7 +137,7 @@ export class ArBilling {
   protected readonly pageTitle = computed(() => 'Top up wallet');
 
   protected readonly topUpOpen = signal(false);
-  protected readonly topUpAmount = signal(20000);
+  protected readonly topUpAmount = signal(5000);
   protected readonly topUpGateway = signal('Razorpay');
   protected readonly availableGateways = signal<CheckoutGatewayDto[]>([]);
   protected readonly topUpPresets = [1000, 2500, 5000, 10000, 20000];
@@ -145,6 +145,28 @@ export class ArBilling {
   protected setTopUpPreset(amount: number): void {
     this.topUpAmount.set(amount);
   }
+
+  protected onAmountInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const val = parseInt(input.value, 10);
+    this.topUpAmount.set(isNaN(val) ? 0 : val);
+  }
+
+  protected readonly amountError = computed(() => {
+    const amt = this.topUpAmount();
+    if (isNaN(amt) || amt <= 0) return 'Please enter a valid recharge amount.';
+    if (amt < 100) return 'Minimum recharge amount is ₹100.';
+    if (amt > 1000000) return 'Maximum recharge amount per transaction is ₹10,00,000.';
+    return null;
+  });
+
+  protected readonly isAmountValid = computed(() => this.amountError() === null);
+
+  protected readonly expectedBalance = computed(() => {
+    const current = this.d().balanceInPaise ?? 0;
+    const recharge = (this.topUpAmount() || 0) * 100;
+    return current + recharge;
+  });
 
   protected txnTone(kind: string): 'good' | 'bad' | 'neutral' {
     if (kind === 'Top-up' || kind === 'Refund') return 'good';

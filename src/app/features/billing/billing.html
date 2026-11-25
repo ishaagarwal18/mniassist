@@ -1,11 +1,238 @@
 @if (isPage) {
   <ar-topbar
-    help="Your plan, prepaid wallet balance and top-ups, and what each message and call costs."
-    [title]="pageTitle()">
-    <button ar-button type="button" variant="ghost" (click)="close()">Back to Billing</button>
+    title="Top up wallet"
+    help="Add money to your prepaid messaging wallet to pay for WhatsApp messages as campaigns and conversations deliver."
+  >
+    <button ar-button type="button" variant="ghost" (click)="close()">
+      Back to Billing
+    </button>
   </ar-topbar>
-  <div class="ar-form-page ar-scroll">
-    <ng-container *ngTemplateOutlet="formsTpl" />
+
+  <div class="tu-page ar-scroll">
+    <div class="tu-container">
+      <!-- Breadcrumb Navigation -->
+      <nav class="tu-breadcrumb" aria-label="Breadcrumb">
+        <a routerLink="/settings" class="tu-breadcrumb__link">Settings</a>
+        <span class="tu-breadcrumb__sep"><ar-icon name="chevron" [size]="12" /></span>
+        <a routerLink="/billing" class="tu-breadcrumb__link">Billing</a>
+        <span class="tu-breadcrumb__sep"><ar-icon name="chevron" [size]="12" /></span>
+        <span class="tu-breadcrumb__current">Top Up Wallet</span>
+      </nav>
+
+      <!-- Page Header -->
+      <header class="tu-header">
+        <div class="tu-header__left">
+          <div class="tu-header__title-row">
+            <h1 class="tu-header__title">Top Up Wallet</h1>
+            <span class="tu-header__badge">Prepaid Messaging</span>
+          </div>
+          <p class="tu-header__desc">
+            Add funds to your prepaid WhatsApp messaging balance for uninterrupted campaigns, transactional templates, and customer conversations.
+          </p>
+        </div>
+        <div class="tu-header__actions">
+          <button ar-button type="button" variant="ghost" (click)="close()">
+            Back to Billing
+          </button>
+        </div>
+      </header>
+
+      <!-- Two-Column Layout Grid -->
+      <div class="tu-grid">
+        <!-- LEFT COLUMN: Recharge Details -->
+        <section class="tu-card tu-form-card" aria-labelledby="recharge-details-heading">
+          <div class="tu-card__header">
+            <h2 id="recharge-details-heading" class="tu-card__title">Recharge Details</h2>
+            <p class="tu-card__subtitle">
+              Choose a quick select preset or specify a custom recharge amount. Funds are credited immediately after payment confirmation.
+            </p>
+          </div>
+
+          <!-- Quick Select Amount Presets -->
+          <div class="tu-field-group">
+            <label class="tu-field-label">Quick Select Amount</label>
+            <div class="tu-presets-grid" role="group" aria-label="Quick amount presets">
+              @for (amt of topUpPresets; track amt) {
+                <button
+                  type="button"
+                  class="tu-preset-btn"
+                  [class.tu-preset-btn--selected]="topUpAmount() === amt"
+                  (click)="setTopUpPreset(amt)"
+                >
+                  <span class="tu-preset-btn__val">₹{{ amt | number }}</span>
+                  @if (topUpAmount() === amt) {
+                    <span class="tu-preset-btn__check"><ar-icon name="check" [size]="12" /></span>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Custom Amount Input -->
+          <div class="tu-field-group">
+            <label for="tu-custom-amount" class="tu-field-label">
+              <span>Custom Amount (₹)</span>
+              <span class="tu-field-hint">Min: ₹100 · Max: ₹10,00,000</span>
+            </label>
+            <div
+              class="tu-input-box"
+              [class.tu-input-box--error]="amountError()"
+            >
+              <span class="tu-input-symbol" aria-hidden="true">₹</span>
+              <input
+                id="tu-custom-amount"
+                type="number"
+                min="100"
+                max="1000000"
+                step="500"
+                required
+                class="tu-amount-input"
+                placeholder="Enter amount, e.g. 5,000"
+                [value]="topUpAmount() || ''"
+                (input)="onAmountInput($event)"
+              />
+            </div>
+            @if (amountError(); as err) {
+              <div class="tu-input-error-msg" role="alert">
+                <ar-icon name="alert" [size]="13" />
+                <span>{{ err }}</span>
+              </div>
+            }
+          </div>
+
+          <!-- Payment Gateway Selection or Warning -->
+          @if (availableGateways().length === 0) {
+            <!-- Professional Warning Component -->
+            <div class="tu-warning-banner" role="alert">
+              <div class="tu-warning-banner__icon">
+                <ar-icon name="alert" [size]="18" />
+              </div>
+              <div class="tu-warning-banner__content">
+                <strong class="tu-warning-banner__title">Online payment gateways are not configured yet</strong>
+                <p class="tu-warning-banner__text">
+                  A platform administrator must enable Razorpay or PayU in <strong>Platform Settings → Payment Gateways</strong> before online wallet recharges can be processed.
+                </p>
+              </div>
+            </div>
+          } @else if (availableGateways().length > 1) {
+            <div class="tu-field-group">
+              <label for="tu-gateway-select" class="tu-field-label">Payment Gateway</label>
+              <select
+                id="tu-gateway-select"
+                class="ar-field__input tu-gateway-select"
+                [value]="topUpGateway()"
+                (change)="topUpGateway.set($any($event.target).value)"
+              >
+                @for (g of availableGateways(); track g.name) {
+                  <option [value]="g.name">{{ g.label }}</option>
+                }
+              </select>
+            </div>
+          }
+
+          <!-- Form Action Buttons -->
+          <div class="tu-actions">
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              icon="billing"
+              class="tu-btn-submit"
+              [disabled]="busy() || availableGateways().length === 0 || !isAmountValid()"
+              (click)="submitTopUp()"
+            >
+              {{ busy() ? 'Processing…' : 'Continue to Payment' }}
+            </button>
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              class="tu-btn-cancel"
+              [disabled]="busy()"
+              (click)="close()"
+            >
+              Cancel
+            </button>
+          </div>
+        </section>
+
+        <!-- RIGHT COLUMN: Payment Summary & Security -->
+        <aside class="tu-summary-col">
+          <!-- Payment Summary Card -->
+          <div class="tu-card tu-summary-card" aria-labelledby="payment-summary-heading">
+            <div class="tu-card__header">
+              <h2 id="payment-summary-heading" class="tu-card__title">Payment Summary</h2>
+              <p class="tu-card__subtitle">Summary of your transaction and wallet balance reflection.</p>
+            </div>
+
+            <div class="tu-summary-rows">
+              <div class="tu-summary-row">
+                <span class="tu-summary-row__label">Recharge Amount</span>
+                <span class="tu-summary-row__value font-mono">{{ money((topUpAmount() || 0) * 100) }}</span>
+              </div>
+              <div class="tu-summary-row">
+                <span class="tu-summary-row__label">Payment Gateway Fee</span>
+                <span class="tu-summary-row__value text-good font-mono">₹0.00 (Included)</span>
+              </div>
+              <div class="tu-summary-row">
+                <span class="tu-summary-row__label">Estimated Tax (GST)</span>
+                <span class="tu-summary-row__value font-mono">Applicable on invoice</span>
+              </div>
+
+              <div class="tu-summary-divider"></div>
+
+              <div class="tu-summary-row tu-summary-row--total">
+                <span class="tu-summary-row__label">Total Payable</span>
+                <span class="tu-summary-row__value tu-summary-total font-mono">{{ money((topUpAmount() || 0) * 100) }}</span>
+              </div>
+            </div>
+
+            <div class="tu-balance-preview">
+              <div class="tu-balance-preview__item">
+                <span class="tu-balance-preview__label">Current Balance</span>
+                <span class="tu-balance-preview__val font-mono">{{ money(d().balanceInPaise) }}</span>
+              </div>
+              <div class="tu-balance-preview__arrow" aria-hidden="true">→</div>
+              <div class="tu-balance-preview__item tu-balance-preview__item--after">
+                <span class="tu-balance-preview__label">Balance After Recharge</span>
+                <span class="tu-balance-preview__val font-mono">{{ money(expectedBalance()) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trust & Security Box -->
+          <div class="tu-trust-card">
+            <div class="tu-trust-card__header">
+              <ar-icon name="shield" [size]="16" class="tu-trust-shield-icon" />
+              <strong class="tu-trust-card__title">Safe &amp; Secure Payment</strong>
+            </div>
+            <ul class="tu-trust-list">
+              <li>
+                <span class="tu-trust-check"><ar-icon name="check" [size]="12" /></span>
+                <div>
+                  <strong>End-to-End Encryption</strong>
+                  <p>All transactions are protected with 256-bit SSL encrypted communication.</p>
+                </div>
+              </li>
+              <li>
+                <span class="tu-trust-check"><ar-icon name="check" [size]="12" /></span>
+                <div>
+                  <strong>Instant Balance Update</strong>
+                  <p>Your prepaid balance is credited immediately upon payment gateway authorization.</p>
+                </div>
+              </li>
+              <li>
+                <span class="tu-trust-check"><ar-icon name="check" [size]="12" /></span>
+                <div>
+                  <strong>Compliant Gateway Partners</strong>
+                  <p>Processed through RBI-authorized payment processors (Razorpay / PayU).</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
   </div>
 } @else {
   <ar-topbar
@@ -510,7 +737,7 @@
 
         <label class="ar-field">
           <span class="ar-field__label">Top-up Amount (₹)</span>
-          <div class="topup-input-wrap">
+          <div class="topup-input-wrap" [class.topup-input-wrap--error]="amountError()">
             <span class="topup-input-prefix">₹</span>
             <input
               type="number"
@@ -519,11 +746,19 @@
               step="500"
               required
               class="ar-field__input topup-number-input"
-              [value]="topUpAmount()"
-              (input)="topUpAmount.set(+$any($event.target).value)"
+              [value]="topUpAmount() || ''"
+              (input)="onAmountInput($event)"
             />
           </div>
+          @if (amountError(); as err) {
+            <span class="tu-modal-error">{{ err }}</span>
+          }
         </label>
+
+        <div class="topup-dialog-summary">
+          <span>Expected balance after top-up:</span>
+          <strong class="font-mono text-good">{{ money(expectedBalance()) }}</strong>
+        </div>
 
         @if (availableGateways().length > 1) {
           <label class="ar-field">
@@ -559,7 +794,7 @@
           ar-button
           type="button"
           variant="primary"
-          [disabled]="busy() || availableGateways().length === 0 || topUpAmount() < 100"
+          [disabled]="busy() || availableGateways().length === 0 || !isAmountValid()"
           (click)="submitTopUp()"
         >
           {{ busy() ? 'Processing…' : 'Continue to Payment' }}
