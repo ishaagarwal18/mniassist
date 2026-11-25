@@ -140,10 +140,6 @@ export class ArTasks {
     this.tick.update((n) => n + 1);
   }
 
-  protected bucketTone(b: DueBucket): ChipTone {
-    return b === 'overdue' ? 'bad' : b === 'today' ? 'amber' : 'neutral';
-  }
-
   protected dueText(t: CrmTaskDto): string {
     return t.status === CrmTaskStatus.Done
       ? 'Done'
