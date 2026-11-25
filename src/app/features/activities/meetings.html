@@ -3,20 +3,13 @@
   [subtitle]="heading()"
   help="Your week. Scheduling checks everyone's calendars and can suggest times when all are free. Open a meeting to answer it, finish it, cancel it, or add it to your calendar app."
 >
-  <input
-    #icalInput
-    type="file"
-    accept=".ics,text/calendar"
-    style="display: none"
-    (change)="onIcalSelected($event)"
-  />
   <button
     ar-button
     type="button"
     variant="ghost"
     icon="download"
     [disabled]="busy()"
-    (click)="icalInput.click()"
+    (click)="showIcalModal.set(true)"
   >
     Import iCal
   </button>
@@ -27,6 +20,7 @@
   }
 </ar-topbar>
 
+<!-- 1. Edit Meeting Dialog -->
 @if (editing(); as meeting) {
   <ar-meeting-dialog
     [meeting]="meeting"
@@ -35,6 +29,7 @@
   />
 }
 
+<!-- 2. Share Meeting Dialog -->
 @if (sharing(); as sm) {
   <ar-activity-share-dialog
     kind="meeting"
@@ -44,6 +39,76 @@
   />
 }
 
+<!-- 3. Import iCal Modal -->
+@if (showIcalModal()) {
+  <ar-dialog title="Import Calendar (.ics)" (dismiss)="showIcalModal.set(false)">
+    <div class="ical-import-dialog">
+      <p class="ical-import-dialog__desc">
+        Import your schedule from external calendars such as Google Calendar, Microsoft Outlook, or Apple Calendar using a standard <code>.ics</code> file.
+      </p>
+
+      <div
+        class="ical-dropzone"
+        [class.ical-dropzone--dragging]="isDraggingIcal()"
+        (dragover)="onIcalDragOver($event)"
+        (dragleave)="onIcalDragLeave()"
+        (drop)="onIcalDrop($event)"
+        (click)="modalIcalInput.click()"
+        role="button"
+        tabindex="0"
+        aria-label="Upload iCal calendar file"
+      >
+        <input
+          #modalIcalInput
+          type="file"
+          accept=".ics,text/calendar"
+          style="display: none"
+          (change)="onIcalSelected($event)"
+        />
+        <div class="ical-dropzone__icon">
+          <ar-icon name="upload" [size]="28" />
+        </div>
+        <div class="ical-dropzone__body">
+          <span class="ical-dropzone__title">Click to upload or drag & drop</span>
+          <span class="ical-dropzone__sub">Supports iCalendar format (.ics, text/calendar)</span>
+        </div>
+        <button ar-button type="button" variant="ghost" class="ical-dropzone__btn">
+          Browse File
+        </button>
+      </div>
+
+      <div class="ical-features-list">
+        <div class="ical-feature-item">
+          <ar-icon name="check" [size]="14" />
+          <span>Automatically sets up meeting titles, dates, descriptions, and video links</span>
+        </div>
+        <div class="ical-feature-item">
+          <ar-icon name="check" [size]="14" />
+          <span>Detects Zoom, Google Meet, and Teams video links automatically</span>
+        </div>
+        <div class="ical-feature-item">
+          <ar-icon name="check" [size]="14" />
+          <span>Synchronizes with your workspace availability and notifications</span>
+        </div>
+      </div>
+
+      @if (busy()) {
+        <div class="ical-import-loading">
+          <span class="ar-spinner"></span>
+          <span>Reading calendar events and scheduling meetings...</span>
+        </div>
+      }
+    </div>
+
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="showIcalModal.set(false)">
+        Cancel
+      </button>
+    </div>
+  </ar-dialog>
+}
+
+<!-- 4. Meeting Detail Dialog -->
 @if (detail(); as m) {
   <div class="dt__scrim" (click)="closeDetail()"></div>
   <div
@@ -54,172 +119,42 @@
     arDraggable=".dt__head"
   >
     <header class="dt__head">
-      <div>
+      <div class="dt__head-info">
         <h2 class="dt__title">{{ m.title }}</h2>
-        <p class="dt__when">{{ whenLong(m) }} · {{ range(m) }} · {{ length(m) }}</p>
+        <p class="dt__when">
+          <ar-icon name="clock" [size]="13" />
+          <span>{{ whenLong(m) }} · {{ range(m) }} ({{ length(m) }})</span>
+        </p>
       </div>
       <button type="button" class="dt__x" aria-label="Close" (click)="closeDetail()">×</button>
     </header>
 
     <div class="dt__body">
+      <!-- Status & Category Badges -->
       <div class="dt__chips">
         <ar-chip [tone]="statusTone(m.status)">{{ statusLabel[m.status!] }}</ar-chip>
-        <ar-chip tone="neutral">{{ kindLabel[m.kind!] }}</ar-chip>
+        <ar-chip tone="neutral">
+          <ar-icon [name]="m.kind === 1 ? 'video' : 'user'" [size]="12" />
+          <span>{{ kindLabel[m.kind!] }}</span>
+        </ar-chip>
         @if (m.enquiryReference) {
-          <ar-chip tone="neutral" [mono]="true">{{ m.enquiryReference }}</ar-chip>
+          <ar-chip tone="neutral" [mono]="true">Deal: {{ m.enquiryReference }}</ar-chip>
         }
         @if (m.seriesId) {
           <ar-chip tone="neutral">Repeats · {{ m.seriesIndex }} of {{ m.seriesTotal }}</ar-chip>
         }
       </div>
 
-      @if (m.location) {
-        <p class="dt__row"><span>Where</span> {{ m.location }}</p>
-      }
-      @if (m.meetingUrl) {
-        <p class="dt__row">
-          <span>Link</span>
-          <a [href]="m.meetingUrl" target="_blank" rel="noopener">{{ m.meetingUrl }}</a>
-        </p>
-      }
-      <p class="dt__row"><span>Organiser</span> {{ m.organizerName || 'Someone' }}</p>
-      @if (m.contactName) {
-        <p class="dt__row"><span>Customer</span> {{ m.contactName }}</p>
-      }
-      @if (m.links?.length) {
-        <p class="dt__row">
-          <span>Linked to</span>
-          <span class="dt__links">
-            @for (l of m.links; track l.type + ':' + l.recordId) {
-              <a
-                class="dt__link"
-                translate="no"
-                [routerLink]="linkRoute(l).path"
-                [queryParams]="linkRoute(l).query ?? null"
-                >{{ l.label }}</a
-              >
-            }
-          </span>
-        </p>
-      }
-      @if (m.description) {
-        <p class="dt__row dt__row--text"><span>Notes</span> {{ m.description }}</p>
-      }
-      @if (m.outcome) {
-        <p class="dt__row dt__row--text"><span>Outcome</span> {{ m.outcome }}</p>
-      }
-      @if (m.cancelReason) {
-        <p class="dt__row dt__row--text"><span>Why cancelled</span> {{ m.cancelReason }}</p>
-      }
-
-      <h3 class="dt__h">In the meeting</h3>
-      <ul class="dt__people">
-        @for (a of m.attendees; track a.id) {
-          <li>
-            <span
-              >{{ a.name }}
-              @if (!a.userId) {
-                <em> · guest</em>
-              }
-            </span>
-            @if (a.userId) {
-              <ar-chip [tone]="responseTone(a.response)">{{ responseLabel[a.response!] }}</ar-chip>
-            }
-          </li>
-        }
-      </ul>
-
-      @if (needsMyAnswer(m)) {
-        <div class="dt__ask" role="group" aria-label="Your answer">
-          <span>Will you be there?</span>
-          <button
-            ar-button
-            type="button"
-            variant="primary"
-            [disabled]="busy()"
-            (click)="respond(m, Response.Accepted)"
-          >
-            Accept
-          </button>
-          <button
-            ar-button
-            type="button"
-            variant="ghost"
-            [disabled]="busy()"
-            (click)="respond(m, Response.Declined)"
-          >
-            Decline
-          </button>
-        </div>
-      }
-
-      @if (outcomeOpen()) {
-        <label class="ar-field">
-          <span class="ar-field__label"
-            >What came of it <span class="ar-field__opt">optional</span></span
-          >
-          <textarea
-            id="dt-outcome"
-            class="ar-field__input"
-            rows="3"
-            [value]="note()"
-            (input)="note.set($any($event.target).value)"
-          ></textarea>
-        </label>
-        <div class="dt__row-actions">
-          <button
-            ar-button
-            type="button"
-            variant="primary"
-            [disabled]="busy()"
-            (click)="complete(m)"
-          >
-            Mark done
-          </button>
-          <button ar-button type="button" variant="ghost" (click)="outcomeOpen.set(false)">
-            Back
-          </button>
-        </div>
-      }
-      @if (cancelOpen()) {
-        <label class="ar-field">
-          <span class="ar-field__label"
-            >Why <span class="ar-field__opt">optional; everyone is told</span></span
-          >
-          <input
-            id="dt-why"
-            class="ar-field__input"
-            [value]="note()"
-            (input)="note.set($any($event.target).value)"
-          />
-        </label>
-        @if (m.seriesId && (m.seriesIndex ?? 0) < (m.seriesTotal ?? 0)) {
-          <label class="dt__chk">
-            <input
-              id="dt-following"
-              type="checkbox"
-              [checked]="cancelFollowing()"
-              (change)="cancelFollowing.set($any($event.target).checked)"
-            />
-            <span
-              >Also cancel the {{ (m.seriesTotal ?? 0) - (m.seriesIndex ?? 0) }} later ones in the
-              series</span
-            >
-          </label>
-        }
-        <div class="dt__row-actions">
-          <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="cancel(m)">
-            Cancel the meeting
-          </button>
-          <button ar-button type="button" variant="ghost" (click)="cancelOpen.set(false)">
-            Back
-          </button>
-        </div>
-      }
-
-      <h3 class="dt__h">Share and add to a calendar</h3>
-      <div class="dt__share">
-        @if (m.meetingUrl) {
+      <!-- Quick Join Call CTA -->
+      @if (m.meetingUrl && m.status === Status.Scheduled) {
+        <div class="dt__join-banner">
+          <div class="dt__join-left">
+            <ar-icon name="video" [size]="18" />
+            <div>
+              <strong class="dt__join-title">Online Video Meeting</strong>
+              <span class="dt__join-url">{{ m.meetingUrl }}</span>
+            </div>
+          </div>
           <a
             ar-button
             variant="primary"
@@ -227,66 +162,216 @@
             [href]="m.meetingUrl"
             target="_blank"
             rel="noopener"
-            >Join</a
+            class="dt__join-btn"
           >
+            Join Call
+          </a>
+        </div>
+      }
+
+      <!-- Detailed Info Fields -->
+      <div class="dt__details-list">
+        @if (m.location && !m.meetingUrl) {
+          <div class="dt__row">
+            <span class="dt__row-label">Location</span>
+            <span class="dt__row-value">{{ m.location }}</span>
+          </div>
         }
+        @if (m.meetingUrl && !m.location) {
+          <div class="dt__row">
+            <span class="dt__row-label">Meeting URL</span>
+            <span class="dt__row-value">
+              <a [href]="m.meetingUrl" target="_blank" rel="noopener" class="dt__link">{{ m.meetingUrl }}</a>
+            </span>
+          </div>
+        }
+        <div class="dt__row">
+          <span class="dt__row-label">Organiser</span>
+          <span class="dt__row-value">{{ m.organizerName || 'Workspace Member' }}</span>
+        </div>
+        @if (m.contactName) {
+          <div class="dt__row">
+            <span class="dt__row-label">Customer</span>
+            <span class="dt__row-value font-medium">{{ m.contactName }}</span>
+          </div>
+        }
+        @if (m.links?.length) {
+          <div class="dt__row">
+            <span class="dt__row-label">Linked to</span>
+            <div class="dt__links">
+              @for (l of m.links; track l.type + ':' + l.recordId) {
+                <a
+                  class="dt__link-pill"
+                  translate="no"
+                  [routerLink]="linkRoute(l).path"
+                  [queryParams]="linkRoute(l).query ?? null"
+                >
+                  <ar-icon name="link" [size]="12" />
+                  <span>{{ l.label }}</span>
+                </a>
+              }
+            </div>
+          </div>
+        }
+        @if (m.description) {
+          <div class="dt__row dt__row--text">
+            <span class="dt__row-label">Notes</span>
+            <span class="dt__row-value">{{ m.description }}</span>
+          </div>
+        }
+        @if (m.outcome) {
+          <div class="dt__row dt__row--text">
+            <span class="dt__row-label">Outcome</span>
+            <span class="dt__row-value dt__row-value--outcome">{{ m.outcome }}</span>
+          </div>
+        }
+        @if (m.cancelReason) {
+          <div class="dt__row dt__row--text">
+            <span class="dt__row-label">Reason Cancelled</span>
+            <span class="dt__row-value dt__row-value--cancel">{{ m.cancelReason }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Attendees Section -->
+      <h3 class="dt__h">Attendees ({{ m.attendees?.length ?? 0 }})</h3>
+      <ul class="dt__people">
+        @for (a of m.attendees; track a.id) {
+          <li class="dt__person-card">
+            <div class="dt__person-left">
+              <span class="dt__avatar">{{ (a.name || 'U').charAt(0).toUpperCase() }}</span>
+              <div class="dt__person-details">
+                <span class="dt__person-name">
+                  {{ a.name }}
+                  @if (!a.userId) {
+                    <em class="dt__guest-tag">External guest</em>
+                  }
+                </span>
+                @if (a.email) {
+                  <span class="dt__person-email">{{ a.email }}</span>
+                }
+              </div>
+            </div>
+            @if (a.userId) {
+              <ar-chip [tone]="responseTone(a.response)">{{ responseLabel[a.response!] }}</ar-chip>
+            }
+          </li>
+        }
+      </ul>
+
+      <!-- Interactive Answer Prompt -->
+      @if (needsMyAnswer(m)) {
+        <div class="dt__ask" role="group" aria-label="Your response">
+          <div class="dt__ask-text">
+            <ar-icon name="alert" [size]="16" />
+            <span>You have been invited to this meeting. Will you attend?</span>
+          </div>
+          <div class="dt__ask-actions">
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              [disabled]="busy()"
+              (click)="respond(m, Response.Accepted)"
+            >
+              Accept
+            </button>
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="busy()"
+              (click)="respond(m, Response.Declined)"
+            >
+              Decline
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Completion Form -->
+      @if (outcomeOpen()) {
+        <div class="dt__action-box">
+          <label class="ar-field">
+            <span class="ar-field__label">Meeting outcome & notes <span class="ar-field__opt">optional</span></span>
+            <textarea
+              id="dt-outcome"
+              class="ar-field__input"
+              rows="3"
+              placeholder="Summary of discussion, agreed next steps, decision made..."
+              [value]="note()"
+              (input)="note.set($any($event.target).value)"
+            ></textarea>
+          </label>
+          <div class="dt__row-actions">
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              [disabled]="busy()"
+              (click)="complete(m)"
+            >
+              Confirm Done
+            </button>
+            <button ar-button type="button" variant="ghost" (click)="outcomeOpen.set(false)">
+              Cancel
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Cancellation Form -->
+      @if (cancelOpen()) {
+        <div class="dt__action-box dt__action-box--cancel">
+          <label class="ar-field">
+            <span class="ar-field__label">Reason for cancellation <span class="ar-field__opt">shared with attendees</span></span>
+            <input
+              id="dt-why"
+              class="ar-field__input"
+              placeholder="e.g., Client requested reschedule, agenda completed over email..."
+              [value]="note()"
+              (input)="note.set($any($event.target).value)"
+            />
+          </label>
+          @if (m.seriesId && (m.seriesIndex ?? 0) < (m.seriesTotal ?? 0)) {
+            <label class="dt__chk">
+              <input
+                id="dt-following"
+                type="checkbox"
+                [checked]="cancelFollowing()"
+                (change)="cancelFollowing.set($any($event.target).checked)"
+              />
+              <span>Also cancel the remaining {{ (m.seriesTotal ?? 0) - (m.seriesIndex ?? 0) }} meetings in this series</span>
+            </label>
+          }
+          <div class="dt__row-actions">
+            <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="cancel(m)">
+              Cancel Meeting
+            </button>
+            <button ar-button type="button" variant="ghost" (click)="cancelOpen.set(false)">
+              Back
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Share and External Calendars -->
+      <h3 class="dt__h">Share & Add to Calendar</h3>
+      <div class="dt__share-grid">
         <button ar-button type="button" variant="ghost" icon="user" (click)="sharing.set(m)">
-          Share with colleagues
+          Share Internally
         </button>
         <a ar-button variant="ghost" icon="mail" [href]="share.mail(m)">Email</a>
-        <a
-          ar-button
-          variant="ghost"
-          icon="send"
-          [href]="share.whatsapp(m)"
-          target="_blank"
-          rel="noopener"
-          >WhatsApp</a
-        >
-        <button ar-button type="button" variant="ghost" icon="copy" (click)="copyDetails(m)">
-          Copy details
-        </button>
+        <a ar-button variant="ghost" icon="send" [href]="share.whatsapp(m)" target="_blank" rel="noopener">WhatsApp</a>
+        <button ar-button type="button" variant="ghost" icon="copy" (click)="copyDetails(m)">Copy Details</button>
       </div>
-      <div class="dt__share">
-        <a
-          ar-button
-          variant="ghost"
-          icon="link"
-          [href]="share.google(m)"
-          target="_blank"
-          rel="noopener"
-          >Google Calendar</a
-        >
-        <a
-          ar-button
-          variant="ghost"
-          icon="link"
-          [href]="share.outlook(m)"
-          target="_blank"
-          rel="noopener"
-          >Outlook / Microsoft 365</a
-        >
-        <a
-          ar-button
-          variant="ghost"
-          icon="video"
-          [href]="share.teams(m)"
-          target="_blank"
-          rel="noopener"
-          >Teams meeting</a
-        >
-        <a
-          ar-button
-          variant="ghost"
-          icon="video"
-          [href]="share.zoom(m)"
-          target="_blank"
-          rel="noopener"
-          >Zoom</a
-        >
-        <button ar-button type="button" variant="ghost" icon="download" (click)="addToCalendar(m)">
-          .ics file
-        </button>
+
+      <div class="dt__share-grid">
+        <a ar-button variant="ghost" icon="link" [href]="share.google(m)" target="_blank" rel="noopener">Google Calendar</a>
+        <a ar-button variant="ghost" icon="link" [href]="share.outlook(m)" target="_blank" rel="noopener">Outlook 365</a>
+        <a ar-button variant="ghost" icon="video" [href]="share.teams(m)" target="_blank" rel="noopener">Teams</a>
+        <a ar-button variant="ghost" icon="video" [href]="share.zoom(m)" target="_blank" rel="noopener">Zoom</a>
+        <button ar-button type="button" variant="ghost" icon="download" (click)="addToCalendar(m)">.ics File</button>
       </div>
 
       @if (error(); as msg) {
@@ -294,6 +379,7 @@
       }
     </div>
 
+    <!-- Modal Footer Actions -->
     <footer class="dt__foot">
       @if (m.status === Status.Scheduled && canChange(m) && !outcomeOpen() && !cancelOpen()) {
         @if (directory.canUpdate) {
@@ -315,7 +401,7 @@
             variant="primary"
             (click)="note.set(''); outcomeOpen.set(true)"
           >
-            Done
+            Mark Done
           </button>
         }
       }
@@ -323,26 +409,128 @@
   </div>
 }
 
+<!-- 5. Main Meetings Page Container -->
 <div class="wk ar-scroll">
+  <!-- Page Header -->
+  <header class="meetings-header">
+    <div class="meetings-header__left">
+      <div class="meetings-header__title-row">
+        <h1 class="meetings-header__title">Meetings</h1>
+        <span class="meetings-range-pill">{{ heading() }}</span>
+      </div>
+      <p class="meetings-header__desc">
+        Schedule, coordinate, and review sales meetings, product demos, and follow-ups.
+      </p>
+    </div>
+
+    <div class="meetings-header__actions">
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        icon="download"
+        [disabled]="busy()"
+        (click)="showIcalModal.set(true)"
+      >
+        Import iCal
+      </button>
+      @if (directory.canCreate) {
+        <a ar-button variant="primary" icon="plus" routerLink="/meetings/new">
+          Schedule Meeting
+        </a>
+      }
+    </div>
+  </header>
+
+  <!-- Metric Summary Cards -->
+  <div class="meetings-kpi-grid" role="group" aria-label="Meetings metrics">
+    <div class="meetings-kpi-card meetings-kpi-card--blue">
+      <div class="meetings-kpi-card__top">
+        <span class="meetings-kpi-card__lbl">Scheduled</span>
+        <div class="meetings-kpi-card__icon-box">
+          <ar-icon name="clock" [size]="14" />
+        </div>
+      </div>
+      <div class="meetings-kpi-card__body">
+        <span class="meetings-kpi-card__num">{{ scheduledCount() }}</span>
+        <span class="meetings-kpi-card__hint">Active in period</span>
+      </div>
+    </div>
+
+    <div class="meetings-kpi-card meetings-kpi-card--amber">
+      <div class="meetings-kpi-card__top">
+        <span class="meetings-kpi-card__lbl">Needs Reply</span>
+        <div class="meetings-kpi-card__icon-box">
+          <ar-icon name="alert" [size]="14" />
+        </div>
+      </div>
+      <div class="meetings-kpi-card__body">
+        <span class="meetings-kpi-card__num">{{ awaitingReplyCount() }}</span>
+        <span class="meetings-kpi-card__hint">Awaiting your RSVP</span>
+      </div>
+    </div>
+
+    <div class="meetings-kpi-card meetings-kpi-card--indigo">
+      <div class="meetings-kpi-card__top">
+        <span class="meetings-kpi-card__lbl">Video Calls</span>
+        <div class="meetings-kpi-card__icon-box">
+          <ar-icon name="video" [size]="14" />
+        </div>
+      </div>
+      <div class="meetings-kpi-card__body">
+        <span class="meetings-kpi-card__num">{{ videoCount() }}</span>
+        <span class="meetings-kpi-card__hint">Google Meet / Teams / Zoom</span>
+      </div>
+    </div>
+
+    <div class="meetings-kpi-card meetings-kpi-card--green">
+      <div class="meetings-kpi-card__top">
+        <span class="meetings-kpi-card__lbl">In Person</span>
+        <div class="meetings-kpi-card__icon-box">
+          <ar-icon name="user" [size]="14" />
+        </div>
+      </div>
+      <div class="meetings-kpi-card__body">
+        <span class="meetings-kpi-card__num">{{ inPersonCount() }}</span>
+        <span class="meetings-kpi-card__hint">On-site or client office</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Visibility Controls & Filters Strip -->
   <div class="wk__bar">
     @if (directory.canSeeAll) {
-      <div class="wk__seg" role="group" aria-label="Whose meetings">
-        <button type="button" [class.on]="scope() === 'mine'" (click)="scope.set('mine')">
-          Mine
+      <div class="scope-segmented-control" role="group" aria-label="Whose meetings">
+        <button
+          type="button"
+          class="scope-segmented-btn"
+          [class.active]="scope() === 'mine'"
+          (click)="scope.set('mine')"
+        >
+          <ar-icon name="user" [size]="14" />
+          <span>My Meetings</span>
         </button>
-        <button type="button" [class.on]="scope() === 'everyone'" (click)="scope.set('everyone')">
-          Everyone
+        <button
+          type="button"
+          class="scope-segmented-btn"
+          [class.active]="scope() === 'everyone'"
+          (click)="scope.set('everyone')"
+        >
+          <ar-icon name="contacts" [size]="14" />
+          <span>Team Calendar</span>
         </button>
       </div>
     }
+
     <label class="wk__chk">
       <input
         id="mt-show-cancelled"
         type="checkbox"
+        class="wk__chk-native"
         [checked]="showCancelled()"
         (change)="showCancelled.set($any($event.target).checked)"
       />
-      <span>Show cancelled</span>
+      <span>Show cancelled meetings</span>
     </label>
   </div>
 
@@ -350,52 +538,79 @@
     <p class="wk__err" role="alert">{{ error() }}</p>
   }
 
-  <div class="wk__cal" [class.wk__cal--loading]="loading()">
-    <ejs-schedule
-      id="meetings-schedule"
-      height="100%"
-      currentView="Week"
-      startHour="07:00"
-      endHour="21:00"
-      [selectedDate]="today"
-      [firstDayOfWeek]="1"
-      [workHours]="{ highlight: true, start: '09:00', end: '18:00' }"
-      [timeScale]="{ enable: true, interval: 60, slotCount: 2 }"
-      [eventSettings]="eventSettings()"
-      [showQuickInfo]="false"
-      [allowDragAndDrop]="false"
-      [allowResizing]="false"
-      [allowKeyboardInteraction]="true"
-      (actionComplete)="onAction($event)"
-      (popupOpen)="$event.cancel = true"
-      (eventClick)="onEventClick($event)"
-      (cellClick)="onCellClick($event)"
-      (eventRendered)="onEventRendered($event)"
-    >
-      <e-views>
-        <e-view option="Day" />
-        <e-view option="Week" />
-        <e-view option="Month" />
-        <e-view option="Agenda" />
-      </e-views>
-      <ng-template #eventSettingsTemplate let-e>
-        <span class="mc">
-          <span class="mc__time">{{ range(e.meeting) }}</span>
-          <span class="mc__title">{{ e.Subject }}</span>
-          <span class="mc__meta">
-            {{ kindOf(e.meeting) }}
-            @if (e.meeting.attendees && e.meeting.attendees.length > 1) {
-              · {{ e.meeting.attendees.length }} people
-            }
-            @if (e.meeting.status !== Status.Scheduled) {
-              · {{ statusOf(e.meeting) }}
-            }
-            @if (needsMyAnswer(e.meeting)) {
-              · <strong>Reply</strong>
-            }
+  <!-- Calendar Container -->
+  <div class="wk__cal-wrapper">
+    <div class="wk__cal" [class.wk__cal--loading]="loading()">
+      <ejs-schedule
+        id="meetings-schedule"
+        height="100%"
+        currentView="Week"
+        startHour="07:00"
+        endHour="21:00"
+        [selectedDate]="today"
+        [firstDayOfWeek]="1"
+        [workHours]="{ highlight: true, start: '09:00', end: '18:00' }"
+        [timeScale]="{ enable: true, interval: 60, slotCount: 2 }"
+        [eventSettings]="eventSettings()"
+        [showQuickInfo]="false"
+        [allowDragAndDrop]="false"
+        [allowResizing]="false"
+        [allowKeyboardInteraction]="true"
+        (actionComplete)="onAction($event)"
+        (popupOpen)="$event.cancel = true"
+        (eventClick)="onEventClick($event)"
+        (cellClick)="onCellClick($event)"
+        (eventRendered)="onEventRendered($event)"
+      >
+        <e-views>
+          <e-view option="Day" />
+          <e-view option="Week" />
+          <e-view option="Month" />
+          <e-view option="Agenda" />
+        </e-views>
+        <ng-template #eventSettingsTemplate let-e>
+          <span class="mc">
+            <span class="mc__time">
+              <ar-icon name="clock" [size]="11" />
+              <span>{{ range(e.meeting) }}</span>
+            </span>
+            <span class="mc__title">{{ e.Subject }}</span>
+            <span class="mc__meta">
+              <span class="mc__kind-badge">
+                <ar-icon [name]="e.meeting.kind === 1 ? 'video' : 'user'" [size]="10" />
+                <span>{{ kindOf(e.meeting) }}</span>
+              </span>
+              @if (e.meeting.attendees && e.meeting.attendees.length > 1) {
+                <span class="mc__tag">· {{ e.meeting.attendees.length }} attendees</span>
+              }
+              @if (e.meeting.status !== Status.Scheduled) {
+                <span class="mc__tag">· {{ statusOf(e.meeting) }}</span>
+              }
+              @if (needsMyAnswer(e.meeting)) {
+                <span class="mc__reply-badge">RSVP</span>
+              }
+            </span>
           </span>
-        </span>
-      </ng-template>
-    </ejs-schedule>
+        </ng-template>
+      </ejs-schedule>
+    </div>
+
+    <!-- Empty State Overlay for Zero Scheduled Events -->
+    @if (!loading() && !meetings().length) {
+      <div class="calendar-empty-notice">
+        <div class="calendar-empty-notice__icon">
+          <ar-icon name="clock" [size]="20" />
+        </div>
+        <div class="calendar-empty-notice__text">
+          <strong>No meetings scheduled for this period</strong>
+          <span>Click on any empty time slot in the calendar or use the button below to book a meeting.</span>
+        </div>
+        @if (directory.canCreate) {
+          <a ar-button variant="primary" icon="plus" routerLink="/meetings/new" class="calendar-empty-notice__btn">
+            Schedule Meeting
+          </a>
+        }
+      </div>
+    }
   </div>
 </div>

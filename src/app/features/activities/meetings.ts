@@ -33,7 +33,7 @@ import {
   MeetingStatus,
 } from '../../proxy/activities';
 import { Router, RouterLink } from '@angular/router';
-import { ArButton, ArChip, ArDraggable } from '../../ui';
+import { ArButton, ArChip, ArDialog, ArDraggable, ArIcon } from '../../ui';
 import { ToastService } from '../../core/ui/toast.service';
 import {
   ZOOM_SCHEDULE_URL,
@@ -88,6 +88,8 @@ interface CalendarEvent {
     ArTopbar,
     ArButton,
     ArChip,
+    ArDialog,
+    ArIcon,
     ArMeetingDialog,
     ScheduleModule,
     ArDraggable,
@@ -111,11 +113,27 @@ export class ArMeetings {
 
   protected readonly scope = signal<'mine' | 'everyone'>('mine');
   protected readonly showCancelled = signal(false);
+  protected readonly showIcalModal = signal(false);
+  protected readonly isDraggingIcal = signal(false);
+  protected readonly activeView = signal<'Day' | 'Week' | 'Month' | 'Agenda'>('Week');
 
   protected readonly meetings = signal<MeetingDto[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly busy = signal(false);
+
+  protected readonly scheduledCount = computed(
+    () => this.meetings().filter((m) => m.status === MeetingStatus.Scheduled).length,
+  );
+  protected readonly awaitingReplyCount = computed(
+    () => this.meetings().filter((m) => this.needsMyAnswer(m)).length,
+  );
+  protected readonly videoCount = computed(
+    () => this.meetings().filter((m) => m.kind === MeetingKind.Video).length,
+  );
+  protected readonly inPersonCount = computed(
+    () => this.meetings().filter((m) => m.kind === MeetingKind.InPerson).length,
+  );
 
   private readonly schedule = viewChild(ScheduleComponent);
   protected readonly today = new Date();
@@ -204,6 +222,10 @@ export class ArMeetings {
 
   protected onAction(args: ActionEventArgs): void {
     if (args.requestType !== 'dateNavigate' && args.requestType !== 'viewNavigate') return;
+    if (args.requestType === 'viewNavigate') {
+      const v = this.schedule()?.currentView;
+      if (v) this.activeView.set(v as 'Day' | 'Week' | 'Month' | 'Agenda');
+    }
     const dates = this.schedule()?.getCurrentViewDates() ?? [];
     if (dates.length === 0) return;
     const from = startOfDay(dates[0]);
@@ -212,6 +234,15 @@ export class ArMeetings {
     if (from.getTime() !== now.from.getTime() || to.getTime() !== now.to.getTime()) {
       this.shown.set({ from, to });
     }
+  }
+
+  protected goToToday(): void {
+    this.schedule()?.changeDate(new Date());
+  }
+
+  protected changeView(view: 'Day' | 'Week' | 'Month' | 'Agenda'): void {
+    this.activeView.set(view);
+    this.schedule()?.changeView(view);
   }
 
   protected onEventClick(args: EventClickArgs): void {
@@ -360,7 +391,29 @@ export class ArMeetings {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    await this.processIcalFile(file);
+    input.value = '';
+  }
 
+  protected onIcalDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.isDraggingIcal.set(false);
+    const file = event.dataTransfer?.files?.[0];
+    if (file) {
+      void this.processIcalFile(file);
+    }
+  }
+
+  protected onIcalDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.isDraggingIcal.set(true);
+  }
+
+  protected onIcalDragLeave(): void {
+    this.isDraggingIcal.set(false);
+  }
+
+  protected async processIcalFile(file: File): Promise<void> {
     try {
       this.busy.set(true);
       const text = await file.text();
@@ -396,15 +449,18 @@ export class ArMeetings {
           `Imported ${imported} meeting${imported === 1 ? '' : 's'} from iCal.`,
           'Imported',
         );
+        this.showIcalModal.set(false);
         await this.reload();
       } else {
         this.toasts.error('Could not save the meetings from this iCal file.', 'Import Failed');
       }
     } catch {
-      this.toasts.error('This file could not be read. Choose a calendar file ending in .ics, exported from Google Calendar or Outlook.', 'Not imported');
+      this.toasts.error(
+        'This file could not be read. Choose a calendar file ending in .ics, exported from Google Calendar or Outlook.',
+        'Not imported',
+      );
     } finally {
       this.busy.set(false);
-      input.value = '';
     }
   }
 
