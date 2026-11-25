@@ -399,7 +399,8 @@
   display: flex;
   flex-direction: column;
   background: #F3F6FA;
-  overflow: hidden;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 /* 1. Topbar Navigation & Actions */
@@ -767,8 +768,8 @@
 
 /* 5. Modern Directory Table Card & Content */
 .directory-table-card {
-  flex: 1;
-  min-height: 0;
+  flex: 1 1 auto;
+  min-height: 440px;
   margin: 16px 24px 8px;
   padding: 0;
   background: #FFFFFF;
@@ -777,48 +778,143 @@
   box-shadow: 0 1px 3px rgba(17, 28, 48, 0.04), 0 4px 12px rgba(17, 28, 48, 0.02);
   display: flex;
   flex-direction: column;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
+  position: relative;
   animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+::ng-deep .directory-table-card {
+  // Hide default Syncfusion toolbar if present
+  .e-toolbar {
+    display: none !important;
+  }
 
   ejs-grid,
-  .e-grid.ar-grid {
-    min-width: 1260px;
-    width: 100%;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    background: transparent;
+  .e-grid.ar-grid,
+  .e-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    width: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    font-family: var(--ar-font-sans, system-ui, sans-serif) !important;
+  }
 
-    .e-gridheader {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      background: #F8FAFC;
-      border-bottom: 1px solid #E2E8F0;
-    }
+  .e-gridheader {
+    flex: 0 0 auto !important;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #F8FAFC !important;
+    border-bottom: 1px solid #E2E8F0 !important;
 
     .e-headercell {
-      background: #F8FAFC;
-      padding: 10px 12px;
+      background: #F8FAFC !important;
+      color: #475569 !important;
+      font: 600 11px var(--ar-font-sans, system-ui, sans-serif) !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.04em !important;
+      padding: 10px 12px !important;
+      border-color: #F1F5F9 !important;
+      height: 40px !important;
+      vertical-align: middle !important;
     }
 
-    .e-row {
-      transition: background 0.15s ease;
+    .e-headertext {
+      font-weight: 600 !important;
+      color: #475569 !important;
+    }
+  }
 
-      &:nth-child(even) {
-        background: #FAFBFC;
-      }
+  .e-gridcontent {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    background: #FFFFFF !important;
+  }
 
-      &:hover {
-        background: #F0F4FF !important;
-      }
+  .e-content {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    background: #FFFFFF !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ar-line-300) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--ar-line-300);
+      border-radius: 3px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background: var(--ar-ink-400);
+    }
+  }
+
+  .e-table {
+    min-width: 1260px;
+    width: 100%;
+  }
+
+  .e-row {
+    height: 46px !important;
+    transition: background 0.15s ease;
+
+    &:nth-child(even) {
+      background: #FAFBFC;
+    }
+
+    &:hover {
+      background: #F0F6FF !important;
     }
 
     .e-rowcell {
-      padding: 10px 12px;
-      border-color: #F1F5F9;
-      vertical-align: middle;
+      padding: 8px 12px !important;
+      border-color: #F1F5F9 !important;
+      color: #111C30;
+      font-size: 13px;
+      vertical-align: middle !important;
+    }
+  }
+
+  .e-gridpager,
+  .e-pager {
+    flex: 0 0 auto !important;
+    border-top: 1px solid #E2E8F0 !important;
+    background: #FAFBFC !important;
+    padding: 6px 16px !important;
+    min-height: 42px !important;
+    display: flex !important;
+    align-items: center !important;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+
+    .e-pagercontainer {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .e-parentmsgbar {
+      font-size: 12px !important;
+      color: #64748B !important;
+      font-weight: 500 !important;
     }
   }
 }
