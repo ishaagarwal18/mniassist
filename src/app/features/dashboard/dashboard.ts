@@ -27,7 +27,6 @@ import {
   ArChannelHealthStrip,
   ArChip,
   ArIcon,
-  ArMeter,
   ArStatTile,
 } from '../../ui';
 import { ArGrid } from '../../ui/grid';
@@ -42,7 +41,6 @@ import { ArGrid } from '../../ui/grid';
     ArChip,
     ArIcon,
     ArButton,
-    ArMeter,
     ArChannelHealthStrip,
     ArGrid,
     GridModule,
@@ -229,6 +227,72 @@ export class ArDashboard {
     const ch = this.channel();
     return ch ? (TIER_LIMIT[ch.tier] ?? 0) : 0;
   });
+
+  protected readonly tierDisplayLabel = computed(() => {
+    const ch = this.channel();
+    if (!ch) return 'Starting Tier (250/day)';
+    switch (ch.tier) {
+      case 'starting':
+        return 'Starting Tier (250/day)';
+      case 'tier1':
+        return 'Tier 1 (2,000/day)';
+      case 'tier2':
+        return 'Tier 2 (10,000/day)';
+      case 'tier3':
+        return 'Tier 3 (100,000/day)';
+      case 'tier4':
+        return 'Tier 4 (Unlimited)';
+      default:
+        return 'Starting Tier (250/day)';
+    }
+  });
+
+  protected readonly usageMeterPercent = computed(() => {
+    const ch = this.channel();
+    if (!ch) return 0;
+    const limit = this.tierLimit();
+    if (!limit) return 0;
+    return Math.min(100, Math.round(((ch.used24h ?? 0) / limit) * 100));
+  });
+
+  protected qualityLabel(quality?: string): string {
+    switch (quality) {
+      case 'green':
+        return 'Good Quality';
+      case 'yellow':
+        return 'Medium Quality';
+      case 'red':
+        return 'Low Quality';
+      default:
+        return 'Pending Assessment';
+    }
+  }
+
+  protected qualityDesc(quality?: string): string {
+    switch (quality) {
+      case 'green':
+        return 'High deliverability & healthy user engagement rating';
+      case 'yellow':
+        return 'Quality score has declined; check opt-in compliance';
+      case 'red':
+        return 'High user report rate · Meta sending limits restricted';
+      default:
+        return 'Meta is establishing channel baseline throughput';
+    }
+  }
+
+  protected qualityTone(quality?: string): 'good' | 'amber' | 'bad' | 'neutral' {
+    switch (quality) {
+      case 'green':
+        return 'good';
+      case 'yellow':
+        return 'amber';
+      case 'red':
+        return 'bad';
+      default:
+        return 'neutral';
+    }
+  }
 
   protected readonly count = count;
 

@@ -1,50 +1,148 @@
 <ar-topbar
   title="Home"
-  [subtitle]="workspaceName()"
+  [subtitle]="workspaceName() ? workspaceName() : 'WhatsApp Business Overview'"
   help="Your workspace at a glance — channel health, wallet balance and a shortcut into your next campaign."
 >
   @if (channel(); as ch) {
     <ar-channel-health-strip [channel]="ch" />
   }
-  <button ar-button variant="ghost" icon="billing" routerLink="/billing">
-    {{ walletLabel() }}
+  <button
+    ar-button
+    variant="ghost"
+    icon="billing"
+    routerLink="/billing"
+    class="wallet-topbar-btn"
+    [class.wallet-topbar-btn--negative]="spend().walletBalanceInPaise < 0"
+    [class.wallet-topbar-btn--low]="spend().walletBalanceInPaise >= 0 && spend().walletBalanceInPaise < 500000"
+    title="View billing wallet and transaction history"
+  >
+    <span class="wallet-topbar-label">Wallet:</span>
+    <span class="wallet-topbar-val ar-mono">{{ walletLabel() }}</span>
   </button>
-  <button ar-button variant="primary" icon="plus" routerLink="/campaigns">New campaign</button>
+  <button
+    ar-button
+    type="button"
+    variant="primary"
+    icon="plus"
+    routerLink="/campaigns"
+    class="btn-topbar-campaign"
+  >
+    New campaign
+  </button>
 </ar-topbar>
 
 <div class="page ar-scroll">
-  <div class="page__stats">
-    <ar-stat-tile
-      label="Open enquiries"
-      [value]="count(pipeline().openEnquiries)"
-      [note]="pipeline().newThisWeek + ' new this week'"
-      tone="good"
-    />
-    <ar-stat-tile
-      label="Quotations awaiting reply"
-      [value]="count(pipeline().quotationsAwaitingDecision)"
-      [note]="pipelineValueLabel() + ' in play'"
-    />
-    <ar-stat-tile
-      label="Sent in the last 24h"
-      [value]="count(volume().sent24h)"
-      [note]="deliveryLabel()"
-      tone="teal"
-    />
-    <ar-stat-tile
-      label="Open conversations"
-      [value]="count(inbox().openConversations)"
-      [note]="inbox().unassigned + ' unassigned'"
-      [tone]="inbox().unassigned > 0 ? 'amber' : 'good'"
-    />
+  <!-- 1. Four Responsive Enterprise KPI Summary Cards -->
+  <div class="dashboard-kpi-grid" aria-label="Key Performance Indicators">
+    <!-- Card 1: Open Enquiries -->
+    <div
+      class="kpi-card kpi-card--blue"
+      routerLink="/enquiries"
+      role="button"
+      tabindex="0"
+      title="View open enquiries in sales pipeline"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Open Enquiries</span>
+        <div class="kpi-card__icon-box">
+          <ar-icon name="enquiry" [size]="16" />
+        </div>
+      </div>
+      <div class="kpi-card__body">
+        <span class="kpi-card__value">{{ count(pipeline().openEnquiries) }}</span>
+        <div class="kpi-card__bottom">
+          <span class="kpi-pill kpi-pill--blue">+{{ pipeline().newThisWeek }}</span>
+          <span class="kpi-card__hint">new this week</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Quotations Awaiting Reply -->
+    <div
+      class="kpi-card kpi-card--amber"
+      routerLink="/quotations"
+      role="button"
+      tabindex="0"
+      title="View quotations awaiting decision"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Quotations Awaiting Reply</span>
+        <div class="kpi-card__icon-box">
+          <ar-icon name="quotation" [size]="16" />
+        </div>
+      </div>
+      <div class="kpi-card__body">
+        <span class="kpi-card__value">{{ count(pipeline().quotationsAwaitingDecision) }}</span>
+        <div class="kpi-card__bottom">
+          <span class="kpi-pill kpi-pill--amber">{{ pipelineValueLabel() }}</span>
+          <span class="kpi-card__hint">in play</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Sent in the Last 24h -->
+    <div
+      class="kpi-card kpi-card--teal"
+      routerLink="/analytics"
+      role="button"
+      tabindex="0"
+      title="View 24h messaging volume and delivery reports"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Sent in Last 24h</span>
+        <div class="kpi-card__icon-box">
+          <ar-icon name="send" [size]="16" />
+        </div>
+      </div>
+      <div class="kpi-card__body">
+        <span class="kpi-card__value">{{ count(volume().sent24h) }}</span>
+        <div class="kpi-card__bottom">
+          <span class="kpi-pill kpi-pill--teal">{{ deliveryLabel() }}</span>
+          <span class="kpi-card__hint">success rate</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: Open Conversations -->
+    <div
+      class="kpi-card kpi-card--indigo"
+      [class.kpi-card--warn]="inbox().unassigned > 0"
+      routerLink="/inbox"
+      role="button"
+      tabindex="0"
+      title="View active WhatsApp conversations"
+    >
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Open Conversations</span>
+        <div class="kpi-card__icon-box">
+          <ar-icon name="inbox" [size]="16" />
+        </div>
+      </div>
+      <div class="kpi-card__body">
+        <span class="kpi-card__value">{{ count(inbox().openConversations) }}</span>
+        <div class="kpi-card__bottom">
+          <span
+            class="kpi-pill"
+            [class.kpi-pill--amber]="inbox().unassigned > 0"
+            [class.kpi-pill--indigo]="inbox().unassigned === 0"
+          >
+            {{ inbox().unassigned }} unassigned
+          </span>
+          <span class="kpi-card__hint">in team inbox</span>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <!-- Optional Custom Pinned Dashboard -->
   @if (customDashboard(); as cd) {
-    <ar-card [heading]="'Custom overview · ' + cd.name">
+    <ar-card [heading]="'Custom Overview · ' + cd.name" class="custom-dash-card">
       <div card-actions>
-        <a ar-button variant="ghost" routerLink="/analytics/dashboards">Manage dashboards →</a>
+        <a ar-button variant="ghost" routerLink="/analytics/dashboards" class="dash-card-link">
+          Manage dashboards →
+        </a>
       </div>
-      <div class="page__stats" style="margin-top: 4px; margin-bottom: 0">
+      <div class="dashboard-kpi-grid" style="margin-top: 6px; margin-bottom: 0">
         @for (w of cd.widgets; track w.id || w.metricKey) {
           <ar-stat-tile
             [label]="w.title || w.metricKey"
@@ -53,127 +151,251 @@
             tone="teal"
           />
         } @empty {
-          <p class="page__muted">No widgets configured on this dashboard.</p>
+          <p class="page__muted">No widgets configured on this custom dashboard.</p>
         }
       </div>
     </ar-card>
   }
 
-  <div class="page__grid">
-    <div class="page__col">
-      <ar-card heading="Needs you today">
-        <span card-actions class="page__muted"
-          >{{ todo().length }} item{{ todo().length === 1 ? '' : 's' }}</span
-        >
+  <!-- 2. Main Balanced Two-Column Grid (60% Left : 40% Right) -->
+  <div class="dashboard-main-grid">
+    <!-- Left Column (60%): Action Center & Recent Broadcasts -->
+    <div class="dashboard-main-col dashboard-main-col--left">
+      <!-- Section 1: Needs You Today — Action Center -->
+      <ar-card heading="Needs You Today" class="action-center-card">
+        <div card-actions class="action-center-badge-wrap">
+          <span
+            class="action-count-badge"
+            [class.action-count-badge--alert]="todo().length > 0"
+            [class.action-count-badge--clean]="todo().length === 0"
+          >
+            {{ todo().length }} {{ todo().length === 1 ? 'action item' : 'action items' }}
+          </span>
+        </div>
+
         @if (todo().length === 0) {
-          <p class="page__muted todo__empty">Nothing needs your attention right now.</p>
+          <div class="todo-empty-state">
+            <div class="todo-empty-state__icon">
+              <ar-icon name="check" [size]="22" />
+            </div>
+            <strong class="todo-empty-state__title">All caught up!</strong>
+            <p class="todo-empty-state__desc">
+              Nothing needs your immediate attention right now. All messaging pipelines, invoices, and enquiries are healthy.
+            </p>
+          </div>
         } @else {
-          <ul class="todo">
+          <div class="action-center-list" role="list">
             @for (item of todo(); track item.title) {
-              <li class="todo__row">
-                <span class="todo__icon" [class]="'todo__icon--' + item.tone">
+              <div
+                class="action-row action-row--{{ item.tone }}"
+                [routerLink]="item.route"
+                role="button"
+                tabindex="0"
+                title="Click to resolve this item"
+              >
+                <div class="action-row__icon-box action-row__icon-box--{{ item.tone }}">
                   <ar-icon [name]="item.icon" [size]="16" />
-                </span>
-                <span class="todo__text">
-                  <span class="todo__title">{{ item.title }}</span>
-                  <span class="todo__meta">{{ item.meta }}</span>
-                </span>
-                <button ar-button variant="ghost" [routerLink]="item.route">Open</button>
-              </li>
+                </div>
+                <div class="action-row__content">
+                  <div class="action-row__header">
+                    <span class="action-row__title">{{ item.title }}</span>
+                    <span class="action-severity-pill action-severity-pill--{{ item.tone }}">
+                      {{ item.tone === 'bad' ? 'Critical' : item.tone === 'amber' ? 'Attention' : 'Info' }}
+                    </span>
+                  </div>
+                  <span class="action-row__meta">{{ item.meta }}</span>
+                </div>
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  class="action-row__btn"
+                  [routerLink]="item.route"
+                  (click)="$event.stopPropagation()"
+                >
+                  <span>Open</span>
+                  <ar-icon name="chevron" [size]="12" />
+                </button>
+              </div>
             }
-          </ul>
+          </div>
         }
       </ar-card>
 
-      <ar-card heading="Recent campaigns">
-        <a card-actions routerLink="/campaigns" class="page__link">View all</a>
-        <ejs-grid
-          arGrid="recent-campaigns"
-          [arGridTools]="false"
-          [dataSource]="recent()"
-          aria-label="Recent campaigns"
-        >
-          <e-columns>
-            <e-column field="name" headerText="Campaign">
-              <ng-template #template let-c>
-                <span class="strong">{{ c.name }}</span>
-              </ng-template>
-            </e-column>
-            <e-column field="state" headerText="State">
-              <ng-template #template let-c>
-                <ar-chip [tone]="chipToneFor(c.state)">{{ c.state }}</ar-chip>
-              </ng-template>
-            </e-column>
-            <e-column field="sent" headerText="Sent" type="number" textAlign="Right">
-              <ng-template #template let-c>{{ count(c.sent) }}</ng-template>
-            </e-column>
-            <e-column field="recipients" headerText="Recipients" type="number" textAlign="Right">
-              <ng-template #template let-c>{{ count(c.recipients) }}</ng-template>
-            </e-column>
-            <e-column field="cost" headerText="Cost" textAlign="Right">
-              <ng-template #template let-c>
-                <span [class.free]="c.free">{{ c.cost }}</span>
-              </ng-template>
-            </e-column>
-          </e-columns>
-          <ng-template #emptyRecordTemplate>No campaigns yet.</ng-template>
-        </ejs-grid>
+      <!-- Section 2: Recent Campaigns Data Table -->
+      <ar-card heading="Recent Campaigns" class="recent-campaigns-card">
+        <div card-actions>
+          <a routerLink="/campaigns" class="dash-card-link" title="View all campaigns">
+            <span>View all</span>
+            <ar-icon name="chevron" [size]="12" />
+          </a>
+        </div>
+
+        <div class="dash-grid-wrap">
+          <ejs-grid
+            arGrid="recent-campaigns"
+            [arGridTools]="false"
+            [dataSource]="recent()"
+            aria-label="Recent campaigns"
+          >
+            <e-columns>
+              <e-column field="name" headerText="Campaign">
+                <ng-template #template let-c>
+                  <a routerLink="/campaigns" class="campaign-table-name" title="View campaign details">
+                    {{ c.name }}
+                  </a>
+                </ng-template>
+              </e-column>
+              <e-column field="state" headerText="State" width="125">
+                <ng-template #template let-c>
+                  <ar-chip [tone]="chipToneFor(c.state)">{{ c.state }}</ar-chip>
+                </ng-template>
+              </e-column>
+              <e-column field="sent" headerText="Sent" type="number" textAlign="Right" width="95">
+                <ng-template #template let-c>
+                  <span class="ar-mono stat-num">{{ count(c.sent) }}</span>
+                </ng-template>
+              </e-column>
+              <e-column field="recipients" headerText="Recipients" type="number" textAlign="Right" width="110">
+                <ng-template #template let-c>
+                  <span class="ar-mono stat-num">{{ count(c.recipients) }}</span>
+                </ng-template>
+              </e-column>
+              <e-column field="cost" headerText="Cost" textAlign="Right" width="105">
+                <ng-template #template let-c>
+                  <span class="campaign-cost-val" [class.campaign-cost-val--free]="c.free">
+                    {{ c.cost }}
+                  </span>
+                </ng-template>
+              </e-column>
+            </e-columns>
+            <ng-template #emptyRecordTemplate>
+              <div class="campaigns-empty">
+                <div class="campaigns-empty__icon">
+                  <ar-icon name="campaign" [size]="24" />
+                </div>
+                <p class="campaigns-empty__title">No campaigns dispatched yet</p>
+                <p class="campaigns-empty__sub">
+                  Create and schedule your first WhatsApp campaign to see broadcast statistics and delivery metrics here.
+                </p>
+              </div>
+            </ng-template>
+          </ejs-grid>
+        </div>
       </ar-card>
     </div>
 
-    <div class="page__col">
-      <ar-card heading="Channel health">
-        <ar-chip card-actions [mono]="true">{{ channel()?.displayPhone ?? 'No channel' }}</ar-chip>
-        <div class="health">
-          <div class="health__quality">
-            <strong class="health__rating">{{ channel()?.quality ?? '—' }}</strong>
-            <span class="page__muted">Rolling quality rating</span>
-          </div>
-          <hr class="rule" />
-          <div class="health__usage">
-            <div class="health__usage-head">
-              <span class="page__muted">Rolling 24-hour recipients</span>
-              <span class="ar-mono">{{ usageLabel() }}</span>
+    <!-- Right Column (40%): Channel Health & Message Mix -->
+    <div class="dashboard-main-col dashboard-main-col--right">
+      <!-- Section 3: Channel Health Widget -->
+      <ar-card heading="Channel Health" class="channel-health-card">
+        <div card-actions>
+          <span class="sender-badge" title="Active WhatsApp Business registered sender phone">
+            <ar-icon name="phone" [size]="12" />
+            <span class="ar-mono">{{ channel()?.displayPhone ?? 'No active channel' }}</span>
+          </span>
+        </div>
+
+        <div class="channel-health-widget">
+          <!-- Quality Hero Rating Banner -->
+          <div class="channel-quality-card channel-quality-card--{{ qualityTone(channel()?.quality) }}">
+            <div class="channel-quality-card__status">
+              <span class="quality-pulse-dot" aria-hidden="true"></span>
+              <strong class="quality-title">{{ qualityLabel(channel()?.quality) }}</strong>
             </div>
-            <ar-meter
-              [value]="channel()?.used24h ?? 0"
-              [max]="tierLimit()"
-              tone="amber"
-              label="Rolling 24-hour recipients used"
-            />
-            <p class="health__foot">
-              Portfolio-scoped · a share is reserved for utility and service traffic
-            </p>
+            <p class="quality-desc">{{ qualityDesc(channel()?.quality) }}</p>
+          </div>
+
+          <!-- Recipient Capacity Progress -->
+          <div class="channel-usage-card">
+            <div class="channel-usage-header">
+              <div class="channel-tier-badge">
+                <span class="channel-tier-label">{{ tierDisplayLabel() }}</span>
+                <span class="channel-tier-sub">Rolling 24-Hour Tier</span>
+              </div>
+              <div class="channel-usage-val">
+                <span class="channel-usage-numbers ar-mono">{{ usageLabel() }}</span>
+                <span class="channel-usage-percent">({{ usagePct() }} used)</span>
+              </div>
+            </div>
+
+            <!-- Custom modern progress meter -->
+            <div class="channel-meter-track" role="progressbar" [attr.aria-valuenow]="usageMeterPercent()" aria-valuemin="0" aria-valuemax="100">
+              <div
+                class="channel-meter-fill channel-meter-fill--{{ qualityTone(channel()?.quality) }}"
+                [style.width.%]="usageMeterPercent()"
+              ></div>
+            </div>
+
+            <div class="channel-usage-stats">
+              <div class="usage-stat-item">
+                <span class="usage-stat-item__label">24h Active Recipients</span>
+                <span class="usage-stat-item__val ar-mono">{{ count(channel()?.used24h ?? 0) }}</span>
+              </div>
+              <div class="usage-stat-item usage-stat-item--right">
+                <span class="usage-stat-item__label">Daily Limit</span>
+                <span class="usage-stat-item__val ar-mono">{{ tierLimit() ? count(tierLimit()) : 'Unlimited' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="channel-footnote">
+            <ar-icon name="alert" [size]="13" class="channel-footnote__icon" />
+            <span>Portfolio-scoped · Meta reserves a throughput share for utility &amp; customer service traffic.</span>
           </div>
         </div>
       </ar-card>
 
-      <ar-card heading="Message mix">
-        <div
-          class="mix__bar"
-          role="img"
-          [attr.aria-label]="'Message mix: ' + freeShareLabel() + ' free of charge'"
-        >
-          @for (s of mix(); track s.label) {
-            <span class="mix__seg" [style.width.%]="s.share" [style.background]="s.colour"></span>
-          }
+      <!-- Section 4: Message Mix Analytics -->
+      <ar-card heading="Message Mix" class="message-mix-card">
+        <div card-actions>
+          <span class="mix-window-badge">Rolling 24h</span>
         </div>
-        <ul class="mix__legend">
-          @for (s of mix(); track s.label) {
-            <li class="mix__item">
-              <span class="mix__swatch" [style.background]="s.colour"></span>
-              <span class="mix__label">{{ s.label }}</span>
-              <span class="ar-mono mix__share">{{ s.share }}%</span>
-            </li>
-          }
-        </ul>
-        <div class="saving">
-          <ar-icon name="clock" [size]="17" />
-          <div>
-            <strong class="saving__head"
-              >{{ freeMessagesLabel() }} free messages in the last 24h</strong
-            >
-            <span class="saving__sub">{{ avoidedLabel() }}</span>
+
+        <div class="message-mix-widget">
+          <!-- Horizontal Stacked Bar -->
+          <div
+            class="mix-stacked-bar"
+            role="img"
+            [attr.aria-label]="'Message mix: ' + freeShareLabel() + ' free of charge'"
+          >
+            @for (s of mix(); track s.label) {
+              <div
+                class="mix-stacked-bar__seg"
+                [style.width.%]="s.share"
+                [style.background]="s.colour"
+                [title]="s.label + ': ' + s.share + '%'"
+              ></div>
+            }
+          </div>
+
+          <!-- Organized Legend Grid -->
+          <div class="mix-legend-grid">
+            @for (s of mix(); track s.label) {
+              <div class="mix-legend-item">
+                <div class="mix-legend-item__left">
+                  <span class="mix-legend-item__swatch" [style.background]="s.colour"></span>
+                  <span class="mix-legend-item__label">{{ s.label }}</span>
+                </div>
+                <span class="mix-legend-item__share ar-mono">{{ s.share }}%</span>
+              </div>
+            }
+          </div>
+
+          <!-- Free Message Savings Insight Panel -->
+          <div class="mix-savings-panel">
+            <div class="mix-savings-panel__icon-box">
+              <ar-icon name="bolt" [size]="16" />
+            </div>
+            <div class="mix-savings-panel__text">
+              <div class="mix-savings-panel__title-row">
+                <strong class="mix-savings-panel__title">
+                  {{ freeMessagesLabel() }} Free Customer Messages
+                </strong>
+                <span class="savings-tag">Zero Platform Fee</span>
+              </div>
+              <span class="mix-savings-panel__sub">{{ avoidedLabel() }}</span>
+            </div>
           </div>
         </div>
       </ar-card>
