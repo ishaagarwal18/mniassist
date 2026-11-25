@@ -785,72 +785,99 @@
 
 <!-- Generate Plan Dialog -->
 @if (generateOpen()) {
-  <ar-dialog title="Generate a plan" (dismiss)="generateOpen.set(false)" [width]="'520px'">
-    <div class="dialog-intro-banner">
-      <ar-icon name="sparkle" [size]="16" class="intro-sparkle" />
-      <div>
-        <p class="intro-title">Autonomous Financial Modeling</p>
-        <p class="intro-desc">
+  <ar-dialog title="Generate a plan" (dismiss)="generateOpen.set(false)" [width]="'580px'">
+    <!-- AI Intro Section -->
+    <div class="modal-ai-banner">
+      <div class="ai-sparkle-box">
+        <ar-icon name="sparkle" [size]="16" />
+      </div>
+      <div class="ai-banner-content">
+        <h4 class="ai-banner-title">Autonomous Financial Modeling</h4>
+        <p class="ai-banner-desc">
           Extrapolates from issued sales invoices over the last 12 months, applies your growth targets,
           and factors in open pipeline opportunities weighted by stage.
         </p>
       </div>
     </div>
 
-    <div class="pp__form-grid">
-      <label class="ar-field" for="gen-fy">
-        <span class="ar-field__label">Fiscal year</span>
-        <select id="gen-fy" class="ar-field__input" (change)="genFy.set($any($event.target).value)">
-          @for (y of fyOptions; track y) {
-            <option [value]="y" [selected]="y === genFy()">FY {{ y }}</option>
-          }
-        </select>
-      </label>
+    <!-- Form Section -->
+    <div class="modal-form-stack">
+      <!-- Fiscal Year Dropdown (Full Width) -->
+      <div class="modal-field-block">
+        <label class="modal-field-label" for="gen-fy">Fiscal Year</label>
+        <div class="modal-select-wrap">
+          <ar-icon name="projection-plan" [size]="14" class="field-select-icon" />
+          <select id="gen-fy" class="modal-select" (change)="genFy.set($any($event.target).value)">
+            @for (y of fyOptions; track y) {
+              <option [value]="y" [selected]="y === genFy()">FY {{ y }}</option>
+            }
+          </select>
+        </div>
+      </div>
 
-      <label class="ar-field" for="gen-growth">
-        <span class="ar-field__label">Growth on past 12 months (%)</span>
-        <input
-          id="gen-growth"
-          class="ar-field__input"
-          inputmode="decimal"
-          [value]="genGrowth()"
-          (input)="genGrowth.set($any($event.target).value)"
-        />
-      </label>
+      <!-- 2-Column Grid: Growth (%) and Target Gross Margin (%) -->
+      <div class="modal-grid-2col">
+        <!-- Growth Field -->
+        <div class="modal-field-block">
+          <label class="modal-field-label" for="gen-growth">Growth on past 12 months (%)</label>
+          <div class="modal-input-addon-wrap">
+            <input
+              id="gen-growth"
+              class="modal-addon-input"
+              inputmode="decimal"
+              placeholder="15"
+              [value]="genGrowth()"
+              (input)="genGrowth.set($any($event.target).value)"
+            />
+            <span class="modal-addon-tag">%</span>
+          </div>
+        </div>
 
-      <label class="ar-field" for="gen-margin">
-        <span class="ar-field__label">Target gross margin (%)</span>
-        <input
-          id="gen-margin"
-          class="ar-field__input"
-          inputmode="decimal"
-          [value]="genMargin()"
-          (input)="genMargin.set($any($event.target).value)"
-        />
-      </label>
+        <!-- Target Gross Margin Field -->
+        <div class="modal-field-block">
+          <label class="modal-field-label" for="gen-margin">Target gross margin (%)</label>
+          <div class="modal-input-addon-wrap">
+            <input
+              id="gen-margin"
+              class="modal-addon-input"
+              inputmode="decimal"
+              placeholder="26"
+              [value]="genMargin()"
+              (input)="genMargin.set($any($event.target).value)"
+            />
+            <span class="modal-addon-tag">%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pipeline Configuration Highlighted Card -->
+      <div class="pipeline-config-card">
+        <label class="pipeline-check-row" for="gen-pipe">
+          <input
+            id="gen-pipe"
+            type="checkbox"
+            class="pipeline-checkbox"
+            [checked]="genPipeline()"
+            (change)="genPipeline.set($any($event.target).checked)"
+          />
+          <div class="pipeline-check-content">
+            <span class="pipeline-check-label">Include open sales pipeline</span>
+            <span class="pipeline-check-desc">
+              Incorporates enquiries with estimated deal values, probability-weighted according to stage.
+            </span>
+          </div>
+        </label>
+      </div>
     </div>
 
-    <label class="pp__checkbox-row" for="gen-pipe">
-      <input
-        id="gen-pipe"
-        type="checkbox"
-        class="form-checkbox"
-        [checked]="genPipeline()"
-        (change)="genPipeline.set($any($event.target).checked)"
-      />
-      <span class="checkbox-text">
-        Include open sales pipeline (enquiries with estimated values, probability-weighted by stage)
-      </span>
-    </label>
-
     @if (dialogError(); as e) {
-      <div class="pp__dialog-error" role="alert">
+      <div class="modal-error-alert" role="alert">
         <ar-icon name="alert" [size]="14" />
         <span>{{ e }}</span>
       </div>
     }
 
-    <div dialogActions class="dialog-actions-bar">
+    <div dialogActions class="modal-actions-bar">
       <button ar-button type="button" variant="ghost" (click)="generateOpen.set(false)" [disabled]="working() === 'generate'">
         Cancel
       </button>
@@ -861,6 +888,7 @@
         icon="sparkle"
         [disabled]="!!working()"
         (click)="generate()"
+        class="btn-cta-primary"
       >
         {{ working() === 'generate' ? 'Generating plan…' : 'Generate plan' }}
       </button>
@@ -870,77 +898,117 @@
 
 <!-- New Plan Dialog -->
 @if (newOpen()) {
-  <ar-dialog title="New plan" (dismiss)="newOpen.set(false)" [width]="'520px'">
-    <div class="pp__form-grid">
-      <label class="ar-field pp__wide" for="np-title">
-        <span class="ar-field__label">Plan Name</span>
+  <ar-dialog title="New plan" (dismiss)="newOpen.set(false)" [width]="'580px'">
+    <div class="modal-form-stack">
+      <!-- Row 1: Plan Name (Full Width) -->
+      <div class="modal-field-block">
+        <label class="modal-field-label" for="np-title">Plan Name</label>
         <input
           id="np-title"
-          class="ar-field__input"
+          class="modal-text-input"
           maxlength="128"
           placeholder="e.g. FY 2026-2027 Expansion Plan"
           [value]="newTitle()"
           (input)="newTitle.set($any($event.target).value)"
         />
-      </label>
+      </div>
 
-      <label class="ar-field" for="np-fy">
-        <span class="ar-field__label">Fiscal year</span>
-        <select id="np-fy" class="ar-field__input" (change)="newFy.set($any($event.target).value)">
-          @for (y of fyOptions; track y) {
-            <option [value]="y" [selected]="y === newFy()">FY {{ y }}</option>
-          }
-        </select>
-      </label>
+      <!-- Row 2: 2-Column Grid (Fiscal Year & Annual Revenue Target) -->
+      <div class="modal-grid-2col">
+        <!-- Fiscal Year -->
+        <div class="modal-field-block">
+          <label class="modal-field-label" for="np-fy">Fiscal Year</label>
+          <div class="modal-select-wrap">
+            <ar-icon name="projection-plan" [size]="14" class="field-select-icon" />
+            <select id="np-fy" class="modal-select" (change)="newFy.set($any($event.target).value)">
+              @for (y of fyOptions; track y) {
+                <option [value]="y" [selected]="y === newFy()">FY {{ y }}</option>
+              }
+            </select>
+          </div>
+        </div>
 
-      <label class="ar-field" for="np-rev">
-        <span class="ar-field__label">Annual revenue target (₹)</span>
-        <input
-          id="np-rev"
-          class="ar-field__input"
-          inputmode="decimal"
-          placeholder="e.g. 5,00,00,000"
-          [value]="newRevenue()"
-          (input)="newRevenue.set($any($event.target).value)"
-        />
-      </label>
+        <!-- Annual Revenue Target with ₹ Prefix -->
+        <div class="modal-field-block">
+          <label class="modal-field-label" for="np-rev">Annual Revenue Target (₹)</label>
+          <div class="modal-input-addon-wrap">
+            <span class="modal-addon-tag modal-addon-tag--prefix">₹</span>
+            <input
+              id="np-rev"
+              class="modal-addon-input modal-addon-input--prefix"
+              inputmode="decimal"
+              placeholder="e.g. 5,00,00,000"
+              [value]="newRevenue()"
+              (input)="newRevenue.set($any($event.target).value)"
+            />
+          </div>
+        </div>
+      </div>
 
-      <label class="ar-field" for="np-margin">
-        <span class="ar-field__label">Gross margin (%)</span>
-        <input
-          id="np-margin"
-          class="ar-field__input"
-          inputmode="decimal"
-          [value]="newMargin()"
-          (input)="newMargin.set($any($event.target).value)"
-        />
-      </label>
+      <!-- Row 3: 2-Column Grid (Gross Margin & Baseline Distribution Badge) -->
+      <div class="modal-grid-2col">
+        <!-- Gross Margin with % Suffix -->
+        <div class="modal-field-block">
+          <label class="modal-field-label" for="np-margin">Target Gross Margin (%)</label>
+          <div class="modal-input-addon-wrap">
+            <input
+              id="np-margin"
+              class="modal-addon-input"
+              inputmode="decimal"
+              placeholder="26"
+              [value]="newMargin()"
+              (input)="newMargin.set($any($event.target).value)"
+            />
+            <span class="modal-addon-tag">%</span>
+          </div>
+        </div>
 
-      <label class="ar-field pp__wide" for="np-notes">
-        <span class="ar-field__label">Notes <span class="ar-field__opt">optional</span></span>
+        <!-- Distribution Helper Box -->
+        <div class="modal-field-block">
+          <label class="modal-field-label">&nbsp;</label>
+          <div class="modal-helper-card">
+            <ar-icon name="projection-plan" [size]="14" class="helper-icon" />
+            <div class="helper-text">
+              <span class="helper-title">4 Quarters · 5 Business Lines</span>
+              <span class="helper-sub">Auto-computed at baseline margin</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 4: Notes (Full Width) -->
+      <div class="modal-field-block">
+        <label class="modal-field-label" for="np-notes">
+          Notes <span class="modal-field-opt">optional</span>
+        </label>
         <textarea
           id="np-notes"
-          class="ar-field__input"
+          class="modal-textarea"
           rows="2"
           placeholder="Key financial goals, directives, and growth assumptions..."
           [value]="newNotes()"
           (input)="newNotes.set($any($event.target).value)"
         ></textarea>
-      </label>
+      </div>
+
+      <!-- Row 5: Information Callout Banner -->
+      <div class="modal-info-callout">
+        <ar-icon name="help" [size]="15" class="callout-icon" />
+        <div class="callout-content">
+          <strong>Automated Period & Vertical Breakdown:</strong>
+          <span>The annual revenue target is automatically distributed into 4 fiscal quarters and 5 business lines. Individual line targets can be adjusted anytime under Lines.</span>
+        </div>
+      </div>
     </div>
 
-    <p class="pp__dialog-hint">
-      The annual target is automatically distributed into 4 quarters and 5 business lines; lines can be fine-tuned anytime.
-    </p>
-
     @if (dialogError(); as e) {
-      <div class="pp__dialog-error" role="alert">
+      <div class="modal-error-alert" role="alert">
         <ar-icon name="alert" [size]="14" />
         <span>{{ e }}</span>
       </div>
     }
 
-    <div dialogActions class="dialog-actions-bar">
+    <div dialogActions class="modal-actions-bar">
       <button ar-button type="button" variant="ghost" (click)="newOpen.set(false)" [disabled]="working() === 'new'">
         Cancel
       </button>
@@ -948,10 +1016,12 @@
         ar-button
         type="button"
         variant="primary"
+        icon="plus"
         [disabled]="!!working()"
         (click)="createPlan()"
+        class="btn-cta-primary"
       >
-        {{ working() === 'new' ? 'Creating…' : 'Create plan' }}
+        {{ working() === 'new' ? 'Creating plan…' : 'Create plan' }}
       </button>
     </div>
   </ar-dialog>
