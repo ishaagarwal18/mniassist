@@ -216,154 +216,152 @@
     }
   </div>
   } @else if (!total()) {
-  <div class="tasks-empty-state">
-    <div class="tasks-empty-state__icon">
-      <ar-icon name="check" [size]="24" />
-    </div>
-    <h3 class="tasks-empty-state__title">
-      @if (filter() || selectedBucket() !== 'all') {
-      No matching tasks found
-      } @else {
-      All clear! Nothing pending
-      }
-    </h3>
-    <p class="tasks-empty-state__desc">
-      @if (filter() || selectedBucket() !== 'all') {
-      Try adjusting your search terms or clearing active filters to see all tasks.
-      } @else {
-      All action items are completed. Create a new task or use quick add above to schedule your next follow-up.
-      }
-    </p>
-    @if (filter() || selectedBucket() !== 'all') {
-    <button ar-button type="button" variant="ghost" (click)="clearAllFilters()">
-      Clear filters
-    </button>
-    } @else if (directory.canCreate) {
-    <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">
-      Create Task
-    </button>
-    }
+<div class="tasks-empty-state">
+  <div class="tasks-empty-state__icon">
+    <ar-icon name="check" [size]="24" />
   </div>
+  <h3 class="tasks-empty-state__title">
+    @if (filter() || selectedBucket() !== 'all') {
+    No matching tasks found
+    } @else {
+    All clear! Nothing pending
+    }
+  </h3>
+  <p class="tasks-empty-state__desc">
+    @if (filter() || selectedBucket() !== 'all') {
+    Try adjusting your search terms or clearing active filters to see all tasks.
+    } @else {
+    All action items are completed. Create a new task or use quick add above to schedule your next follow-up.
+    }
+  </p>
+  @if (filter() || selectedBucket() !== 'all') {
+  <button ar-button type="button" variant="ghost" (click)="clearAllFilters()">
+    Clear filters
+  </button>
+  } @else if (directory.canCreate) {
+  <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">
+    Create Task
+  </button>
   }
+</div>
+}
 
-  <!-- 6. Grouped Tasks by Due Date (Collapsible Modern Accordions) -->
-  @for (g of groups(); track g.bucket) {
-  <details class="task-group-card" open [attr.aria-label]="g.label">
-    <summary class="task-group-summary">
-      <div class="task-group-summary__left">
-        <span class="task-group-bullet" [class.task-group-bullet--overdue]="g.bucket === 'overdue'"
-          [class.task-group-bullet--today]="g.bucket === 'today'" [class.task-group-bullet--week]="g.bucket === 'week'"
-          [class.task-group-bullet--done]="g.bucket === 'done'" aria-hidden="true"></span>
-        <h2 class="task-group-title">{{ g.label }}</h2>
-        <span class="task-group-count">{{ g.tasks.length }}</span>
-      </div>
-      <div class="task-group-chevron" aria-hidden="true">
-        <ar-icon name="chevron" [size]="14" />
-      </div>
-    </summary>
+<!-- 6. Grouped Tasks by Due Date (Collapsible Modern Accordions) -->
+@for (g of groups(); track g.bucket) {
+<details class="task-group-card" open [attr.aria-label]="g.label">
+  <summary class="task-group-summary">
+    <div class="task-group-summary__left">
+      <span class="task-group-bullet" [class.task-group-bullet--overdue]="g.bucket === 'overdue'"
+        [class.task-group-bullet--today]="g.bucket === 'today'" [class.task-group-bullet--week]="g.bucket === 'week'"
+        [class.task-group-bullet--done]="g.bucket === 'done'" aria-hidden="true"></span>
+      <h2 class="task-group-title">{{ g.label }}</h2>
+      <span class="task-group-count">{{ g.tasks.length }}</span>
+    </div>
+    <div class="task-group-chevron" aria-hidden="true">
+      <ar-icon name="chevron" [size]="14" />
+    </div>
+  </summary>
 
-    <ul class="task-items-list" role="list">
-      @for (t of g.tasks; track t.id) {
-      <li class="task-item-card" [class.task-item-card--done]="t.status !== Status.Open"
-        [class.task-item-card--busy]="busy() === t.id"
-        [class.task-item-card--overdue]="isOverdue(t) && t.status === Status.Open"
-        [class.task-item-card--today]="isDueToday(t) && t.status === Status.Open">
-        <!-- Checkbox Completion -->
-        <label class="task-checkbox-wrap" (click)="$event.stopPropagation()">
-          <input class="task-native-checkbox" type="checkbox"
-            [attr.aria-label]="(t.status === Status.Open ? 'Finish ' : 'Reopen ') + t.title"
-            [checked]="t.status === Status.Done" [disabled]="t.status === Status.Cancelled || busy() === t.id"
-            (change)="toggle(t)" />
-          <span class="task-custom-checkbox" aria-hidden="true">
-            @if (t.status === Status.Done) {
-            <ar-icon name="check" [size]="12" />
-            }
-          </span>
-        </label>
-
-        <!-- Main Interactive Task Body -->
-        <button type="button" class="task-main-btn" (click)="editing.set(t)"
-          title="Click to view and edit task details">
-          <div class="task-title-row">
-            <span class="task-title-text">{{ t.title }}</span>
-            @if (t.priority === High && t.status === Status.Open) {
-            <span class="priority-badge priority-badge--high">High Priority</span>
-            }
-          </div>
-
-          <div class="task-meta-row">
-            <!-- Due Date Badge -->
-            <span class="task-meta-tag task-meta-tag--due"
-              [class.task-meta-tag--overdue]="isOverdue(t) && t.status === Status.Open"
-              [class.task-meta-tag--today]="isDueToday(t) && t.status === Status.Open">
-              <ar-icon name="clock" [size]="12" />
-              <span>{{ dueText(t) }}</span>
-            </span>
-
-            <!-- Assignee -->
-            @if (!isMine(t)) {
-            <span class="task-meta-tag task-meta-tag--assignee">
-              <ar-icon name="user" [size]="12" />
-              <span>{{ t.assigneeName || 'Assigned' }}</span>
-            </span>
-            }
-
-            <!-- Linked CRM Records (Deal / Contact) -->
-            @if (t.links?.length) {
-            @for (l of t.links!.slice(0, 3); track l.type + ':' + l.recordId) {
-            <span class="task-meta-tag task-meta-tag--link" translate="no">
-              <ar-icon name="link" [size]="12" />
-              <span>{{ l.label }}</span>
-            </span>
-            }
-            @if (t.links!.length > 3) {
-            <span class="task-meta-tag task-meta-tag--more">+{{ t.links!.length - 3 }} more</span>
-            }
-            } @else {
-            @if (t.contactName) {
-            <span class="task-meta-tag task-meta-tag--link" translate="no">
-              <ar-icon name="contacts" [size]="12" />
-              <span>{{ t.contactName }}</span>
-            </span>
-            }
-            @if (t.enquiryReference) {
-            <span class="task-meta-tag task-meta-tag--link ar-mono">
-              <ar-icon name="enquiry" [size]="12" />
-              <span>{{ t.enquiryReference }}</span>
-            </span>
-            }
-            }
-
-            <!-- Recurrence -->
-            @if (t.recurrence) {
-            <span class="task-meta-tag task-meta-tag--recur">
-              <span>↻ {{ repeatText(t) }}</span>
-            </span>
-            }
-          </div>
-
-          <!-- Notes snippet -->
-          @if (t.notes) {
-          <span class="task-notes-snippet">{{ t.notes }}</span>
+  <ul class="task-items-list" role="list">
+    @for (t of g.tasks; track t.id) {
+    <li class="task-item-card" [class.task-item-card--done]="t.status !== Status.Open"
+      [class.task-item-card--busy]="busy() === t.id"
+      [class.task-item-card--overdue]="isOverdue(t) && t.status === Status.Open"
+      [class.task-item-card--today]="isDueToday(t) && t.status === Status.Open">
+      <!-- Checkbox Completion -->
+      <label class="task-checkbox-wrap" (click)="$event.stopPropagation()">
+        <input class="task-native-checkbox" type="checkbox"
+          [attr.aria-label]="(t.status === Status.Open ? 'Finish ' : 'Reopen ') + t.title"
+          [checked]="t.status === Status.Done" [disabled]="t.status === Status.Cancelled || busy() === t.id"
+          (change)="toggle(t)" />
+        <span class="task-custom-checkbox" aria-hidden="true">
+          @if (t.status === Status.Done) {
+          <ar-icon name="check" [size]="12" />
           }
-        </button>
+        </span>
+      </label>
 
-        <!-- Quick Action Buttons -->
-        <div class="task-actions-strip" (click)="$event.stopPropagation()">
-          <button type="button" class="task-action-btn" (click)="sharing.set(t)"
-            title="Share with colleagues on WhatsApp" aria-label="Share task">
-            <ar-icon name="share" [size]="13" />
-            <span>Share</span>
-          </button>
-          <button type="button" class="task-action-btn" (click)="editing.set(t)" title="Edit task"
-            aria-label="Edit task">
-            <ar-icon name="edit" [size]="13" />
-            <span>Edit</span>
-          </button>
+      <!-- Main Interactive Task Body -->
+      <button type="button" class="task-main-btn" (click)="editing.set(t)" title="Click to view and edit task details">
+        <div class="task-title-row">
+          <span class="task-title-text">{{ t.title }}</span>
+          @if (t.priority === High && t.status === Status.Open) {
+          <span class="priority-badge priority-badge--high">High Priority</span>
+          }
         </div>
-      </li>
-      }
-    </ul>
-  </details>
-  }
+
+        <div class="task-meta-row">
+          <!-- Due Date Badge -->
+          <span class="task-meta-tag task-meta-tag--due"
+            [class.task-meta-tag--overdue]="isOverdue(t) && t.status === Status.Open"
+            [class.task-meta-tag--today]="isDueToday(t) && t.status === Status.Open">
+            <ar-icon name="clock" [size]="12" />
+            <span>{{ dueText(t) }}</span>
+          </span>
+
+          <!-- Assignee -->
+          @if (!isMine(t)) {
+          <span class="task-meta-tag task-meta-tag--assignee">
+            <ar-icon name="user" [size]="12" />
+            <span>{{ t.assigneeName || 'Assigned' }}</span>
+          </span>
+          }
+
+          <!-- Linked CRM Records (Deal / Contact) -->
+          @if (t.links?.length) {
+          @for (l of t.links!.slice(0, 3); track l.type + ':' + l.recordId) {
+          <span class="task-meta-tag task-meta-tag--link" translate="no">
+            <ar-icon name="link" [size]="12" />
+            <span>{{ l.label }}</span>
+          </span>
+          }
+          @if (t.links!.length > 3) {
+          <span class="task-meta-tag task-meta-tag--more">+{{ t.links!.length - 3 }} more</span>
+          }
+          } @else {
+          @if (t.contactName) {
+          <span class="task-meta-tag task-meta-tag--link" translate="no">
+            <ar-icon name="contacts" [size]="12" />
+            <span>{{ t.contactName }}</span>
+          </span>
+          }
+          @if (t.enquiryReference) {
+          <span class="task-meta-tag task-meta-tag--link ar-mono">
+            <ar-icon name="enquiry" [size]="12" />
+            <span>{{ t.enquiryReference }}</span>
+          </span>
+          }
+          }
+
+          <!-- Recurrence -->
+          @if (t.recurrence) {
+          <span class="task-meta-tag task-meta-tag--recur">
+            <span>↻ {{ repeatText(t) }}</span>
+          </span>
+          }
+        </div>
+
+        <!-- Notes snippet -->
+        @if (t.notes) {
+        <span class="task-notes-snippet">{{ t.notes }}</span>
+        }
+      </button>
+
+      <!-- Quick Action Buttons -->
+      <div class="task-actions-strip" (click)="$event.stopPropagation()">
+        <button type="button" class="task-action-btn" (click)="sharing.set(t)" title="Share with colleagues on WhatsApp"
+          aria-label="Share task">
+          <ar-icon name="share" [size]="13" />
+          <span>Share</span>
+        </button>
+        <button type="button" class="task-action-btn" (click)="editing.set(t)" title="Edit task" aria-label="Edit task">
+          <ar-icon name="edit" [size]="13" />
+          <span>Edit</span>
+        </button>
+      </div>
+    </li>
+    }
+  </ul>
+</details>
+}
 </div>
