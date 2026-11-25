@@ -1,8 +1,13 @@
 <ar-topbar
   title="Inbox"
+  subtitle="Customer messaging &amp; conversations"
   help="Every conversation across every connected channel. Once a contact's 24-hour reply window closes, only an approved template can re-open it — the composer locks automatically."
 >
-  <ar-chip tone="warn">{{ unassigned() }} unassigned</ar-chip>
+  @if (unassigned() > 0) {
+    <ar-chip tone="warn">{{ unassigned() }} unassigned</ar-chip>
+  } @else {
+    <ar-chip tone="good">All assigned</ar-chip>
+  }
   @if (assignee(); as a) {
     <button
       type="button"
@@ -349,6 +354,17 @@
                 </button>
               }
             }
+            <button
+              ar-button
+              variant="ghost"
+              type="button"
+              icon="user"
+              [class.thread__details-btn--active]="infoOpen()"
+              title="Toggle customer profile panel"
+              (click)="infoOpen.toggle()"
+            >
+              Profile
+            </button>
           </div>
         </div>
 
@@ -916,16 +932,21 @@
             </div>
           </div>
         } @else {
-          <div class="composer__locked">
-            <ar-icon name="alert" [size]="17" />
-            <p class="composer__locked-text">
-              The 24-hour service window has closed. Start with an approved template to reopen the
-              conversation — free-form replies are not delivered.
-            </p>
+          <div class="composer__locked" role="alert">
+            <div class="composer__locked-icon-box">
+              <ar-icon name="alert" [size]="20" />
+            </div>
+            <div class="composer__locked-content">
+              <strong class="composer__locked-title">24-Hour WhatsApp Service Window Closed</strong>
+              <p class="composer__locked-text">
+                Meta requires an approved message template to reopen this conversation. Free-form text and attachments are paused until the customer replies.
+              </p>
+            </div>
             <button
               ar-button
               variant="primary"
               icon="template"
+              class="composer__locked-cta"
               [disabled]="!thread.contactId"
               (click)="openTemplate(thread.contactId)"
             >
@@ -1205,4 +1226,115 @@
       </div>
     }
   </section>
+
+  @if (infoOpen() && selected(); as t) {
+    <aside class="info-panel" aria-label="Customer Profile">
+      <header class="info-panel__head">
+        <div class="info-panel__head-left">
+          <ar-icon name="user" [size]="15" />
+          <h3 class="info-panel__title">Customer Profile</h3>
+        </div>
+        <button
+          type="button"
+          class="info-panel__close"
+          aria-label="Close profile panel"
+          title="Close profile panel"
+          (click)="infoOpen.set(false)"
+        >
+          ×
+        </button>
+      </header>
+
+      <div class="info-panel__body ar-scroll">
+        <!-- Profile Card -->
+        <div class="info-panel__card">
+          <ar-avatar [name]="t.contactName" [size]="48" />
+          <h4 class="info-panel__name">{{ t.contactName }}</h4>
+          @if (t.company) {
+            <span class="info-panel__company">{{ t.company }}</span>
+          }
+          @if (!t.channel || t.sms) {
+            <span class="info-panel__phone ar-mono">{{ t.phoneE164 }}</span>
+          }
+        </div>
+
+        <!-- Quick CRM Actions -->
+        @if (t.contactId) {
+          <div class="info-panel__section">
+            <span class="info-panel__sec-title">Quick Actions</span>
+            <div class="info-panel__actions">
+              <a [routerLink]="['/contacts', t.contactId, '360']" class="info-action-btn">
+                <ar-icon name="customer-360" [size]="14" />
+                <span>Customer 360</span>
+              </a>
+              <a [routerLink]="['/contacts', t.contactId, 'message']" class="info-action-btn">
+                <ar-icon name="template" [size]="14" />
+                <span>Send Template</span>
+              </a>
+              @if (canReorder() && !t.channel) {
+                <button
+                  type="button"
+                  class="info-action-btn"
+                  (click)="reorderFor.set({ id: t.contactId, name: t.contactName })"
+                >
+                  <ar-icon name="flow" [size]="14" />
+                  <span>Send Re-order Link</span>
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Conversation Context & Metadata -->
+        <div class="info-panel__section">
+          <span class="info-panel__sec-title">Conversation Context</span>
+          <div class="info-panel__meta-list">
+            <div class="info-panel__meta-row">
+              <span class="info-panel__meta-label">Channel</span>
+              <span class="info-panel__meta-val font-medium">{{ t.channel || 'WhatsApp Business' }}</span>
+            </div>
+            <div class="info-panel__meta-row">
+              <span class="info-panel__meta-label">Assigned Agent</span>
+              <span class="info-panel__meta-val font-medium">{{ t.assignedUserName || 'Unassigned' }}</span>
+            </div>
+            <div class="info-panel__meta-row">
+              <span class="info-panel__meta-label">Status</span>
+              <span class="info-panel__meta-val capitalize">{{ t.status || 'Open' }}</span>
+            </div>
+            <div class="info-panel__meta-row">
+              <span class="info-panel__meta-label">Priority</span>
+              <span class="info-panel__meta-val capitalize">{{ t.priority || 'Normal' }}</span>
+            </div>
+            <div class="info-panel__meta-row">
+              <span class="info-panel__meta-label">24h Window</span>
+              <span class="info-panel__meta-val">
+                {{ t.windowless ? 'No Window Cap' : windowLeft() ? 'Active (' + windowLeft() + ')' : 'Closed' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- WhatsApp Call Permission -->
+        @if (!t.channel && permission(); as pm) {
+          @if (pm.conversationId === t.id && permissionLabel(pm.value); as pl) {
+            <div class="info-panel__section">
+              <span class="info-panel__sec-title">Call Permission</span>
+              <div class="info-panel__permission-box">
+                <ar-chip [tone]="pl.tone" [dot]="true">{{ pl.text }}</ar-chip>
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  class="mt-2 w-full text-xs"
+                  (click)="askToCall(t.id)"
+                >
+                  Ask permission again
+                </button>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </aside>
+  }
 </div>

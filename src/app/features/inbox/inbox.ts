@@ -106,6 +106,8 @@ export class ArInbox {
 
   /** The list can fold to a strip of avatars, for more room to read and write. */
   protected readonly listCollapsed = persistedToggle('ar.inbox.listCollapsed');
+  /** Collapsible right customer details sidebar */
+  protected readonly infoOpen = persistedToggle('ar.inbox.infoOpen', false);
   protected readonly listQuery = signal('');
   // Two or more letters go to the server, which also searches what was said in the messages; one letter filters what is loaded.
   private searchTimer: ReturnType<typeof setTimeout> | undefined;
@@ -123,7 +125,7 @@ export class ArInbox {
     );
   });
   protected readonly selected = this.inbox.selected;
-  protected readonly unassigned = this.inbox.unassignedCount;
+  protected readonly unassigned = computed(() => this.inbox.unassignedCount() ?? 0);
 
   // ---- Filters ---------------------------------------------------------------------------
   protected readonly Status = ConversationState;
