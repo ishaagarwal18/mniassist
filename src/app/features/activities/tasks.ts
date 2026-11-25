@@ -11,11 +11,11 @@ import { firstValueFrom } from 'rxjs';
 
 import { ArTopbar } from '../../layout/topbar';
 import { CrmTaskDto, CrmTaskStatus, CrmTaskSummaryDto, TaskPriority } from '../../proxy/activities';
-import { ArButton, ArChip, ArIcon, ArSearchBox } from '../../ui';
-import { ChipTone } from '../../ui/chip';
+import { ArButton, ArIcon, ArSearchBox } from '../../ui';
 import { ActivityDirectory } from './activity-directory';
 import { ActivityGateway } from './activity-gateway';
 import {
+  BUCKET_LABEL,
   DueBucket,
   dueBucket,
   dueLabel,
@@ -34,7 +34,7 @@ import { initialSearch } from '../../core/util/customer-scope';
  */
 @Component({
   selector: 'ar-tasks',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSearchBox, ArTaskDialog, ArActivityShareDialog],
+  imports: [ArTopbar, ArButton, ArIcon, ArSearchBox, ArTaskDialog, ArActivityShareDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './tasks.html',
   styleUrl: './tasks.scss',
@@ -67,8 +67,39 @@ export class ArTasks {
   /** Groups are worked out against this, refreshed with each load, so "today" is right whenever the list was read. */
   protected readonly now = signal(new Date());
 
-  protected readonly groups = computed(() => groupTasks(this.tasks(), this.now()));
+  /** Selected summary card bucket filter ('all' = no bucket filter). */
+  protected readonly selectedBucket = signal<DueBucket | 'all'>('all');
+
+  protected readonly groups = computed(() => {
+    const all = groupTasks(this.tasks(), this.now());
+    const sel = this.selectedBucket();
+    if (sel === 'all') return all;
+    return all.filter((g) => g.bucket === sel);
+  });
   protected readonly total = computed(() => this.tasks().length);
+
+  protected readonly selectedBucketLabel = computed(() => {
+    const sel = this.selectedBucket();
+    return sel === 'all' ? '' : BUCKET_LABEL[sel] ?? sel;
+  });
+
+  protected toggleBucketFilter(bucket: DueBucket): void {
+    if (bucket === 'done') {
+      if (this.selectedBucket() === 'done') {
+        this.selectedBucket.set('all');
+      } else {
+        this.showDone.set(true);
+        this.selectedBucket.set('done');
+      }
+    } else {
+      this.selectedBucket.update((curr) => (curr === bucket ? 'all' : bucket));
+    }
+  }
+
+  protected clearAllFilters(): void {
+    this.filter.set('');
+    this.selectedBucket.set('all');
+  }
 
   constructor() {
     void this.directory.load();
@@ -127,6 +158,10 @@ export class ArTasks {
 
   protected isOverdue(t: CrmTaskDto): boolean {
     return dueBucket(t, this.now()) === 'overdue';
+  }
+
+  protected isDueToday(t: CrmTaskDto): boolean {
+    return dueBucket(t, this.now()) === 'today';
   }
 
   protected isMine(t: CrmTaskDto): boolean {
