@@ -19,15 +19,15 @@
   </ar-topbar>
 
   <div class="bl ar-scroll">
+    <!-- Status Banners -->
     @if (failed()) {
-      <ar-banner tone="bad"
-        >Your wallet and plan could not be loaded. Try again in a moment.</ar-banner
-      >
+      <ar-banner tone="bad">
+        Your wallet and plan could not be loaded. Try again in a moment.
+      </ar-banner>
     }
     @if (requested(); as r) {
       <ar-banner tone="teal">
-        You chose the <strong>{{ r.name }}</strong> plan · {{ r.price }}/month + GST. Activate it to
-        unlock its features and limits. WhatsApp message charges are paid from the wallet below.
+        You chose the <strong>{{ r.name }}</strong> plan · {{ r.price }}/month + GST. Activate it to unlock its features and limits. WhatsApp message charges are paid from the wallet below.
         <span banner-actions class="bl__req-actions">
           <button
             ar-button
@@ -43,250 +43,385 @@
     }
     @if (d().chargesStartOn; as start) {
       <ar-banner tone="warn">
-        From {{ chargeDay(start) }}, each delivered WhatsApp message Meta charges for is charged to
-        this wallet at your plan's rate. Messages until then are recorded but not charged. Top up,
-        or switch on auto top-up, so campaigns keep sending.
+        From {{ chargeDay(start) }}, each delivered WhatsApp message Meta charges for is charged to this wallet at your plan's rate. Messages until then are recorded but not charged. Top up, or switch on auto top-up, so campaigns keep sending.
       </ar-banner>
     }
 
-    <!-- How billing works, in one glance -->
-    <section class="how" aria-label="How billing works">
-      <div class="how__step">
-        <span class="how__n">1</span>
-        <div>
-          <p class="how__t">Plan — monthly fee</p>
-          <p class="how__d">
-            {{ planName() }} costs {{ money(d().feeInPaise) }}/month + GST. It decides your seats,
-            features and limits.
+    <!-- In-Page Header -->
+    <header class="bl-header">
+      <div class="bl-header__left">
+        <div class="bl-header__title-row">
+          <h1 class="bl-header__title">Billing &amp; Subscription</h1>
+          <span class="bl-plan-badge">{{ planName() }} Plan</span>
+        </div>
+        <p class="bl-header__desc">
+          Manage your monthly subscription tier, prepaid WhatsApp messaging balance, automated top-ups, and transaction history.
+        </p>
+      </div>
+
+      <div class="bl-header__actions">
+        <button ar-button variant="primary" icon="billing" [disabled]="busy()" (click)="goTopUp()">
+          Top up wallet
+        </button>
+      </div>
+    </header>
+
+    <!-- How Billing Works: 3-Step Overview -->
+    <section class="how-strip" aria-label="How billing works">
+      <div class="how-step">
+        <div class="how-step__num">1</div>
+        <div class="how-step__content">
+          <strong class="how-step__title">Monthly Subscription</strong>
+          <p class="how-step__desc">
+            {{ planName() }} costs {{ money(d().feeInPaise) }}/mo + GST. Covers agent seats, modules, and platform features.
           </p>
         </div>
       </div>
-      <div class="how__step">
-        <span class="how__n">2</span>
-        <div>
-          <p class="how__t">Wallet — pay per message</p>
-          <p class="how__d">
-            You add money in advance. Each WhatsApp message Meta charges for is taken from it.
+      <div class="how-step">
+        <div class="how-step__num">2</div>
+        <div class="how-step__content">
+          <strong class="how-step__title">Prepaid Messaging Wallet</strong>
+          <p class="how-step__desc">
+            Funds in your wallet cover per-message Meta WhatsApp charges as campaigns and conversations deliver.
           </p>
         </div>
       </div>
-      <div class="how__step">
-        <span class="how__n">3</span>
-        <div>
-          <p class="how__t">Limits — no surprise bills</p>
-          <p class="how__d">
-            When you reach a plan limit, the action is stopped. Upgrade to go further.
+      <div class="how-step">
+        <div class="how-step__num">3</div>
+        <div class="how-step__content">
+          <strong class="how-step__title">No Surprise Bills</strong>
+          <p class="how-step__desc">
+            When plan quotas are reached, activities gracefully pause. Upgrade anytime to scale limits and team members.
           </p>
         </div>
       </div>
     </section>
 
-    <!-- At a glance -->
-    <div class="kpis">
-      <div class="kpi" [class.kpi--bad]="d().isLow">
-        <p class="kpi__l">Wallet balance</p>
-        <p class="kpi__v">{{ money(d().balanceInPaise) }}</p>
-        <p class="kpi__n">
-          @if (runway() !== null) {
-            Lasts about {{ d().daysRemaining }} days at your current spend
-          } @else {
-            No recent spend yet
-          }
-        </p>
+    <!-- 2. Billing Overview KPI Cards -->
+    <div class="bl-kpi-grid" role="group" aria-label="Billing overview metrics">
+      <!-- KPI 1: Wallet Balance -->
+      <div class="bl-kpi-card" [class.bl-kpi-card--bad]="d().isLow || d().balanceInPaise < 0">
+        <div class="bl-kpi-card__top">
+          <span class="bl-kpi-card__lbl">Wallet Balance</span>
+          <div class="bl-kpi-card__icon-box">
+            <ar-icon name="billing" [size]="15" />
+          </div>
+        </div>
+        <div class="bl-kpi-card__body">
+          <span class="bl-kpi-card__num" [class.text-danger]="d().isLow || d().balanceInPaise < 0">
+            {{ money(d().balanceInPaise) }}
+          </span>
+          <span class="bl-kpi-card__hint">
+            @if (d().isLow || d().balanceInPaise < 0) {
+              <strong class="text-danger">Low balance · Top up needed</strong>
+            } @else if (runway() !== null) {
+              Lasts about {{ d().daysRemaining }} days at current spend
+            } @else {
+              No recent message spend
+            }
+          </span>
+        </div>
       </div>
-      <div class="kpi">
-        <p class="kpi__l">Current plan</p>
-        <p class="kpi__v">{{ planName() }}</p>
-        <p class="kpi__n">{{ d().seats }} agent seats · {{ money(d().feeInPaise) }}/month</p>
+
+      <!-- KPI 2: Active Plan -->
+      <div class="bl-kpi-card bl-kpi-card--indigo">
+        <div class="bl-kpi-card__top">
+          <span class="bl-kpi-card__lbl">Current Plan</span>
+          <div class="bl-kpi-card__icon-box">
+            <ar-icon name="card" [size]="15" />
+          </div>
+        </div>
+        <div class="bl-kpi-card__body">
+          <span class="bl-kpi-card__num">{{ planName() }}</span>
+          <span class="bl-kpi-card__hint">
+            {{ d().seats }} agent seats · {{ money(d().feeInPaise) }}/mo + GST
+          </span>
+        </div>
       </div>
-      <div class="kpi">
-        <p class="kpi__l">Billed this period</p>
-        <p class="kpi__v">{{ money(d().billed) }}</p>
-        <p class="kpi__n">+ {{ money(d().tax) }} GST · period ends {{ when(d().periodEnd) }}</p>
+
+      <!-- KPI 3: Billed This Period -->
+      <div class="bl-kpi-card bl-kpi-card--blue">
+        <div class="bl-kpi-card__top">
+          <span class="bl-kpi-card__lbl">Billed This Period</span>
+          <div class="bl-kpi-card__icon-box">
+            <ar-icon name="clock" [size]="15" />
+          </div>
+        </div>
+        <div class="bl-kpi-card__body">
+          <span class="bl-kpi-card__num">{{ money(d().billed) }}</span>
+          <span class="bl-kpi-card__hint">
+            + {{ money(d().tax) }} GST · Ends {{ when(d().periodEnd) }}
+          </span>
+        </div>
       </div>
-      <div class="kpi kpi--good">
-        <p class="kpi__l">Free messages</p>
-        <p class="kpi__v">{{ (d().free | number: '1.0-0') ?? '0' }}</p>
-        <p class="kpi__n">You saved {{ money(d().avoided) }}</p>
+
+      <!-- KPI 4: Free Messages -->
+      <div class="bl-kpi-card bl-kpi-card--good">
+        <div class="bl-kpi-card__top">
+          <span class="bl-kpi-card__lbl">Free Messages</span>
+          <div class="bl-kpi-card__icon-box">
+            <ar-icon name="check" [size]="15" />
+          </div>
+        </div>
+        <div class="bl-kpi-card__body">
+          <span class="bl-kpi-card__num text-good">{{ (d().free | number: '1.0-0') ?? '0' }}</span>
+          <span class="bl-kpi-card__hint">
+            You saved {{ money(d().avoided) }} in WhatsApp fees
+          </span>
+        </div>
       </div>
     </div>
 
-    <!-- 1. Wallet -->
-    <section class="sec">
-      <header class="sec__head">
-        <h2 class="sec__h">Your wallet</h2>
-        <p class="sec__d">
-          Money you have added for message charges. Keep it topped up so campaigns and replies are
-          not paused.
-        </p>
+    <!-- 3. Wallet & Auto Top-Up Section -->
+    <section class="bl-section">
+      <header class="bl-section__head">
+        <div>
+          <h2 class="bl-section__title">Wallet Management</h2>
+          <p class="bl-section__desc">
+            Prepaid balance for WhatsApp message charges. Maintain a healthy balance so outgoing campaigns and automated responses are not delayed.
+          </p>
+        </div>
       </header>
+
       <div class="bl__grid">
-        <section class="card">
-          <h3 class="card__h">Balance</h3>
-          <p class="card__big">{{ money(d().balanceInPaise) }}</p>
+        <!-- Balance Overview Card -->
+        <div class="bl-card bl-balance-card">
+          <div class="bl-balance-card__top">
+            <span class="bl-card__eyebrow">Available Balance</span>
+            <span
+              class="bl-status-pill"
+              [class.bl-status-pill--warn]="d().isLow || d().balanceInPaise < 0"
+            >
+              {{ d().isLow || d().balanceInPaise < 0 ? 'Low Balance' : 'Active' }}
+            </span>
+          </div>
+
+          <div class="bl-balance-card__amount-row">
+            <span class="bl-balance-card__big" [class.text-danger]="d().balanceInPaise < 0">
+              {{ money(d().balanceInPaise) }}
+            </span>
+          </div>
+
           @if (runway() !== null) {
-            <ar-meter
-              [value]="runway()! * 100"
-              [tone]="d().isLow ? 'bad' : 'good'"
-              [label]="d().daysRemaining + ' days at current spend'"
-            />
+            <div class="bl-balance-card__meter-wrap">
+              <ar-meter
+                [value]="runway()! * 100"
+                [tone]="d().isLow ? 'bad' : 'good'"
+                [label]="d().daysRemaining + ' days runway at current consumption'"
+              />
+            </div>
           }
+
           @if (d().graceInPaise > 0) {
-            <p class="card__sub">
-              If it runs out, sending carries on up to {{ money(d().graceInPaise) }} below zero, then
-              stops until you top up.
+            <p class="bl-balance-card__grace">
+              Overdraft protection active: sending continues up to {{ money(d().graceInPaise) }} below zero before pausing.
             </p>
           }
-          <p class="card__sub">
-            Auto top-up is
-            <strong>{{ d().autoTopUp ? 'on (' + money(d().autoAmountInPaise) + ' each time)' : 'off' }}</strong>.
-          </p>
+
+          <div class="bl-balance-card__status-info">
+            <ar-icon name="billing" [size]="14" />
+            <span>
+              Auto top-up is
+              <strong>{{ d().autoTopUp ? 'Active (' + money(d().autoAmountInPaise) + ' per top-up)' : 'Disabled' }}</strong>
+            </span>
+          </div>
+
           <button
             ar-button
             variant="primary"
-            class="card__cta"
+            icon="billing"
+            class="bl-balance-card__cta"
             [disabled]="busy()"
             (click)="goTopUp()"
           >
-            Add money
+            Add Money to Wallet
           </button>
-        </section>
+        </div>
+
+        <!-- Auto Top-Up Component Card -->
         <ar-auto-top-up-card (saved)="reloadWallet()" />
       </div>
     </section>
 
-    <!-- 2. Plan -->
-    <section class="sec">
-      <header class="sec__head">
-        <h2 class="sec__h">Your plan</h2>
-        <p class="sec__d">
-          The monthly subscription. A bigger plan gives more seats, features and higher limits.
-          Click a plan to switch.
-        </p>
+    <!-- 4. Subscription Plans Section -->
+    <section class="bl-section">
+      <header class="bl-section__head">
+        <div>
+          <h2 class="bl-section__title">Subscription Plans</h2>
+          <p class="bl-section__desc">
+            Compare subscription plans and tier limits. Upgrades and plan adjustments take effect immediately.
+          </p>
+        </div>
       </header>
-      <section class="card">
-        <div class="pcmp">
-          @for (p of offered(); track p.id) {
-            <article
-              class="pc"
-              [class.pc--current]="p.isCurrent"
-              [class.pc--chosen]="p.builtIn != null && p.builtIn === requested()?.plan"
-            >
-              <header class="pc__head">
-                <h3 class="pc__name">{{ p.name }}</h3>
+
+      <div class="pcmp-grid">
+        @for (p of offered(); track p.id) {
+          <article
+            class="pc-card"
+            [class.pc-card--current]="p.isCurrent"
+            [class.pc-card--chosen]="p.builtIn != null && p.builtIn === requested()?.plan"
+          >
+            <header class="pc-card__head">
+              <div class="pc-card__title-row">
+                <h3 class="pc-card__name">{{ p.name }}</h3>
                 @if (p.isCurrent) {
-                  <ar-chip tone="good">Current</ar-chip>
+                  <span class="pc-chip pc-chip--current">Current Plan</span>
                 } @else if (p.builtIn != null && p.builtIn === requested()?.plan) {
-                  <ar-chip tone="teal">Selected</ar-chip>
-                }
-              </header>
-              <p class="pc__price">
-                {{ money(p.monthlyFeeInPaise) }}<span class="pc__per">/month + GST</span>
-              </p>
-              @if (p.description) {
-                <p class="pc__desc">{{ p.description }}</p>
-              }
-              <ul class="pc__limits">
-                <li><b>{{ limit(p.includedAgentSeats) }}</b> members</li>
-                <li><b>{{ limit(p.channelLimit) }}</b> numbers</li>
-                <li><b>{{ limit(p.contactLimit) }}</b> contacts</li>
-              </ul>
-              @if (p.highlights.length) {
-                <ul class="pc__list pc__list--hl">
-                  @for (h of p.highlights; track h) {
-                    <li><span class="pc__tick" aria-hidden="true">★</span>{{ h }}</li>
-                  }
-                </ul>
-              }
-              <p class="pc__mods">
-                {{ p.features.length ? p.features.length + ' modules' : 'Core features only' }}
-              </p>
-              @if (p.features.length) {
-                <ul class="pc__list">
-                  @for (f of planFeatures(p); track f) {
-                    <li><span class="pc__tick" aria-hidden="true">✓</span>{{ f }}</li>
-                  }
-                </ul>
-              }
-              <div class="pc__foot">
-                @if (p.isCurrent) {
-                  <span class="pc__note">Your plan</span>
-                } @else {
-                  <button
-                    ar-button
-                    type="button"
-                    [variant]="p.builtIn != null && p.builtIn === requested()?.plan ? 'primary' : 'ghost'"
-                    [disabled]="busy() || !canManagePlan()"
-                    [title]="canManagePlan() ? '' : 'Changing the plan needs the Manage plan permission'"
-                    (click)="choosePlan(p)"
-                  >
-                    Switch to {{ p.name }}
-                  </button>
+                  <span class="pc-chip pc-chip--chosen">Selected</span>
                 }
               </div>
-            </article>
-          } @empty {
-            <p class="card__sub">The plans could not be loaded. Try again in a moment.</p>
-          }
-        </div>
-      </section>
+              <div class="pc-card__price-row">
+                <span class="pc-card__price">{{ money(p.monthlyFeeInPaise) }}</span>
+                <span class="pc-card__per">/month + GST</span>
+              </div>
+              @if (p.description) {
+                <p class="pc-card__desc">{{ p.description }}</p>
+              }
+            </header>
+
+            <div class="pc-card__limits-box">
+              <div class="pc-limit-item">
+                <ar-icon name="user" [size]="13" />
+                <span><strong>{{ limit(p.includedAgentSeats) }}</strong> Members</span>
+              </div>
+              <div class="pc-limit-item">
+                <ar-icon name="phone" [size]="13" />
+                <span><strong>{{ limit(p.channelLimit) }}</strong> Numbers</span>
+              </div>
+              <div class="pc-limit-item">
+                <ar-icon name="contacts" [size]="13" />
+                <span><strong>{{ limit(p.contactLimit) }}</strong> Contacts</span>
+              </div>
+            </div>
+
+            @if (p.highlights.length) {
+              <ul class="pc-card__highlights">
+                @for (h of p.highlights; track h) {
+                  <li>
+                    <span class="pc-star" aria-hidden="true">★</span>
+                    <span>{{ h }}</span>
+                  </li>
+                }
+              </ul>
+            }
+
+            <div class="pc-card__features-wrap">
+              <span class="pc-card__features-title">
+                {{ p.features.length ? p.features.length + ' Enterprise Modules' : 'Core CRM features only' }}
+              </span>
+              @if (p.features.length) {
+                <ul class="pc-card__features-list">
+                  @for (f of planFeatures(p); track f) {
+                    <li>
+                      <span class="pc-check" aria-hidden="true">✓</span>
+                      <span>{{ f }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+
+            <footer class="pc-card__foot">
+              @if (p.isCurrent) {
+                <button ar-button type="button" variant="ghost" [disabled]="true" class="w-full">
+                  Current Plan
+                </button>
+              } @else {
+                <button
+                  ar-button
+                  type="button"
+                  class="w-full"
+                  [variant]="p.builtIn != null && p.builtIn === requested()?.plan ? 'primary' : 'ghost'"
+                  [disabled]="busy() || !canManagePlan()"
+                  [title]="canManagePlan() ? '' : 'Changing the plan needs the Manage plan permission'"
+                  (click)="choosePlan(p)"
+                >
+                  Switch to {{ p.name }}
+                </button>
+              }
+            </footer>
+          </article>
+        } @empty {
+          <p class="text-muted p-4">Subscription plan catalog could not be loaded. Please refresh in a moment.</p>
+        }
+      </div>
     </section>
 
-    <!-- 3. Usage -->
-    <section class="sec">
-      <header class="sec__head">
-        <h2 class="sec__h">What you have used</h2>
-        <p class="sec__d">
-          How close you are to each plan limit. Green is fine, amber is nearly full, red means the
-          limit is reached and that action is blocked until you upgrade.
-        </p>
+    <!-- 5. Usage Statistics Section -->
+    <section class="bl-section">
+      <header class="bl-section__head">
+        <div>
+          <h2 class="bl-section__title">Plan Usage &amp; Capacity</h2>
+          <p class="bl-section__desc">
+            Monitor real-time consumption against your active plan limits. Actions automatically stop when limits are reached until you upgrade.
+          </p>
+        </div>
       </header>
-      <section class="card">
-        <ul class="usage">
-          @for (r of usageRows(); track r.label) {
-            <li class="usage__row" [class.usage__row--over]="r.over">
-              <div class="usage__head">
-                <span class="usage__label">{{ r.label }}</span>
-                <span class="usage__count ar-mono">
-                  {{ (r.used | number: '1.0-0') ?? '0' }}
-                  @if (!r.unlimited) {
-                    of {{ (r.limit | number: '1.0-0') ?? '0' }}
-                  }
-                </span>
+
+      <div class="bl-usage-grid">
+        @for (r of usageRows(); track r.label) {
+          <div class="bl-usage-card" [class.bl-usage-card--over]="r.over">
+            <div class="bl-usage-card__head">
+              <div class="bl-usage-card__left">
+                <span class="bl-usage-card__label">{{ r.label }}</span>
+                @if (r.unlimited) {
+                  <span class="bl-tag bl-tag--unlimited">Unlimited</span>
+                } @else if (r.over) {
+                  <span class="bl-tag bl-tag--over">Limit Reached</span>
+                } @else if (r.fraction > 0.85) {
+                  <span class="bl-tag bl-tag--warn">Near Limit</span>
+                } @else {
+                  <span class="bl-tag bl-tag--good">Healthy</span>
+                }
               </div>
-              @if (!r.unlimited) {
+              <span class="bl-usage-card__count ar-mono">
+                <strong>{{ (r.used | number: '1.0-0') ?? '0' }}</strong>
+                @if (!r.unlimited) {
+                  <span>/ {{ (r.limit | number: '1.0-0') ?? '0' }}</span>
+                }
+              </span>
+            </div>
+
+            @if (!r.unlimited) {
+              <div class="bl-usage-card__meter-wrap">
                 <ar-meter
                   [value]="r.fraction * 100"
                   [tone]="r.over ? 'bad' : r.fraction > 0.85 ? 'amber' : 'good'"
-                  [label]="r.label + ' usage'"
+                  [label]="r.label + ' usage progress'"
                 />
-              } @else {
-                <p class="usage__note">Unlimited on this plan.</p>
-              }
-            </li>
-          }
-        </ul>
-      </section>
+              </div>
+            } @else {
+              <p class="bl-usage-card__unlimited-text">No hard cap on your current subscription plan.</p>
+            }
+          </div>
+        }
+      </div>
     </section>
 
-    <!-- 4. Rates -->
-    <section class="sec">
-      <header class="sec__head">
-        <h2 class="sec__h">What each message costs</h2>
-        <p class="sec__d">The price taken from your wallet for each WhatsApp message.</p>
+    <!-- 6. WhatsApp Message Rates -->
+    <section class="bl-section">
+      <header class="bl-section__head">
+        <div>
+          <h2 class="bl-section__title">WhatsApp Message Rates</h2>
+          <p class="bl-section__desc">Standard rates deducted from your prepaid wallet for each delivered message in India.</p>
+        </div>
       </header>
+
       <ar-rate-history-card />
     </section>
 
-    <!-- 5. History -->
-    <section class="sec">
-      <header class="sec__head">
-        <h2 class="sec__h">Wallet history</h2>
-        <p class="sec__d">
-          Every top-up and charge. Money added shows as positive, charges in red.
-        </p>
+    <!-- 7. Wallet Transaction Ledger -->
+    <section class="bl-section">
+      <header class="bl-section__head">
+        <div>
+          <h2 class="bl-section__title">Wallet Transaction History</h2>
+          <p class="bl-section__desc">
+            Complete financial audit trail of wallet top-ups, campaign message charges, refunds, and adjustments.
+          </p>
+        </div>
       </header>
-      <section class="card">
+
+      <div class="bl-ledger-card">
         <ejs-grid
           arGrid="billing-wallet-ledger"
           [dataSource]="d().transactions"
@@ -295,84 +430,139 @@
           <e-columns>
             <e-column field="at" headerText="Date" width="130">
               <ng-template #template let-t>
-                {{ when(t.at) }}
+                <div class="ledger-date-cell">
+                  <ar-icon name="calendar" [size]="12" />
+                  <span>{{ when(t.at) }}</span>
+                </div>
               </ng-template>
             </e-column>
-            <e-column field="kind" headerText="Type" width="140"></e-column>
-            <e-column field="description" headerText="Details" width="220">
+            <e-column field="kind" headerText="Type" width="150">
               <ng-template #template let-t>
-                <span class="muted">{{ t.description }}</span>
+                <span
+                  class="ledger-type-pill"
+                  [class.ledger-type-pill--credit]="t.kind === 'Top-up' || t.kind === 'Refund'"
+                  [class.ledger-type-pill--debit]="t.kind === 'Message charge'"
+                >
+                  {{ t.kind }}
+                </span>
               </ng-template>
             </e-column>
-            <e-column field="amountInPaise" headerText="Amount" width="130" [textAlign]="'Right'">
+            <e-column field="description" headerText="Details &amp; Reference" width="220">
               <ng-template #template let-t>
-                <span [class.neg]="t.amountInPaise < 0">{{ money(t.amountInPaise) }}</span>
+                <span class="ledger-desc-text">{{ t.description || '—' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="amountInPaise" headerText="Amount" width="140" [textAlign]="'Right'">
+              <ng-template #template let-t>
+                <span
+                  class="ledger-amount font-mono"
+                  [class.ledger-amount--neg]="t.amountInPaise < 0"
+                  [class.ledger-amount--pos]="t.amountInPaise > 0"
+                >
+                  {{ t.amountInPaise > 0 ? '+' : '' }}{{ money(t.amountInPaise) }}
+                </span>
               </ng-template>
             </e-column>
             <e-column
               field="balanceAfterInPaise"
-              headerText="Balance after"
-              width="130"
+              headerText="Balance After"
+              width="140"
               [textAlign]="'Right'"
             >
               <ng-template #template let-t>
-                {{ money(t.balanceAfterInPaise) }}
+                <span class="ledger-balance font-mono font-medium">
+                  {{ money(t.balanceAfterInPaise) }}
+                </span>
               </ng-template>
             </e-column>
           </e-columns>
         </ejs-grid>
-      </section>
+      </div>
     </section>
   </div>
 }
 
+<!-- Top-up Modal Dialog Template -->
 <ng-template #formsTpl>
   @if (topUpOpen()) {
     <ar-dialog title="Top up wallet" (dismiss)="close()">
-      <p class="bl__dialog-note" style="margin-bottom: 12px; color: var(--ar-text-muted)">
-        You pay on the gateway’s secure page; the wallet is credited as soon as payment is
-        confirmed.
-      </p>
-      <label class="ar-field">
-        <span class="ar-field__label">Amount (₹)</span>
-        <input
-          type="number"
-          min="100"
-          max="1000000"
-          required
-          class="ar-field__input"
-          [value]="topUpAmount()"
-          (input)="topUpAmount.set(+$any($event.target).value)"
-        />
-      </label>
-      @if (availableGateways().length > 1) {
-        <label class="ar-field">
-          <span class="ar-field__label">Pay with</span>
-          <select
-            class="ar-field__input"
-            [value]="topUpGateway()"
-            (change)="topUpGateway.set($any($event.target).value)"
-          >
-            @for (g of availableGateways(); track g.name) {
-              <option [value]="g.name">{{ g.label }}</option>
-            }
-          </select>
-        </label>
-      } @else if (availableGateways().length === 0) {
-        <p class="ar-field__hint" role="note">
-          Online payment is not set up yet, so the wallet cannot be topped up. A platform administrator turns on Razorpay or PayU under Platform › Payment gateways.
+      <div class="topup-dialog-content">
+        <p class="topup-dialog-desc">
+          Add money to your prepaid messaging wallet. Payment is processed securely through your selected payment gateway and credited immediately upon confirmation.
         </p>
-      }
+
+        <!-- Quick Amount Presets -->
+        <div class="topup-presets-wrap">
+          <span class="topup-presets-label">Quick select amount:</span>
+          <div class="topup-presets-list">
+            @for (amt of topUpPresets; track amt) {
+              <button
+                type="button"
+                class="topup-preset-chip"
+                [class.topup-preset-chip--active]="topUpAmount() === amt"
+                (click)="setTopUpPreset(amt)"
+              >
+                ₹{{ amt | number }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <label class="ar-field">
+          <span class="ar-field__label">Top-up Amount (₹)</span>
+          <div class="topup-input-wrap">
+            <span class="topup-input-prefix">₹</span>
+            <input
+              type="number"
+              min="100"
+              max="1000000"
+              step="500"
+              required
+              class="ar-field__input topup-number-input"
+              [value]="topUpAmount()"
+              (input)="topUpAmount.set(+$any($event.target).value)"
+            />
+          </div>
+        </label>
+
+        @if (availableGateways().length > 1) {
+          <label class="ar-field">
+            <span class="ar-field__label">Payment Gateway</span>
+            <select
+              class="ar-field__input"
+              [value]="topUpGateway()"
+              (change)="topUpGateway.set($any($event.target).value)"
+            >
+              @for (g of availableGateways(); track g.name) {
+                <option [value]="g.name">{{ g.label }}</option>
+              }
+            </select>
+          </label>
+        } @else if (availableGateways().length === 0) {
+          <div class="topup-alert-warning">
+            <ar-icon name="alert" [size]="16" />
+            <span>
+              Online payment gateways are not configured yet. A platform administrator must enable Razorpay or PayU in Platform Settings › Payment Gateways.
+            </span>
+          </div>
+        }
+
+        <div class="topup-security-note">
+          <ar-icon name="check" [size]="14" />
+          <span>Secured payment with end-to-end 256-bit encryption. Instant wallet reflection.</span>
+        </div>
+      </div>
+
       <div dialogActions>
         <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
         <button
           ar-button
           type="button"
           variant="primary"
-          [disabled]="busy() || availableGateways().length === 0"
+          [disabled]="busy() || availableGateways().length === 0 || topUpAmount() < 100"
           (click)="submitTopUp()"
         >
-          {{ busy() ? 'Processing…' : 'Continue to payment' }}
+          {{ busy() ? 'Processing…' : 'Continue to Payment' }}
         </button>
       </div>
     </ar-dialog>

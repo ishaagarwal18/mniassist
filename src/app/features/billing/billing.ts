@@ -23,7 +23,7 @@ import {
 } from '../../proxy/billing/platform-checkout.service';
 import { ArTopbar } from '../../layout/topbar';
 import { planByKey, priceLabel } from '../landing/landing-plans';
-import { ArBanner, ArButton, ArChip, ArDialog, ArMeter } from '../../ui';
+import { ArBanner, ArButton, ArDialog, ArIcon, ArMeter } from '../../ui';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { PlanCatalogService, type PlanDefinitionDto } from '../../proxy/billing/plan-catalog.service';
 import { ArGrid } from '../../ui/grid';
@@ -88,8 +88,8 @@ const EMPTY = {
     ArTopbar,
     ArBanner,
     ArButton,
-    ArChip,
     ArDialog,
+    ArIcon,
     ArMeter,
     DecimalPipe,
     ArGrid,
@@ -140,6 +140,17 @@ export class ArBilling {
   protected readonly topUpAmount = signal(20000);
   protected readonly topUpGateway = signal('Razorpay');
   protected readonly availableGateways = signal<CheckoutGatewayDto[]>([]);
+  protected readonly topUpPresets = [1000, 2500, 5000, 10000, 20000];
+
+  protected setTopUpPreset(amount: number): void {
+    this.topUpAmount.set(amount);
+  }
+
+  protected txnTone(kind: string): 'good' | 'bad' | 'neutral' {
+    if (kind === 'Top-up' || kind === 'Refund') return 'good';
+    if (kind === 'Message charge') return 'bad';
+    return 'neutral';
+  }
 
   constructor() {
     this.announceCheckoutReturn();
@@ -244,22 +255,22 @@ export class ArBilling {
       }).pipe(
         map((r) => ({
           usage: r.usage,
-          balanceInPaise: r.wallet.balanceInPaise,
+          balanceInPaise: r.wallet.balanceInPaise ?? 0,
           graceInPaise: r.wallet.graceOverdraftInPaise ?? 0,
-          isLow: r.wallet.isLow,
+          isLow: !!r.wallet.isLow,
           daysRemaining: r.wallet.estimatedDaysRemaining ?? null,
           chargesStartOn: r.wallet.chargesStartOnUtc ?? null,
           autoTopUp: r.wallet.autoTopUpEnabled,
           autoAmountInPaise: r.wallet.autoTopUpAmountInPaise,
           lowThresholdInPaise: r.wallet.lowBalanceThresholdInPaise ?? 0,
           plan: r.sub.plan,
-          feeInPaise: r.sub.monthlyFeeInPaise,
-          seats: r.sub.includedAgentSeats,
+          feeInPaise: r.sub.monthlyFeeInPaise ?? 0,
+          seats: r.sub.includedAgentSeats ?? 0,
           periodEnd: r.sub.currentPeriodEndUtc,
-          billed: r.summary.totalBilledInPaise,
-          tax: r.summary.taxInPaise,
-          free: r.summary.freeMessageCount,
-          avoided: r.summary.avoidedChargeInPaise,
+          billed: r.summary.totalBilledInPaise ?? 0,
+          tax: r.summary.taxInPaise ?? 0,
+          free: r.summary.freeMessageCount ?? 0,
+          avoided: r.summary.avoidedChargeInPaise ?? 0,
           transactions: (r.txns.items ?? []).map(
             (t) =>
               ({
