@@ -7,7 +7,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { grantedPolicy } from '../../core/auth/permission';
@@ -38,7 +38,6 @@ import {
 } from './custom-field-values';
 import { ArBanner } from '../../ui/banner';
 import { ArButton } from '../../ui/button';
-import { ArCard } from '../../ui/card';
 import { ArChip } from '../../ui/chip';
 import { ArIcon } from '../../ui/icon';
 import {
@@ -54,7 +53,7 @@ import { parseVCards } from './vcard';
 
 @Component({
   selector: 'ar-contact-form',
-  imports: [ArTopbar, ArButton, ArCard, ArBanner, ArIcon, ArChip, ArCustomFieldInputs],
+  imports: [ArTopbar, ArButton, ArBanner, ArIcon, ArChip, ArCustomFieldInputs, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './contact-form.html',
   styleUrl: './contact-form.scss',

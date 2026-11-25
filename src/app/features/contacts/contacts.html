@@ -758,20 +758,27 @@
 <!-- ========================================================================= -->
 <!-- 3. ADVANCED FILTER RIGHT-SIDE DRAWER -->
 <!-- ========================================================================= -->
+<!-- 6. Filter Contacts Side Drawer -->
+<!-- ========================================================================= -->
 @if (filterDrawerOpen()) {
 <div class="drawer-overlay" (click)="filterDrawerOpen.set(false)" aria-hidden="true"></div>
 <aside class="filter-drawer" role="dialog" aria-label="Filter contacts">
   <div class="drawer-header">
     <div class="filter-drawer-title-wrap">
-      <ar-icon name="filter" [size]="18" />
-      <h2 class="drawer-name">Filter Contacts</h2>
+      <div class="filter-drawer-icon-box">
+        <ar-icon name="filter" [size]="16" />
+      </div>
+      <div class="filter-drawer-headings">
+        <h2 class="drawer-name">Filter Contacts</h2>
+        <span class="drawer-subtitle">Refine directory by specific parameters</span>
+      </div>
       @if (activeFilterCount() > 0) {
-      <span class="filter-badge">{{ activeFilterCount() }}</span>
+      <span class="filter-badge">{{ activeFilterCount() }} active</span>
       }
     </div>
     <button type="button" class="drawer-close-btn" (click)="filterDrawerOpen.set(false)"
-      aria-label="Close filter drawer">
-      <ar-icon name="plus" [size]="18" class="drawer-close-icon" />
+      aria-label="Close filter drawer" title="Close filter drawer">
+      <ar-icon name="close" [size]="15" />
     </button>
   </div>
 
@@ -779,77 +786,87 @@
     <!-- Filter 1: Decision Role -->
     <div class="f-group">
       <label class="f-label" for="filter-role">Decision Role</label>
-      <select id="filter-role" class="contacts-select" [value]="roleFilter()"
-        (change)="roleFilter.set($any($event.target).value)">
-        <option value="">All Roles</option>
-        <option value="Maintenance">Maintenance</option>
-        <option value="Purchase">Purchase</option>
-        <option value="Engineering">Engineering</option>
-        <option value="Plant head">Plant head</option>
-        <option value="Dealer">Dealer</option>
-      </select>
+      <div class="f-select-wrapper">
+        <select id="filter-role" class="contacts-select" [value]="roleFilter()"
+          (change)="roleFilter.set($any($event.target).value)">
+          <option value="">All Roles</option>
+          <option value="Maintenance">Maintenance</option>
+          <option value="Purchase">Purchase</option>
+          <option value="Engineering">Engineering</option>
+          <option value="Plant head">Plant head</option>
+          <option value="Dealer">Dealer</option>
+        </select>
+      </div>
     </div>
 
     <!-- Filter 2: Company Account -->
     <div class="f-group">
       <label class="f-label" for="filter-company">Company / Account</label>
-      <select id="filter-company" class="contacts-select" [value]="accountId()"
-        (change)="chooseAccount($any($event.target).value)">
-        <option value="">All Accounts</option>
-        @for (row of accountRows(); track row.account.id) {
-        <option [value]="row.account.id" [selected]="row.account.id === accountId()">
-          {{ '\u2003'.repeat(row.depth - 1) }}{{ row.account.name }}
-        </option>
-        }
-      </select>
+      <div class="f-select-wrapper">
+        <select id="filter-company" class="contacts-select" [value]="accountId()"
+          (change)="chooseAccount($any($event.target).value)">
+          <option value="">All Accounts</option>
+          @for (row of accountRows(); track row.account.id) {
+          <option [value]="row.account.id" [selected]="row.account.id === accountId()">
+            {{ '\u2003'.repeat(row.depth - 1) }}{{ row.account.name }}
+          </option>
+          }
+        </select>
+      </div>
     </div>
 
     <!-- Filter 3: Marketing Consent -->
     <div class="f-group">
       <label class="f-label" for="filter-consent">Marketing Consent</label>
-      <select id="filter-consent" class="contacts-select" [value]="consentFilter()"
-        (change)="consentFilter.set($any($event.target).value)">
-        <option value="">All Consent Sources</option>
-        <option value="whatsapp_optin">WhatsApp opt-in</option>
-        <option value="website">Website form</option>
-        <option value="ctwa">Click-to-WhatsApp</option>
-        <option value="manual">Dealer agreement</option>
-        <option value="qr">Exhibition QR</option>
-        <option value="import">Imported (signed form)</option>
-      </select>
+      <div class="f-select-wrapper">
+        <select id="filter-consent" class="contacts-select" [value]="consentFilter()"
+          (change)="consentFilter.set($any($event.target).value)">
+          <option value="">All Consent Sources</option>
+          <option value="whatsapp_optin">WhatsApp opt-in</option>
+          <option value="website">Website form</option>
+          <option value="ctwa">Click-to-WhatsApp</option>
+          <option value="manual">Dealer agreement</option>
+          <option value="qr">Exhibition QR</option>
+          <option value="import">Imported (signed form)</option>
+        </select>
+      </div>
     </div>
 
     <!-- Filter 4: AMC Expiry -->
     <div class="f-group">
       <label class="f-label" for="filter-amc">AMC Status</label>
-      <select id="filter-amc" class="contacts-select" [value]="amcFilter()"
-        (change)="amcFilter.set($any($event.target).value)">
-        <option value="">All Contacts</option>
-        <option value="active">Active AMC Contract</option>
-        <option value="none">No Active AMC</option>
-      </select>
+      <div class="f-select-wrapper">
+        <select id="filter-amc" class="contacts-select" [value]="amcFilter()"
+          (change)="amcFilter.set($any($event.target).value)">
+          <option value="">All Contacts</option>
+          <option value="active">Active AMC Contract</option>
+          <option value="none">No Active AMC</option>
+        </select>
+      </div>
     </div>
 
     <!-- Filter 5: Engagement Score -->
     <div class="f-group">
       <label class="f-label" for="filter-score">Engagement Score Tier</label>
-      <select id="filter-score" class="contacts-select" [value]="scoreFilter()"
-        (change)="scoreFilter.set($any($event.target).value)">
-        <option value="">All Scores</option>
-        <option value="60">High Score (60+)</option>
-        <option value="25">Medium Score (25–59)</option>
-        <option value="0">Cold / Low Score (&lt;25)</option>
-      </select>
+      <div class="f-select-wrapper">
+        <select id="filter-score" class="contacts-select" [value]="scoreFilter()"
+          (change)="scoreFilter.set($any($event.target).value)">
+          <option value="">All Scores</option>
+          <option value="60">High Score (60+)</option>
+          <option value="25">Medium Score (25–59)</option>
+          <option value="0">Cold / Low Score (&lt;25)</option>
+        </select>
+      </div>
     </div>
   </div>
 
   <!-- Filter Drawer Actions Footer -->
   <div class="filter-drawer-footer">
-    <button ar-button type="button" variant="ghost" (click)="clearAdvancedFilters()"
+    <button ar-button type="button" variant="ghost" class="btn-drawer-reset" (click)="clearAdvancedFilters()"
       [disabled]="activeFilterCount() === 0">
       Reset filters
     </button>
-    <button ar-button type="button" variant="primary" (click)="filterDrawerOpen.set(false)">
+    <button ar-button type="button" variant="primary" class="btn-drawer-apply" (click)="filterDrawerOpen.set(false)">
       Apply ({{ count(visible().length) }} results)
     </button>
   </div>
