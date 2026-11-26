@@ -357,7 +357,7 @@ export const MESSAGING_TOPICS: Readonly<Record<string, HelpTopic>> = {
       { name: 'New automation', text: 'Creates a paused draft with a name, channel and trigger.' },
       { name: 'Name', text: 'Shown on the list, up to 128 characters.' },
       { name: 'Channel', text: 'The WhatsApp number the automation works on.' },
-      { name: 'Trigger', text: 'What starts it: inbound keyword, button reply, new contact, attribute changed, enquiry stage changed, scheduled date, Flow completed, campaign reply, contact enters a segment, or an AI voice call completed or not answered.' },
+      { name: 'Trigger', text: 'What starts it: inbound keyword, button reply, new contact, attribute changed, enquiry stage changed, scheduled date, Flow completed, campaign reply, contact enters a segment, an AI voice call completed or not answered, an invoice overdue by a number of days, an AMC contract ending or a service visit due.' },
       { name: 'Keyword', text: 'For an inbound keyword trigger: the word customers send, such as PRICE.' },
       { name: 'Pipeline / When a deal reaches', text: 'For a stage trigger: optionally the pipeline and stage.' },
       { name: 'Which calls / With this result', text: 'For AI call triggers: call direction and, for completed calls, whether the goal was met.' },

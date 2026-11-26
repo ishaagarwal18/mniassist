@@ -7,6 +7,14 @@ import {
   aiCallTriggerConfig,
   isAiCallTrigger,
 } from './ai-call-trigger';
+import {
+  DUE_MAX_DAYS,
+  DUE_TRIGGER_HINT,
+  defaultDueDays,
+  dueDaysLabel,
+  isDueDateTrigger,
+  parseDueDays,
+} from './due-date-trigger';
 
 import { grantedPolicy } from '../../core/auth/permission';
 import { Automation, WState, WorkflowStore } from '../../core/services/workflow.service';
@@ -74,7 +82,19 @@ export class ArAutomations {
     { value: AutomationTriggerKind.SegmentEntered, label: 'Contact enters a segment (drip)' },
     { value: AutomationTriggerKind.AiCallCompleted, label: 'AI voice call completed' },
     { value: AutomationTriggerKind.AiCallNotConnected, label: 'AI voice call not answered' },
+    { value: AutomationTriggerKind.InvoiceOverdue, label: 'Invoice overdue (payment reminder)' },
+    {
+      value: AutomationTriggerKind.ContractEnding,
+      label: 'AMC contract ending (renewal reminder)',
+    },
+    { value: AutomationTriggerKind.ServiceVisitDue, label: 'Service visit due (visit reminder)' },
   ];
+  protected readonly isDueDateTrigger = isDueDateTrigger;
+  protected readonly dueDaysLabel = dueDaysLabel;
+  protected readonly dueHint = DUE_TRIGGER_HINT;
+  protected readonly dueMaxDays = DUE_MAX_DAYS;
+  /** For the date triggers: how many days after the due date / before the end or visit. */
+  protected readonly newDueDays = signal('7');
   protected readonly isAiCallTrigger = isAiCallTrigger;
   protected readonly callDirections = AI_CALL_DIRECTIONS;
   protected readonly callOutcomes = AI_CALL_OUTCOMES;
@@ -93,6 +113,12 @@ export class ArAutomations {
   protected readonly newPipelineId = signal('');
   protected readonly newStageId = signal('');
 
+  /** Picking a date trigger fills in its usual number of days. */
+  protected pickTrigger(t: AutomationTriggerKind): void {
+    this.newTrigger.set(t);
+    if (isDueDateTrigger(t)) this.newDueDays.set(String(defaultDueDays(t)));
+  }
+
   protected stagesOfNewPipeline() {
     const p = this.pipelines().find((x) => x.id === this.newPipelineId());
     return p?.stages ?? [];
@@ -107,6 +133,7 @@ export class ArAutomations {
     this.newStageId.set('');
     this.newCallDirection.set('');
     this.newCallOutcome.set('');
+    this.newDueDays.set('7');
     this.error.set(null);
     this.dialogOpen.set(true);
   }
@@ -118,6 +145,11 @@ export class ArAutomations {
     }
     if (this.newTrigger() === AutomationTriggerKind.InboundKeyword && !this.newKeyword().trim()) {
       this.toasts.warning('A keyword trigger needs at least one keyword.', 'Automation');
+      return;
+    }
+    const dueDays = parseDueDays(this.newDueDays());
+    if (isDueDateTrigger(this.newTrigger()) && dueDays === null) {
+      this.toasts.warning(`Enter a whole number of days from 0 to ${DUE_MAX_DAYS}.`, 'Automation');
       return;
     }
     this.saving.set(true);
@@ -135,7 +167,9 @@ export class ArAutomations {
             }
           : isAiCallTrigger(this.newTrigger())
             ? aiCallTriggerConfig(this.newTrigger(), this.newCallDirection(), this.newCallOutcome())
-            : undefined,
+            : isDueDateTrigger(this.newTrigger())
+              ? { days: dueDays }
+              : undefined,
       );
       this.dialogOpen.set(false);
     } catch (e: unknown) {

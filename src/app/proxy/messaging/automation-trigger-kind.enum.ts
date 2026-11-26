@@ -12,6 +12,9 @@ export enum AutomationTriggerKind {
   SegmentEntered = 8,
   AiCallCompleted = 9,
   AiCallNotConnected = 10,
+  InvoiceOverdue = 11,
+  ContractEnding = 12,
+  ServiceVisitDue = 13,
 }
 
 export const automationTriggerKindOptions = mapEnumToOptions(AutomationTriggerKind);

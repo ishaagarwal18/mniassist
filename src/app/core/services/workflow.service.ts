@@ -62,6 +62,9 @@ const TRIGGER: Record<AutomationTriggerKind, string> = {
   [AutomationTriggerKind.SegmentEntered]: 'Segment entered',
   [AutomationTriggerKind.AiCallCompleted]: 'AI call completed',
   [AutomationTriggerKind.AiCallNotConnected]: 'AI call not connected',
+  [AutomationTriggerKind.InvoiceOverdue]: 'Invoice overdue',
+  [AutomationTriggerKind.ContractEnding]: 'Contract ending',
+  [AutomationTriggerKind.ServiceVisitDue]: 'Service visit due',
 };
 const WSTATE: Record<AutomationState, WState> = {
   [AutomationState.Draft]: 'draft',
