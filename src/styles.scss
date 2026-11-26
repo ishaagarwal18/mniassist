@@ -1238,7 +1238,8 @@ ejs-grid[arGrid] {
   font-family: var(--ar-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
   box-sizing: border-box !important;
 
-  // Hide any loose navigation buttons outside the bordered container
+  // STRICTLY hide any loose navigation buttons or icons outside the bordered container
+  > :not(.e-pagercontainer):not(.e-pagesizes):not(.e-parentmsgbar),
   > div[class*="e-first"],
   > div[class*="e-prev"],
   > div[class*="e-next"],
@@ -1336,8 +1337,6 @@ ejs-grid[arGrid] {
     .e-numericitem,
     .e-nextpager,
     .e-prevpager {
-      display: inline-grid !important;
-      place-items: center !important;
       width: 28px !important;
       height: 28px !important;
       min-width: 28px !important;
@@ -1349,6 +1348,11 @@ ejs-grid[arGrid] {
       border-right: 1px solid #e2e8f0 !important;
       border-radius: 0 !important;
       text-decoration: none !important;
+
+      &:not([style*="display: none"]):not([style*="display:none"]):not(.e-hide) {
+        display: inline-grid !important;
+        place-items: center !important;
+      }
 
       &:last-child {
         border-right: none !important;
@@ -1364,6 +1368,18 @@ ejs-grid[arGrid] {
         color: #ffffff !important;
         font-weight: 600 !important;
       }
+
+      &.e-hide,
+      &[style*="display: none"],
+      &[style*="display:none"] {
+        display: none !important;
+      }
+    }
+
+    .e-hide,
+    [style*="display: none"],
+    [style*="display:none"] {
+      display: none !important;
     }
   }
 
@@ -1405,6 +1421,13 @@ ejs-grid[arGrid] {
     float: none !important;
     text-align: right !important;
     white-space: nowrap !important;
+
+    .e-icons,
+    .e-link,
+    [class*="e-next"],
+    [class*="e-last"] {
+      display: none !important;
+    }
   }
 }
 
