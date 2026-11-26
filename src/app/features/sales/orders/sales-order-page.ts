@@ -1,49 +1,69 @@
-import { ArSalesChain } from '../sales-chain';
-import { orderChain } from '../sales-chain.logic';
 import { PermissionService } from '@abp/ng.core';
-import { grantedPolicy } from '../../../core/auth/permission';
-import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  HostListener,
+  computed,
+  inject,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationStart, RouterLink } from '@angular/router';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { filter } from 'rxjs';
 
+import { grantedPolicy } from '../../../core/auth/permission';
 import { inr } from '../../../core/util/format';
 import { ArTopbar } from '../../../layout/topbar';
 import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.service';
-import { SalesExportFormat } from '../../../proxy/sales/sales-enums';
+import { SalesExportFormat, SalesOrderStatus } from '../../../proxy/sales/sales-enums';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { SalesOrderDto } from '../../../proxy/sales/sales-order.models';
 import { SalesOrderService } from '../../../proxy/sales/sales-order.service';
-import { ArButton, ArChip, ArIcon } from '../../../ui';
-import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArButton, ArIcon } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
-import { SALES_RECORD_STYLES, SalesRecordPage } from '../sales-record-page';
+import { ArAcceptanceTestsPanel } from '../../project-billing/acceptance-tests-panel';
+import { ArBillingPlanPanel } from '../../project-billing/billing-plan-panel';
+import { ArGuaranteesPanel } from '../../project-billing/guarantees-panel';
+import { ChainState, orderChain } from '../sales-chain.logic';
+import { ArSalesExport } from '../sales-export';
+import { SalesRecordPage } from '../sales-record-page';
 import {
+  canCancelOrder,
   canConfirmOrder,
+  canDeleteOrder,
   canFulfilOrder,
   orderStatusLabel,
   orderStatusTone,
-  canCancelOrder,
-  canDeleteOrder,
 } from '../sales-records.logic';
-import { ArSalesExport } from '../sales-export';
-import { ArBillingPlanPanel } from '../../project-billing/billing-plan-panel';
-import { ArAcceptanceTestsPanel } from '../../project-billing/acceptance-tests-panel';
-import { ArGuaranteesPanel } from '../../project-billing/guarantees-panel';
+
+const STATE_TEXT: Record<ChainState, string> = {
+  done: 'Completed',
+  partly: 'Partly done',
+  current: 'In Progress',
+  todo: 'Pending',
+  skipped: 'Not used',
+};
 
 /**
- * One sales order on its own page (/sales/orders/<id>): the customer PO, terms, site address, items with what has been dispatched
- * and invoiced, the totals, and the next step: confirm a draft, or raise a delivery challan or invoice from a confirmed order (each
- * opens on its own page).
+ * Enterprise Sales Order Details Page (/sales/orders/<id>):
+ * - Commercial customer overview with live metrics and terms
+ * - Horizontal order lifecycle progress tracker (Quotation → Sales Order → Delivery → Invoice)
+ * - Order items table with part numbers, quantities, dispatch/invoice status and grand totals
+ * - Integrated Billing Plan, Tests & Sign-off, and Bank Guarantees management cards
+ * - Sticky bottom action bar for quick document conversions, approvals, exports and lifecycle actions.
  */
 @Component({
   selector: 'ar-sales-order-page',
   imports: [
-    ArSalesChain,
+    CommonModule,
+    DatePipe,
+    RouterLink,
     ArTopbar,
     ArButton,
-    ArChip,
     ArIcon,
     ArSalesExport,
-    DatePipe,
     ArGrid,
     GridModule,
     ArBillingPlanPanel,
@@ -51,291 +71,37 @@ import { ArGuaranteesPanel } from '../../project-billing/guarantees-panel';
     ArGuaranteesPanel,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <ar-topbar
-      help="One sales order: the customer's PO, terms, site address, items and totals, with challans and invoices made from it."
-      [title]="record() ? 'Sales order ' + record()!.orderNumber : 'Sales order'"
-      [subtitle]="record()?.customerName ?? ''"
-    />
-
-    <div class="pf ar-scroll ar-scroll--bare">
-      @if (loading()) {
-        <p class="sr-muted">Loading the sales order…</p>
-      } @else if (problem(); as p) {
-        <section class="pf__card pf__denied" role="alert">
-          <ar-icon name="alert" [size]="20" />
-          <div>
-            <strong>{{ p }}</strong>
-          </div>
-          <button ar-button variant="ghost" type="button" (click)="back()">Go back</button>
-        </section>
-      } @else if (record(); as o) {
-        <div class="pf__form">
-          @if (chain(); as ch) {
-            <ar-sales-chain [chain]="ch" />
-          }
-          <section class="pf__card">
-            <div class="sr-head">
-              <div>
-                <span class="sr-label">Customer</span>
-                <h2 translate="no">{{ o.customerName }}</h2>
-                @if (o.customerAccountName) {
-                  <span class="sr-muted" translate="no">{{ o.customerAccountName }}</span>
-                }
-              </div>
-              <ar-chip [tone]="tone(o.status)">{{ label(o.status) }}</ar-chip>
-            </div>
-
-            <div class="sr-money">
-              <div>
-                <span>Order total</span><strong>{{ inr(o.grandTotalInPaise) }}</strong>
-              </div>
-              <div>
-                <span>Order date</span><strong>{{ o.orderDateUtc | date: 'dd MMM yyyy' }}</strong>
-              </div>
-              <div>
-                <span>Expected delivery</span
-                ><strong>{{
-                  o.expectedDeliveryDateUtc
-                    ? (o.expectedDeliveryDateUtc | date: 'dd MMM yyyy')
-                    : 'TBD'
-                }}</strong>
-              </div>
-            </div>
-
-            <div class="sr-facts">
-              <div class="sr-box">
-                <h3>Customer PO & terms</h3>
-                <dl>
-                  <dt>Customer PO</dt>
-                  <dd class="ar-mono">{{ o.customerPoNumber || 'N/A' }}</dd>
-                  @if (o.customerPoDate) {
-                    <dt>PO date</dt>
-                    <dd>{{ o.customerPoDate | date: 'dd MMM yyyy' }}</dd>
-                  }
-                  <dt>Payment terms</dt>
-                  <dd>{{ o.paymentTermsDays ? o.paymentTermsDays + ' days' : 'Advance' }}</dd>
-                  <dt>Delivery terms</dt>
-                  <dd>{{ o.deliveryTerms || 'Standard' }}</dd>
-                </dl>
-              </div>
-              <div class="sr-box">
-                <h3>Addresses</h3>
-                <dl>
-                  @if (o.billingAddress) {
-                    <dt>Billing</dt>
-                    <dd>{{ o.billingAddress }}</dd>
-                  }
-                  <dt>Shipping</dt>
-                  <dd>{{ o.shippingAddress || 'Default site address' }}</dd>
-                </dl>
-              </div>
-              @if (o.notes || o.internalNotes) {
-                <div class="sr-box">
-                  <h3>Notes</h3>
-                  <dl>
-                    @if (o.notes) {
-                      <dt>On the order</dt>
-                      <dd>{{ o.notes }}</dd>
-                    }
-                    @if (o.internalNotes) {
-                      <dt>Internal</dt>
-                      <dd>{{ o.internalNotes }}</dd>
-                    }
-                  </dl>
-                </div>
-              }
-            </div>
-          </section>
-
-          <section class="pf__card" aria-labelledby="so-lines">
-            <header class="pf__head">
-              <div>
-                <h2 id="so-lines">Order items</h2>
-                <p>{{ o.lines.length }} item(s), with what has been dispatched and invoiced.</p>
-              </div>
-            </header>
-            <ejs-grid arGrid="sales-order-lines" [dataSource]="o.lines" aria-label="Order items">
-              <e-columns>
-                <e-column
-                  field="lineNumber"
-                  headerText="#"
-                  width="60"
-                  [textAlign]="'Right'"
-                ></e-column>
-                <e-column field="partNumber" headerText="Part number & description" width="260">
-                  <ng-template #template let-l>
-                    <div>
-                      <strong class="ar-mono">{{ l.partNumber }}</strong>
-                      <span class="sr-sub block">{{ l.description }}</span>
-                    </div>
-                  </ng-template>
-                </e-column>
-                <e-column field="hsnCode" headerText="HSN" width="110">
-                  <ng-template #template let-l>
-                    <span class="ar-mono">{{ l.hsnCode || '—' }}</span>
-                  </ng-template>
-                </e-column>
-                <e-column field="quantity" headerText="Qty" width="90" [textAlign]="'Right'">
-                  <ng-template #template let-l>
-                    <strong>{{ l.quantity }}</strong>
-                  </ng-template>
-                </e-column>
-                <e-column
-                  field="unitPriceInPaise"
-                  headerText="Unit price"
-                  width="130"
-                  [textAlign]="'Right'"
-                >
-                  <ng-template #template let-l>
-                    {{ inr(l.unitPriceInPaise) }}
-                  </ng-template>
-                </e-column>
-                <e-column headerText="Dispatched" width="120" [textAlign]="'Right'">
-                  <ng-template #template let-l>
-                    {{ l.dispatchedQuantity }} / {{ l.quantity }}
-                  </ng-template>
-                </e-column>
-                <e-column headerText="Invoiced" width="120" [textAlign]="'Right'">
-                  <ng-template #template let-l>
-                    {{ l.invoicedQuantity }} / {{ l.quantity }}
-                  </ng-template>
-                </e-column>
-                <e-column
-                  field="lineTotalInPaise"
-                  headerText="Total"
-                  width="140"
-                  [textAlign]="'Right'"
-                >
-                  <ng-template #template let-l>
-                    <strong>{{ inr(l.lineTotalInPaise) }}</strong>
-                  </ng-template>
-                </e-column>
-              </e-columns>
-            </ejs-grid>
-            <dl class="pf__totals">
-              <dt>Subtotal</dt>
-              <dd>{{ inr(o.subtotalInPaise) }}</dd>
-              <dt>GST</dt>
-              <dd>{{ inr(o.taxInPaise) }}</dd>
-              @if (o.discountInPaise > 0) {
-                <dt>Discount</dt>
-                <dd class="sr-good">−{{ inr(o.discountInPaise) }}</dd>
-              }
-              <dt class="pf__grand">Grand total</dt>
-              <dd class="pf__grand">{{ inr(o.grandTotalInPaise) }}</dd>
-            </dl>
-          </section>
-
-          @if (o.id) {
-            <ar-billing-plan-panel
-              [orderId]="o.id"
-              [orderValue]="o.subtotalInPaise - o.discountInPaise"
-            />
-            <ar-acceptance-tests-panel [orderId]="o.id" />
-            <ar-guarantees-panel [orderId]="o.id" />
-          }
-
-          <footer class="pf__bar">
-            <span class="pf__summary"></span>
-            <button ar-button variant="ghost" type="button" (click)="back()">Back</button>
-            <button ar-button variant="ghost" type="button" (click)="customer360(o.customerId)">
-              Customer overview
-            </button>
-            <ar-sales-export
-              [fetch]="download"
-              [fileName]="o.orderNumber"
-              hint="This sales order"
-            />
-            @if (mayConfirm() && canConfirm(o)) {
-              <button
-                ar-button
-                variant="primary"
-                type="button"
-                icon="check"
-                [disabled]="busy()"
-                (click)="confirm(o)"
-              >
-                Confirm sales order
-              </button>
-            }
-            @if (mayEdit() && canDeleteOrder(o)) {
-              <button
-                ar-button
-                variant="ghost"
-                type="button"
-                [disabled]="busy()"
-                (click)="editOrder(o)"
-              >
-                Edit draft
-              </button>
-            }
-            @if (mayDelete() && canDeleteOrder(o)) {
-              <button
-                ar-button
-                variant="ghost"
-                type="button"
-                [disabled]="busy()"
-                (click)="deleteOrder(o)"
-              >
-                Delete draft
-              </button>
-            }
-            @if (mayCancel() && canCancelOrder(o)) {
-              <button
-                ar-button
-                variant="ghost"
-                type="button"
-                [disabled]="busy()"
-                (click)="cancelOrder(o)"
-              >
-                Cancel order
-              </button>
-            }
-            @if (canFulfil(o)) {
-              <button
-                ar-button
-                variant="ghost"
-                type="button"
-                [disabled]="busy()"
-                (click)="createChallan(o)"
-              >
-                Create delivery challan
-              </button>
-              <button
-                ar-button
-                variant="primary"
-                type="button"
-                [disabled]="busy()"
-                (click)="createInvoice(o)"
-              >
-                Generate sales invoice
-              </button>
-            }
-          </footer>
-        </div>
-      }
-    </div>
-  `,
-  styles: SALES_RECORD_STYLES,
+  templateUrl: './sales-order-page.html',
+  styleUrl: './sales-order-page.scss',
 })
 export class ArSalesOrderPage extends SalesRecordPage<SalesOrderDto> {
+  private readonly api = inject(SalesOrderService);
+  private readonly challans = inject(DeliveryChallanService);
+  private readonly invoices = inject(SalesInvoiceService);
+  private readonly permissions = inject(PermissionService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly list = '/sales/orders';
+  protected readonly noun = 'This sales order';
+
   /** Where this document sits in the sale, with what to do next. */
   protected readonly chain = computed(() => {
     const r = this.record();
     return r ? orderChain(r) : null;
   });
 
-  private readonly api = inject(SalesOrderService);
+  /** Customer initials for the overview avatar */
+  protected readonly customerInitials = computed(() => {
+    const name = this.record()?.customerName?.trim() || '';
+    if (!name) return 'SO';
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  });
 
   /** The record as its printed PDF or an Excel workbook. */
   protected readonly download = (format: SalesExportFormat) =>
     this.api.download(this.record()!.id!, format, { skipHandleError: true });
-  private readonly challans = inject(DeliveryChallanService);
-  private readonly invoices = inject(SalesInvoiceService);
-
-  protected readonly list = '/sales/orders';
-  protected readonly noun = 'This sales order';
 
   protected readonly inr = inr;
   protected readonly label = orderStatusLabel;
@@ -344,11 +110,73 @@ export class ArSalesOrderPage extends SalesRecordPage<SalesOrderDto> {
   protected readonly canFulfil = canFulfilOrder;
   protected readonly canCancelOrder = canCancelOrder;
   protected readonly canDeleteOrder = canDeleteOrder;
-  private readonly permissions = inject(PermissionService);
+
   protected readonly mayConfirm = grantedPolicy('AutoReach.SalesOrders.Confirm', this.permissions);
   protected readonly mayCancel = grantedPolicy('AutoReach.SalesOrders.Cancel', this.permissions);
   protected readonly mayDelete = grantedPolicy('AutoReach.SalesOrders.Delete', this.permissions);
   protected readonly mayEdit = grantedPolicy('AutoReach.SalesOrders.Update', this.permissions);
+
+  constructor() {
+    super();
+    void this.load();
+
+    // Close any floating popovers/menus on route navigation
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationStart),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => this.closeFloatingMenus());
+  }
+
+  @HostListener('document:click', ['$event'])
+  protected onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest('.e-dropdown-popup, .e-popup, .e-dialog, .e-split-btn')) {
+      this.closeFloatingMenus();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    this.closeFloatingMenus();
+  }
+
+  protected closeFloatingMenus(): void {
+    // Closes any floating Syncfusion or custom menus that might linger
+    if (typeof document !== 'undefined') {
+      const popups = document.querySelectorAll<HTMLElement>('.e-popup-open');
+      popups.forEach((p) => {
+        if (!p.closest('.e-dialog')) {
+          p.style.display = 'none';
+        }
+      });
+    }
+  }
+
+  protected stateText(state: ChainState): string {
+    return STATE_TEXT[state] || state;
+  }
+
+  protected getStatusClass(status: SalesOrderStatus): string {
+    switch (status) {
+      case SalesOrderStatus.Draft:
+        return 'draft';
+      case SalesOrderStatus.Confirmed:
+        return 'confirmed';
+      case SalesOrderStatus.InProduction:
+      case SalesOrderStatus.PartiallyDispatched:
+        return 'partial';
+      case SalesOrderStatus.Dispatched:
+        return 'dispatched';
+      case SalesOrderStatus.Completed:
+        return 'completed';
+      case SalesOrderStatus.Cancelled:
+        return 'cancelled';
+      default:
+        return 'draft';
+    }
+  }
 
   protected editOrder(o: SalesOrderDto): void {
     void this.router.navigate(['/sales/orders', o.id, 'edit']);
@@ -366,11 +194,6 @@ export class ArSalesOrderPage extends SalesRecordPage<SalesOrderDto> {
     void this.deleteRecord(`Draft order ${o.orderNumber}`, () =>
       this.api.delete(o.id!, { skipHandleError: true }),
     );
-  }
-
-  constructor() {
-    super();
-    void this.load();
   }
 
   protected fetch(id: string) {

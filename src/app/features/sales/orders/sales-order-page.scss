@@ -1,0 +1,1159 @@
+// ===========================================================================
+// Sales Order Details Page — Modern Enterprise ERP Styling
+// ===========================================================================
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: var(--ar-bg-50, #f8fafc);
+  font-family: var(--ar-font-sans, system-ui, -apple-system, sans-serif);
+}
+
+.sod-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 20px 28px 100px; // Generous bottom padding so sticky footer never covers content
+}
+
+.sod-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+// ---------------------------------------------------------------------------
+// Loading & Error States
+// ---------------------------------------------------------------------------
+
+.sod-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 16px;
+}
+
+.sod-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #2165f5;
+  border-radius: 50%;
+  animation: sodSpin 0.7s linear infinite;
+}
+
+@keyframes sodSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sod-loading-text {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.sod-error-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  max-width: 720px;
+  margin: 40px auto;
+}
+
+.sod-error-icon {
+  color: #dc2626;
+  flex-shrink: 0;
+}
+
+.sod-error-content {
+  flex: 1;
+}
+
+.sod-error-title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #991b1b;
+}
+
+.sod-error-msg {
+  margin: 0;
+  font-size: 13px;
+  color: #b91c1c;
+}
+
+// ---------------------------------------------------------------------------
+// 1. ORDER PROGRESS TRACKER
+// ---------------------------------------------------------------------------
+
+.sod-tracker-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 24px;
+  background: #ffffff;
+  border: 1px solid var(--ar-line-200, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.sod-tracker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sod-section-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ar-ink-400, #94a3b8);
+}
+
+.sod-tracker-current {
+  font-size: 12.5px;
+  color: #475569;
+
+  strong {
+    color: #0f172a;
+  }
+}
+
+.sod-steps {
+  display: flex;
+  align-items: flex-start;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.sod-step {
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 150px;
+  position: relative;
+
+  &__node {
+    display: flex;
+    align-items: center;
+    position: relative;
+    margin-right: 12px;
+  }
+
+  &__circle {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    background: #ffffff;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    z-index: 2;
+    transition: all 0.2s ease;
+  }
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2165f5;
+  }
+
+  &__line {
+    position: absolute;
+    left: 26px;
+    top: 50%;
+    width: calc(100% - 26px + 12px + 120px);
+    height: 2px;
+    background: #e2e8f0;
+    z-index: 1;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 3px;
+  }
+
+  &__name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    white-space: nowrap;
+
+    &--link {
+      color: #2165f5;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  &__num-tag {
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  &__state-text {
+    text-transform: capitalize;
+  }
+
+  // State Modifiers
+  &--done {
+    .sod-step__circle {
+      background: #10b981;
+      border-color: #10b981;
+      color: #ffffff;
+    }
+    .sod-step__line {
+      background: #10b981;
+    }
+    .sod-step__name {
+      color: #0f172a;
+    }
+    .sod-step__state-text {
+      color: #059669;
+      font-weight: 500;
+    }
+  }
+
+  &--current {
+    .sod-step__circle {
+      border-color: #2165f5;
+      background: #eff6ff;
+      box-shadow: 0 0 0 4px rgba(33, 101, 245, 0.15);
+    }
+    .sod-step__name {
+      color: #2165f5;
+      font-weight: 700;
+    }
+    .sod-step__state-text {
+      color: #2165f5;
+      font-weight: 600;
+    }
+  }
+
+  &--partly {
+    .sod-step__circle {
+      border-color: #f59e0b;
+      color: #d97706;
+    }
+    .sod-step__state-text {
+      color: #d97706;
+      font-weight: 500;
+    }
+  }
+
+  &--last {
+    flex: 0 0 auto;
+    min-width: 120px;
+  }
+}
+
+// Next Step Information Banner
+.sod-next-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #f0f7ff;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  color: #1e40af;
+
+  .sod-next-icon {
+    color: #2165f5;
+    flex-shrink: 0;
+  }
+
+  &--cancelled {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+
+    .sod-next-icon {
+      color: #dc2626;
+    }
+  }
+
+  &--complete {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #065f46;
+
+    .sod-next-icon {
+      color: #10b981;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 2. CUSTOMER OVERVIEW & COMMERCIAL TERMS CARD
+// ---------------------------------------------------------------------------
+
+.sod-customer-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 22px 26px;
+  background: #ffffff;
+  border: 1px solid var(--ar-line-200, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.sod-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.sod-customer-profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sod-customer-avatar {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #2165f5;
+  font-size: 17px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sod-customer-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sod-customer-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.sod-customer-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sod-customer-account {
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+// Semantic Status Badges
+.sod-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  &--draft {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    .sod-status-badge__dot {
+      background: #94a3b8;
+    }
+  }
+
+  &--confirmed {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8;
+    .sod-status-badge__dot {
+      background: #2165f5;
+    }
+  }
+
+  &--partial {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #b45309;
+    .sod-status-badge__dot {
+      background: #f59e0b;
+    }
+  }
+
+  &--dispatched {
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    color: #6d28d9;
+    .sod-status-badge__dot {
+      background: #8b5cf6;
+    }
+  }
+
+  &--completed {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #047857;
+    .sod-status-badge__dot {
+      background: #10b981;
+    }
+  }
+
+  &--cancelled {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    .sod-status-badge__dot {
+      background: #ef4444;
+    }
+  }
+}
+
+// Metrics KPI Bar
+.sod-metrics-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.sod-metric {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+
+  &__icon-wrap {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    flex-shrink: 0;
+  }
+
+  &__data {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+  }
+
+  &__val {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  &--total {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+
+    .sod-metric__icon-wrap {
+      background: #2165f5;
+      border-color: #2165f5;
+      color: #ffffff;
+    }
+
+    .sod-metric__label {
+      color: #1e40af;
+    }
+
+    .sod-metric__val {
+      color: #1d4ed8;
+      font-size: 18px;
+    }
+  }
+}
+
+// Details Grid: PO & Terms, and Addresses
+.sod-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.sod-info-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    h3 {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #475569;
+    }
+  }
+
+  &__icon {
+    color: #2165f5;
+  }
+}
+
+.sod-dl {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 8px 14px;
+  margin: 0;
+  font-size: 13px;
+
+  dt {
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  dd {
+    margin: 0;
+    color: #0f172a;
+    font-weight: 500;
+  }
+}
+
+.sod-po-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.sod-address-text {
+  line-height: 1.45;
+  color: #1e293b;
+}
+
+.sod-empty-text {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+// Notes Row
+.sod-notes-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.sod-note-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+
+  .sod-note-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+  }
+
+  .sod-note-body {
+    margin: 0;
+    font-size: 13px;
+    color: #1e293b;
+    line-height: 1.45;
+  }
+
+  &--internal {
+    background: #fffbeb;
+    border-color: #fde68a;
+
+    .sod-note-label {
+      color: #92400e;
+    }
+
+    .sod-note-body {
+      color: #78350f;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 3. ORDER ITEMS TABLE & FINANCIAL SUMMARY
+// ---------------------------------------------------------------------------
+
+.sod-items-card {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid var(--ar-line-200, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.sod-items-header {
+  padding: 20px 24px 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sod-items-title {
+  margin: 2px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sod-items-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.sod-table-wrap {
+  width: 100%;
+}
+
+.sod-line-num {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.sod-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sod-part-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sod-part-desc {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.sod-hsn-badge {
+  font-size: 12px;
+  color: #475569;
+}
+
+.sod-qty-val,
+.sod-price-val,
+.sod-line-total {
+  font-size: 13px;
+}
+
+.sod-line-total {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sod-progress-ratio {
+  font-size: 12.5px;
+  color: #475569;
+
+  &--done {
+    color: #059669;
+    font-weight: 600;
+  }
+}
+
+// Financial Summary Box
+.sod-summary-section {
+  display: flex;
+  padding: 20px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.sod-summary-spacer {
+  flex: 1;
+}
+
+.sod-summary-card {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.sod-summary-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.sod-summary-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sod-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+  color: #334155;
+
+  &--discount {
+    color: #059669;
+    font-weight: 600;
+  }
+
+  &--grand {
+    margin-top: 4px;
+    padding: 10px 12px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+  }
+}
+
+.sod-grand-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.sod-grand-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e40af;
+}
+
+.sod-grand-sub {
+  font-size: 11px;
+  color: #3b82f6;
+}
+
+.sod-grand-amount {
+  font-size: 19px;
+  font-weight: 800;
+  color: #1d4ed8;
+  letter-spacing: -0.01em;
+}
+
+.sod-summary-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 2px 0;
+}
+
+// ---------------------------------------------------------------------------
+// 4. MANAGEMENT SECTIONS (Billing Plan, Tests, Guarantees)
+// ---------------------------------------------------------------------------
+
+.sod-management-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.sod-management-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+// ---------------------------------------------------------------------------
+// 5. STICKY BOTTOM ACTION BAR
+// ---------------------------------------------------------------------------
+
+.sod-sticky-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 28px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.08);
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+}
+
+.sod-icon-rotate {
+  transform: rotate(180deg);
+}
+
+.sod-export-actions {
+  display: inline-flex;
+  align-items: center;
+}
+
+.sod-btn-primary-cta {
+  background: #2165f5 !important;
+  border-color: #2165f5 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(33, 101, 245, 0.3) !important;
+  transition: all 0.15s ease !important;
+
+  &:hover {
+    background: #1952cb !important;
+    border-color: #1952cb !important;
+    box-shadow: 0 4px 12px rgba(33, 101, 245, 0.35) !important;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.sod-btn-danger {
+  color: #dc2626 !important;
+  border-color: #fecaca !important;
+  background: #ffffff !important;
+
+  &:hover {
+    background: #fef2f2 !important;
+    border-color: #f87171 !important;
+    color: #b91c1c !important;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 6. Syncfusion Grid High-Density Styling
+// ---------------------------------------------------------------------------
+
+::ng-deep .sod-table-wrap {
+  .e-grid {
+    border: none !important;
+    border-radius: 0;
+    font-family: inherit;
+    background: transparent;
+  }
+
+  .e-toolbar {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 6px 12px !important;
+    min-height: 42px !important;
+
+    .e-toolbar-items {
+      background: transparent !important;
+    }
+
+    .e-tbar-btn {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 6px !important;
+      padding: 3px 10px !important;
+      margin: 0 4px !important;
+
+      &:hover {
+        background: #f1f5f9 !important;
+        border-color: #94a3b8 !important;
+      }
+
+      .e-tbar-btn-text,
+      .e-icons {
+        color: #334155 !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+      }
+    }
+
+    .e-toolbar-item.e-search-wrapper {
+      .e-input-group {
+        border-radius: 6px !important;
+        border-color: #cbd5e1 !important;
+        background: #ffffff !important;
+        height: 32px !important;
+
+        &.e-input-focus {
+          border-color: #2165f5 !important;
+          box-shadow: 0 0 0 2px rgba(33, 101, 245, 0.15) !important;
+        }
+
+        input {
+          font-size: 12.5px !important;
+          padding-left: 8px !important;
+        }
+      }
+    }
+  }
+
+  .e-gridheader {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+
+    .e-headercell {
+      background: #f8fafc !important;
+      padding: 10px 14px !important;
+      height: 40px !important;
+      vertical-align: middle !important;
+      border-color: #e2e8f0 !important;
+
+      .e-headertext {
+        font-weight: 600 !important;
+        font-size: 11px !important;
+        letter-spacing: 0.05em !important;
+        text-transform: uppercase !important;
+        color: #475569 !important;
+      }
+    }
+  }
+
+  .e-gridcontent {
+    background: #ffffff !important;
+
+    .e-row {
+      height: 48px !important;
+      transition: background 0.12s ease;
+
+      &:nth-child(even) {
+        background: #fbfcfd;
+      }
+
+      &:hover {
+        background: #f0f7ff !important;
+      }
+
+      .e-rowcell {
+        padding: 8px 14px !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        font-size: 13px !important;
+        color: #0f172a !important;
+        vertical-align: middle !important;
+      }
+    }
+  }
+
+  .e-gridpager,
+  .e-pager {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 8px 16px !important;
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    font-size: 12px !important;
+
+    .e-pagercontainer {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 3px !important;
+    }
+
+    .e-firstpagedisabled,
+    .e-prevpagedisabled,
+    .e-nextpagedisabled,
+    .e-lastpagedisabled,
+    .e-firstpage,
+    .e-prevpage,
+    .e-nextpage,
+    .e-lastpage {
+      border-radius: 6px !important;
+      border: 1px solid transparent !important;
+      width: 28px !important;
+      height: 28px !important;
+      display: inline-grid !important;
+      place-items: center !important;
+      color: #64748b !important;
+
+      &:hover:not([class*="disabled"]) {
+        background: #ffffff !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+      }
+    }
+
+    .e-numericitem {
+      display: inline-grid !important;
+      place-items: center !important;
+      width: 28px !important;
+      height: 28px !important;
+      border-radius: 6px !important;
+      font-weight: 500 !important;
+      color: #475569 !important;
+      margin: 0 1px !important;
+
+      &:hover {
+        background: #ffffff !important;
+        border-color: #cbd5e1 !important;
+      }
+
+      &.e-currentitem {
+        background: #2165f5 !important;
+        color: #ffffff !important;
+        font-weight: 600 !important;
+      }
+    }
+
+    .e-parentmsgbar {
+      font-size: 12px !important;
+      color: #64748b !important;
+      font-weight: 500 !important;
+    }
+
+    .e-pagesizes {
+      .e-pagerdropdown {
+        border-radius: 6px !important;
+        border: 1px solid #cbd5e1 !important;
+        background: #ffffff !important;
+        height: 28px !important;
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 7. Responsive Breakpoints
+// ---------------------------------------------------------------------------
+
+@media (max-width: 960px) {
+  .sod-shell {
+    padding: 16px 16px 120px;
+  }
+
+  .sod-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sod-summary-section {
+    flex-direction: column;
+    align-items: stretch;
+
+    .sod-summary-spacer {
+      display: none;
+    }
+
+    .sod-summary-card {
+      max-width: 100%;
+    }
+  }
+
+  .sod-sticky-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 16px;
+
+    &__left,
+    &__right {
+      justify-content: center;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .sod-metrics-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .sod-dl {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

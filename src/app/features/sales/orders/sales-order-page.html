@@ -1,0 +1,508 @@
+<ar-topbar
+  help="One sales order: the customer's PO, terms, site address, items and totals, with challans and invoices made from it."
+  [title]="record() ? 'Sales order ' + record()!.orderNumber : 'Sales order'"
+  [subtitle]="record()?.customerName ?? ''"
+/>
+
+<div class="sod-shell ar-scroll ar-scroll--bare">
+  @if (loading()) {
+    <div class="sod-loading-state">
+      <div class="sod-spinner"></div>
+      <p class="sod-loading-text">Loading the sales order…</p>
+    </div>
+  } @else if (problem(); as p) {
+    <section class="sod-error-card" role="alert">
+      <ar-icon name="alert" [size]="22" class="sod-error-icon" />
+      <div class="sod-error-content">
+        <h3 class="sod-error-title">Order Could Not Be Loaded</h3>
+        <p class="sod-error-msg">{{ p }}</p>
+      </div>
+      <button ar-button variant="ghost" type="button" (click)="back()">Go back</button>
+    </section>
+  } @else if (record(); as o) {
+    <div class="sod-content">
+      <!-- 1. ORDER PROGRESS TRACKER -->
+      @if (chain(); as ch) {
+        <section class="sod-tracker-card" aria-label="Progress of this sale">
+          <div class="sod-tracker-header">
+            <span class="sod-section-kicker">Order Lifecycle</span>
+            <span class="sod-tracker-current">
+              Stage: <strong>{{ label(o.status) }}</strong>
+            </span>
+          </div>
+
+          <ol class="sod-steps">
+            @for (s of ch.steps; track s.key; let idx = $index; let last = $last) {
+              <li class="sod-step sod-step--{{ s.state }}" [class.sod-step--last]="last">
+                <div class="sod-step__node">
+                  <span class="sod-step__circle" aria-hidden="true">
+                    @if (s.state === 'done') {
+                      <ar-icon name="check" [size]="13" />
+                    } @else if (s.state === 'current') {
+                      <span class="sod-step__dot"></span>
+                    } @else {
+                      <span class="sod-step__num">{{ idx + 1 }}</span>
+                    }
+                  </span>
+                  @if (!last) {
+                    <div class="sod-step__line" aria-hidden="true"></div>
+                  }
+                </div>
+
+                <div class="sod-step__content">
+                  @if (s.route) {
+                    <a class="sod-step__name sod-step__name--link" [routerLink]="s.route">
+                      {{ s.label }}
+                    </a>
+                  } @else {
+                    <span class="sod-step__name">{{ s.label }}</span>
+                  }
+                  <span class="sod-step__meta">
+                    @if (s.number) {
+                      <span class="sod-step__num-tag" translate="no">{{ s.number }}</span>
+                    }
+                    <span class="sod-step__state-text">{{ stateText(s.state) }}</span>
+                  </span>
+                </div>
+              </li>
+            }
+          </ol>
+
+          <!-- Next Step Information Banner -->
+          @if (ch.cancelled) {
+            <div class="sod-next-banner sod-next-banner--cancelled" role="status">
+              <ar-icon name="alert" [size]="16" class="sod-next-icon" />
+              <span>This sales order is cancelled. No further delivery challans or invoices can be generated.</span>
+            </div>
+          } @else if (ch.next) {
+            <div class="sod-next-banner" role="status">
+              <ar-icon name="info" [size]="16" class="sod-next-icon" />
+              <span><strong>Next step:</strong> {{ ch.next }}</span>
+            </div>
+          } @else {
+            <div class="sod-next-banner sod-next-banner--complete" role="status">
+              <ar-icon name="check" [size]="16" class="sod-next-icon" />
+              <span><strong>All done!</strong> This sale is completely fulfilled, billed and settled in full.</span>
+            </div>
+          }
+        </section>
+      }
+
+      <!-- 2. CUSTOMER OVERVIEW & COMMERCIAL TERMS -->
+      <section class="sod-customer-card">
+        <!-- Top header: Customer identity and status badge -->
+        <div class="sod-card-header">
+          <div class="sod-customer-profile">
+            <div class="sod-customer-avatar" aria-hidden="true">
+              {{ customerInitials() }}
+            </div>
+            <div class="sod-customer-details">
+              <div class="sod-customer-kicker">Commercial Customer</div>
+              <h2 class="sod-customer-name" translate="no">{{ o.customerName }}</h2>
+              @if (o.customerAccountName) {
+                <span class="sod-customer-account" translate="no">
+                  Account: {{ o.customerAccountName }}
+                </span>
+              }
+            </div>
+          </div>
+
+          <div class="sod-header-right">
+            <span class="sod-status-badge sod-status-badge--{{ getStatusClass(o.status) }}">
+              <span class="sod-status-badge__dot"></span>
+              <span class="sod-status-badge__text">{{ label(o.status) }}</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- KPI Metrics Banner -->
+        <div class="sod-metrics-bar">
+          <div class="sod-metric sod-metric--total">
+            <div class="sod-metric__icon-wrap">
+              <ar-icon name="billing" [size]="18" />
+            </div>
+            <div class="sod-metric__data">
+              <span class="sod-metric__label">Order Total</span>
+              <strong class="sod-metric__val font-mono">{{ inr(o.grandTotalInPaise) }}</strong>
+            </div>
+          </div>
+
+          <div class="sod-metric">
+            <div class="sod-metric__icon-wrap">
+              <ar-icon name="calendar" [size]="18" />
+            </div>
+            <div class="sod-metric__data">
+              <span class="sod-metric__label">Order Date</span>
+              <strong class="sod-metric__val">{{ o.orderDateUtc | date: 'dd MMM yyyy' }}</strong>
+            </div>
+          </div>
+
+          <div class="sod-metric">
+            <div class="sod-metric__icon-wrap">
+              <ar-icon name="clock" [size]="18" />
+            </div>
+            <div class="sod-metric__data">
+              <span class="sod-metric__label">Expected Delivery</span>
+              <strong class="sod-metric__val">
+                {{ o.expectedDeliveryDateUtc ? (o.expectedDeliveryDateUtc | date: 'dd MMM yyyy') : 'TBD' }}
+              </strong>
+            </div>
+          </div>
+
+          @if (o.lines.length > 0) {
+            <div class="sod-metric">
+              <div class="sod-metric__icon-wrap">
+                <ar-icon name="document" [size]="18" />
+              </div>
+              <div class="sod-metric__data">
+                <span class="sod-metric__label">Total Items</span>
+                <strong class="sod-metric__val">{{ o.lines.length }} line item(s)</strong>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Two Column Details Grid: Customer PO & Terms, and Addresses -->
+        <div class="sod-details-grid">
+          <!-- PO & Terms Box -->
+          <div class="sod-info-box">
+            <div class="sod-info-box__head">
+              <ar-icon name="document" [size]="15" class="sod-info-box__icon" />
+              <h3>Customer PO & Commercial Terms</h3>
+            </div>
+            <dl class="sod-dl">
+              <dt>Customer PO #</dt>
+              <dd>
+                @if (o.customerPoNumber) {
+                  <span class="sod-po-badge font-mono">{{ o.customerPoNumber }}</span>
+                } @else {
+                  <span class="sod-empty-text">N/A</span>
+                }
+              </dd>
+
+              @if (o.customerPoDate) {
+                <dt>PO Date</dt>
+                <dd>{{ o.customerPoDate | date: 'dd MMM yyyy' }}</dd>
+              }
+
+              <dt>Payment Terms</dt>
+              <dd>{{ o.paymentTermsDays ? o.paymentTermsDays + ' days credit' : 'Advance Payment' }}</dd>
+
+              <dt>Delivery Terms</dt>
+              <dd>{{ o.deliveryTerms || 'Standard delivery terms' }}</dd>
+            </dl>
+          </div>
+
+          <!-- Addresses Box -->
+          <div class="sod-info-box">
+            <div class="sod-info-box__head">
+              <ar-icon name="home" [size]="15" class="sod-info-box__icon" />
+              <h3>Addresses</h3>
+            </div>
+            <dl class="sod-dl">
+              <dt>Billing Address</dt>
+              <dd>
+                @if (o.billingAddress) {
+                  <div class="sod-address-text">{{ o.billingAddress }}</div>
+                } @else {
+                  <span class="sod-empty-text">Default registered address</span>
+                }
+              </dd>
+
+              <dt>Shipping Address</dt>
+              <dd>
+                @if (o.shippingAddress) {
+                  <div class="sod-address-text">{{ o.shippingAddress }}</div>
+                } @else {
+                  <span class="sod-empty-text">Default site / warehouse address</span>
+                }
+              </dd>
+            </dl>
+          </div>
+        </div>
+
+        <!-- Optional Notes Box -->
+        @if (o.notes || o.internalNotes) {
+          <div class="sod-notes-row">
+            @if (o.notes) {
+              <div class="sod-note-box">
+                <span class="sod-note-label">Customer Order Notes</span>
+                <p class="sod-note-body">{{ o.notes }}</p>
+              </div>
+            }
+            @if (o.internalNotes) {
+              <div class="sod-note-box sod-note-box--internal">
+                <span class="sod-note-label">Internal Team Notes</span>
+                <p class="sod-note-body">{{ o.internalNotes }}</p>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- 3. ORDER ITEMS DATA TABLE -->
+      <section class="sod-items-card" aria-labelledby="sod-lines-title">
+        <header class="sod-items-header">
+          <div>
+            <span class="sod-section-kicker">Order Breakdown</span>
+            <h2 id="sod-lines-title" class="sod-items-title">Order Items</h2>
+            <p class="sod-items-sub">
+              {{ o.lines.length }} line item(s) showing ordered, dispatched and invoiced quantities.
+            </p>
+          </div>
+        </header>
+
+        <div class="sod-table-wrap">
+          <ejs-grid
+            arGrid="sales-order-lines"
+            [dataSource]="o.lines"
+            aria-label="Order items"
+          >
+            <e-columns>
+              <e-column
+                field="lineNumber"
+                headerText="#"
+                width="65"
+                textAlign="Right"
+              >
+                <ng-template #template let-l>
+                  <span class="sod-line-num font-mono">{{ l.lineNumber }}</span>
+                </ng-template>
+              </e-column>
+
+              <e-column field="partNumber" headerText="Part number & description" width="280">
+                <ng-template #template let-l>
+                  <div class="sod-item-info">
+                    <strong class="sod-part-num font-mono">{{ l.partNumber }}</strong>
+                    <span class="sod-part-desc">{{ l.description }}</span>
+                  </div>
+                </ng-template>
+              </e-column>
+
+              <e-column field="hsnCode" headerText="HSN" width="115">
+                <ng-template #template let-l>
+                  <span class="sod-hsn-badge font-mono">{{ l.hsnCode || '—' }}</span>
+                </ng-template>
+              </e-column>
+
+              <e-column field="quantity" headerText="Qty" width="95" textAlign="Right">
+                <ng-template #template let-l>
+                  <strong class="sod-qty-val font-mono">{{ l.quantity }}</strong>
+                </ng-template>
+              </e-column>
+
+              <e-column
+                field="unitPriceInPaise"
+                headerText="Unit price"
+                width="140"
+                textAlign="Right"
+              >
+                <ng-template #template let-l>
+                  <span class="sod-price-val font-mono">{{ inr(l.unitPriceInPaise) }}</span>
+                </ng-template>
+              </e-column>
+
+              <e-column headerText="Dispatched" width="130" textAlign="Right">
+                <ng-template #template let-l>
+                  <span
+                    class="sod-progress-ratio font-mono"
+                    [class.sod-progress-ratio--done]="l.dispatchedQuantity >= l.quantity"
+                  >
+                    {{ l.dispatchedQuantity }} / {{ l.quantity }}
+                  </span>
+                </ng-template>
+              </e-column>
+
+              <e-column headerText="Invoiced" width="130" textAlign="Right">
+                <ng-template #template let-l>
+                  <span
+                    class="sod-progress-ratio font-mono"
+                    [class.sod-progress-ratio--done]="l.invoicedQuantity >= l.quantity"
+                  >
+                    {{ l.invoicedQuantity }} / {{ l.quantity }}
+                  </span>
+                </ng-template>
+              </e-column>
+
+              <e-column
+                field="lineTotalInPaise"
+                headerText="Total"
+                width="150"
+                textAlign="Right"
+              >
+                <ng-template #template let-l>
+                  <strong class="sod-line-total font-mono">{{ inr(l.lineTotalInPaise) }}</strong>
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
+        </div>
+
+        <!-- 4. ORDER FINANCIAL SUMMARY -->
+        <div class="sod-summary-section">
+          <div class="sod-summary-spacer"></div>
+          <div class="sod-summary-card">
+            <h4 class="sod-summary-title">Financial Summary</h4>
+            <div class="sod-summary-rows">
+              <div class="sod-summary-row">
+                <span class="sod-summary-label">Subtotal</span>
+                <span class="sod-summary-value font-mono">{{ inr(o.subtotalInPaise) }}</span>
+              </div>
+
+              <div class="sod-summary-row">
+                <span class="sod-summary-label">GST / Statutory Taxes</span>
+                <span class="sod-summary-value font-mono">{{ inr(o.taxInPaise) }}</span>
+              </div>
+
+              @if (o.discountInPaise > 0) {
+                <div class="sod-summary-row sod-summary-row--discount">
+                  <span class="sod-summary-label">Applied Discount</span>
+                  <span class="sod-summary-value font-mono">−{{ inr(o.discountInPaise) }}</span>
+                </div>
+              }
+
+              <div class="sod-summary-divider"></div>
+
+              <div class="sod-summary-row sod-summary-row--grand">
+                <div class="sod-grand-title">
+                  <span class="sod-grand-label">Grand Total</span>
+                  <span class="sod-grand-sub">Inclusive of applicable taxes</span>
+                </div>
+                <strong class="sod-grand-amount font-mono">{{ inr(o.grandTotalInPaise) }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. ADDITIONAL MANAGEMENT SECTIONS (Billing Plan, Tests, Bank Guarantees) -->
+      @if (o.id) {
+        <section class="sod-management-section">
+          <div class="sod-management-grid">
+            <ar-billing-plan-panel
+              [orderId]="o.id"
+              [orderValue]="o.subtotalInPaise - o.discountInPaise"
+            />
+            <ar-acceptance-tests-panel [orderId]="o.id" />
+            <ar-guarantees-panel [orderId]="o.id" />
+          </div>
+        </section>
+      }
+    </div>
+
+    <!-- 6. STICKY BOTTOM ACTION BAR -->
+    <footer class="sod-sticky-bar" role="toolbar" aria-label="Order actions">
+      <div class="sod-sticky-bar__left">
+        <button ar-button variant="ghost" type="button" (click)="back()" class="sod-btn-back">
+          <ar-icon name="chevron" [size]="14" class="sod-icon-rotate" />
+          <span>Back</span>
+        </button>
+
+        <button
+          ar-button
+          variant="ghost"
+          type="button"
+          (click)="customer360(o.customerId)"
+          class="sod-btn-customer"
+        >
+          <ar-icon name="contacts" [size]="15" />
+          <span>Customer Overview</span>
+        </button>
+
+        <div class="sod-export-actions">
+          <ar-sales-export
+            [fetch]="download"
+            [fileName]="o.orderNumber"
+            hint="This sales order"
+          />
+        </div>
+      </div>
+
+      <div class="sod-sticky-bar__right">
+        <!-- Draft Confirmation -->
+        @if (mayConfirm() && canConfirm(o)) {
+          <button
+            ar-button
+            variant="primary"
+            type="button"
+            icon="check"
+            class="sod-btn-primary-cta"
+            [disabled]="busy()"
+            (click)="confirm(o)"
+          >
+            Confirm Sales Order
+          </button>
+        }
+
+        <!-- Fulfilment Actions: Challan & Invoice -->
+        @if (canFulfil(o)) {
+          <button
+            ar-button
+            variant="ghost"
+            type="button"
+            icon="delivery-challans"
+            [disabled]="busy()"
+            (click)="createChallan(o)"
+          >
+            Create Delivery Challan
+          </button>
+
+          <button
+            ar-button
+            variant="primary"
+            type="button"
+            icon="sales-invoices"
+            class="sod-btn-primary-cta"
+            [disabled]="busy()"
+            (click)="createInvoice(o)"
+          >
+            Generate Sales Invoice
+          </button>
+        }
+
+        <!-- Edit Draft -->
+        @if (mayEdit() && canDeleteOrder(o)) {
+          <button
+            ar-button
+            variant="ghost"
+            type="button"
+            icon="edit"
+            [disabled]="busy()"
+            (click)="editOrder(o)"
+          >
+            Edit Draft
+          </button>
+        }
+
+        <!-- Destructive Actions (Red Styling) -->
+        @if (mayDelete() && canDeleteOrder(o)) {
+          <button
+            ar-button
+            variant="ghost"
+            type="button"
+            icon="trash"
+            class="sod-btn-danger"
+            [disabled]="busy()"
+            (click)="deleteOrder(o)"
+          >
+            Delete Draft
+          </button>
+        }
+
+        @if (mayCancel() && canCancelOrder(o)) {
+          <button
+            ar-button
+            variant="ghost"
+            type="button"
+            icon="close"
+            class="sod-btn-danger"
+            [disabled]="busy()"
+            (click)="cancelOrder(o)"
+          >
+            Cancel Order
+          </button>
+        }
+      </div>
+    </footer>
+  }
+</div>
