@@ -16,25 +16,6 @@
   </div>
 </ar-topbar>
 
-<!-- Navigation Tabs for Orders & Invoices -->
-<nav class="so-nav-strip" aria-label="Orders and Invoices Navigation">
-  <div class="so-nav-strip__track">
-    @for (tab of navTabs; track tab.route) {
-      <a
-        [routerLink]="tab.route"
-        class="so-nav-tab"
-        [class.so-nav-tab--active]="tab.route === '/sales/orders'"
-        [attr.aria-current]="tab.route === '/sales/orders' ? 'page' : null"
-      >
-        <span class="so-nav-tab__icon">
-          <ar-icon [name]="tab.icon" [size]="14" />
-        </span>
-        <span class="so-nav-tab__label">{{ tab.label }}</span>
-      </a>
-    }
-  </div>
-</nav>
-
 <div class="so-shell">
   <!-- Scope filter banner (Customer 360 context) -->
   @if (scope(); as sc) {
@@ -296,7 +277,7 @@
         </e-column>
 
         <!-- 8. Actions Column -->
-        <e-column headerText="Actions" textAlign="Right" width="165" freeze="Right">
+        <e-column headerText="Actions" textAlign="Right" width="165">
           <ng-template #template let-order>
             <div class="row-actions-wrap" (click)="$event.stopPropagation()">
               <!-- Quick View Button -->

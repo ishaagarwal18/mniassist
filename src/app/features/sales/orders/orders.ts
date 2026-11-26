@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, NavigationStart, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, NavigationStart, Router } from '@angular/router';
 import { GridComponent, GridModule, RecordClickEventArgs } from '@syncfusion/ej2-angular-grids';
 import { filter, firstValueFrom } from 'rxjs';
 
@@ -28,7 +28,6 @@ import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service'
 import { SalesOrderDto } from '../../../proxy/sales/sales-order.models';
 import { SalesOrderService } from '../../../proxy/sales/sales-order.service';
 import { ArButton, ArIcon } from '../../../ui';
-import type { IconName } from '../../../ui/icon';
 import { ArGrid } from '../../../ui/grid';
 import { errorMessage } from '../../activities/activity-logic';
 import { ArSalesExport } from '../sales-export';
@@ -43,19 +42,12 @@ import {
   orderStatusTone,
 } from '../sales-records.logic';
 
-export interface SalesNavTab {
-  readonly label: string;
-  readonly route: string;
-  readonly icon: IconName;
-}
-
 @Component({
   selector: 'ar-sales-orders',
   standalone: true,
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     ArTopbar,
     ArButton,
     ArIcon,
@@ -88,16 +80,6 @@ export class ArSalesOrders {
   protected readonly scope = signal<CustomerScope | null>(readCustomerScope());
 
   readonly SalesOrderStatus = SalesOrderStatus;
-
-  readonly navTabs: readonly SalesNavTab[] = [
-    { label: 'Sales Orders', route: '/sales/orders', icon: 'sales-orders' },
-    { label: 'Delivery Challans', route: '/sales/challans', icon: 'delivery-challans' },
-    { label: 'Sales Invoices', route: '/sales/invoices', icon: 'sales-invoices' },
-    { label: 'Milestones Due', route: '/billing/due', icon: 'clock' },
-    { label: 'Retention', route: '/billing/retention', icon: 'retention' },
-    { label: 'Re-Orders', route: '/reorders', icon: 'reorders' },
-    { label: 'Collections', route: '/collections', icon: 'collections' },
-  ];
 
   orders = signal<SalesOrderDto[]>([]);
   loadError = signal<string | null>(null);
