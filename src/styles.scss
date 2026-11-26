@@ -858,9 +858,15 @@ ejs-grid[arGrid] {
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
 
+    // Native horizontal scrollbar on .e-content is hidden because the synchronized scroller is pinned at the bottom of the grid
+    &::-webkit-scrollbar:horizontal {
+      height: 0px !important;
+      display: none !important;
+    }
+
     &::-webkit-scrollbar {
       width: 6px;
-      height: 6px;
+      height: 0px;
     }
     &::-webkit-scrollbar-track {
       background: transparent;
@@ -868,6 +874,42 @@ ejs-grid[arGrid] {
     &::-webkit-scrollbar-thumb {
       background: #cbd5e1;
       border-radius: 4px;
+    }
+  }
+
+  // Synchronized horizontal scrollbar at the bottom of the grid (below the pager)
+  .ar-bottom-scroller {
+    order: 9999 !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    height: 10px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 4 !important;
+    display: none;
+    box-sizing: border-box !important;
+
+    &::-webkit-scrollbar {
+      height: 8px !important;
+    }
+    &::-webkit-scrollbar-track {
+      background: #f8fafc !important;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1 !important;
+      border-radius: 4px !important;
+
+      &:hover {
+        background: #94a3b8 !important;
+      }
+    }
+
+    .ar-bottom-scroller__track {
+      height: 1px !important;
     }
   }
 

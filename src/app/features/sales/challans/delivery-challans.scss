@@ -46,12 +46,12 @@
 .dc-shell {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px 24px 20px;
+  gap: 10px;
+  padding: 12px 20px 18px;
   flex: 1;
   min-height: 0;
   max-width: 100%;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .dc-scope-bar {
@@ -122,7 +122,8 @@
 .dc-kpi-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 14px;
+  gap: 10px;
+  flex: 0 0 auto;
 }
 
 .dc-kpi-card {
@@ -130,7 +131,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 10px 14px;
   background: #ffffff;
   border: 1px solid var(--ar-line-200, #e2e8f0);
   border-radius: 12px;
@@ -267,8 +268,9 @@
 .dc-controls-card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px 20px;
+  gap: 10px;
+  padding: 10px 16px;
+  flex: 0 0 auto;
   background: #ffffff;
   border: 1px solid var(--ar-line-200, #e2e8f0);
   border-radius: 12px;
@@ -415,15 +417,19 @@
   &--draft .dc-filter-chip__dot {
     background: #94a3b8;
   }
+
   &--dispatched .dc-filter-chip__dot {
     background: #f59e0b;
   }
+
   &--delivered .dc-filter-chip__dot {
     background: #10b981;
   }
+
   &--invoiced .dc-filter-chip__dot {
     background: #8b5cf6;
   }
+
   &--cancelled .dc-filter-chip__dot {
     background: #ef4444;
   }
@@ -435,7 +441,7 @@
 
 .dc-table-card {
   flex: 1 1 auto;
-  min-height: 440px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: #ffffff;
@@ -771,6 +777,7 @@
     opacity: 0;
     transform: translateY(-4px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);

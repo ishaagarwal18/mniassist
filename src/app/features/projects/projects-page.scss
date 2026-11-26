@@ -84,7 +84,7 @@
 .pj-container {
   flex: 1;
   min-height: 0;
-  padding: 8px 18px 12px;
+  padding: 8px 18px 18px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1010,6 +1010,11 @@
     overflow-y: auto !important;
     overflow-x: auto !important;
     background: #ffffff !important;
+
+    &::-webkit-scrollbar:horizontal {
+      height: 0 !important;
+      display: none !important;
+    }
   }
 
   .e-row {

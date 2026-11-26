@@ -72,7 +72,7 @@
 .q-dashboard {
   flex: 1;
   min-height: 0;
-  padding: 10px 20px 12px;
+  padding: 10px 20px 18px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -530,6 +530,11 @@
     overflow-y: auto !important;
     overflow-x: auto !important;
     background: #ffffff !important;
+
+    &::-webkit-scrollbar:horizontal {
+      height: 0 !important;
+      display: none !important;
+    }
   }
 
   // Compact row heights (25% reduction in row height)

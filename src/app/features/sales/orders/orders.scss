@@ -46,12 +46,12 @@
 .so-shell {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px 24px 20px;
+  gap: 10px;
+  padding: 12px 20px 18px;
   flex: 1;
   min-height: 0;
   max-width: 100%;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .so-scope-bar {
@@ -122,7 +122,8 @@
 .so-kpi-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 14px;
+  gap: 10px;
+  flex: 0 0 auto;
 }
 
 .so-kpi-card {
@@ -130,7 +131,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 10px 14px;
   background: #ffffff;
   border: 1px solid var(--ar-line-200, #e2e8f0);
   border-radius: 12px;
@@ -267,8 +268,9 @@
 .so-controls-card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px 20px;
+  gap: 10px;
+  padding: 10px 16px;
+  flex: 0 0 auto;
   background: #ffffff;
   border: 1px solid var(--ar-line-200, #e2e8f0);
   border-radius: 12px;
@@ -438,7 +440,7 @@
 
 .so-table-card {
   flex: 1 1 auto;
-  min-height: 440px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: #ffffff;
