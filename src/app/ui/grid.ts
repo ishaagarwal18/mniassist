@@ -24,21 +24,37 @@ registerSyncfusionLicense();
 let nextId = 0;
 
 /**
- * The house settings for a Syncfusion data grid. Put it on an `ejs-grid` and
- * declare only the data and columns:
+ * The universal enterprise house settings for Syncfusion data grids.
+ * Put it on an `ejs-grid` and declare only the data and columns:
  *
- *   <ejs-grid arGrid="contacts" [dataSource]="rows()">
- *     <e-columns> <e-column field="name" headerText="Contact" /> … </e-columns>
- *   </ejs-grid>
+ *   <div class="ar-table-card">
+ *     <ejs-grid arGrid="quotations" [dataSource]="rows()">
+ *       <e-columns>
+ *         <e-column field="reference" headerText="Quotation Ref" width="160">
+ *           <ng-template #template let-q>
+ *             <div class="cell-ref">
+ *               <a class="ref-link" [routerLink]="['/quotations', q.id]">{{ q.reference }}</a>
+ *             </div>
+ *           </ng-template>
+ *         </e-column>
+ *         ...
+ *       </e-columns>
+ *     </ejs-grid>
+ *   </div>
  *
- * Every grid sorts, filters (Excel-style, per column), searches, pages, lets
- * the user hide columns and exports to Excel or CSV; the attribute value names
- * the exported file. Columns that draw chips or buttons use an `#template` and
- * keep a plain `field` so sorting, filtering and export still see the value.
- * `[arGridPageSize]` changes the page length; `[arGridSearch]="false"` leaves
- * out the search box where the screen already has one; `freeze="Right"` on an actions
- * column keeps its buttons on screen however wide the grid scrolls; `[arGridTools]="false"`
- * drops the toolbar and the pager for short summary lists.
+ * Universal styling and behavior provided automatically across all pages:
+ * - Crisp uppercase headers (#f8fafc) with subtle filter funnels
+ * - Alternating rows (#fafbfc) and soft blue hover (#f0f6ff)
+ * - 12px compact enterprise typography with vertical centering
+ * - Standard segmented pager (« < 1 2 3 ... > »), dropdown on right, page summary text
+ * - Excel/CSV exporting, column resizing, column chooser, and Excel filter popups
+ * - Universal cell formatting classes:
+ *     .cell-ref / .ref-link          -> Blue monospace code link
+ *     .cell-customer                 -> Bold title + subtle subtitle
+ *     .cell-enquiry / .badge-link    -> Rounded pill badge with icon
+ *     .status-pill                   -> Pill badge with colored dot
+ *     .cell-amount                   -> Right-aligned monospace tabular amounts
+ *     .cell-date                     -> Primary date line + subtle relative time
  */
 @Directive({
   selector: 'ejs-grid[arGrid]',
@@ -60,6 +76,7 @@ export class ArGrid implements OnInit, DoCheck {
   /** Exported file name, without extension. */
   readonly arGrid = input('export');
   readonly arGridPageSize = input(20);
+  readonly arGridPageCount = input(3);
   readonly arGridSearch = input(true);
   readonly arGridTools = input(true);
   /**
@@ -80,7 +97,7 @@ export class ArGrid implements OnInit, DoCheck {
     grid.allowFiltering = true;
     grid.filterSettings = { type: 'Excel' };
     grid.allowPaging = true;
-    grid.pageSettings = { pageSize: 20, pageSizes: [10, 20, 50, 100] };
+    grid.pageSettings = { pageSize: 20, pageSizes: [10, 20, 50, 100], pageCount: 3 };
     grid.allowResizing = true;
     grid.allowExcelExport = true;
     grid.showColumnChooser = true;
@@ -94,7 +111,12 @@ export class ArGrid implements OnInit, DoCheck {
 
   ngOnInit(): void {
     const grid = this.grid;
-    grid.pageSettings = { ...grid.pageSettings, pageSize: this.arGridPageSize() };
+    grid.pageSettings = {
+      ...grid.pageSettings,
+      pageSize: this.arGridPageSize(),
+      pageCount: this.arGridPageCount(),
+      pageSizes: [10, 20, 50, 100],
+    };
     if (!this.arGridTools()) {
       grid.allowPaging = false;
     } else {
@@ -122,11 +144,11 @@ export class ArGrid implements OnInit, DoCheck {
     if (grid.filterSettings?.columns?.length) grid.clearFiltering();
     grid.filterSettings = on
       ? {
-          type: 'FilterBar',
-          mode: 'Immediate',
-          immediateModeDelay: 400,
-          showFilterBarStatus: false,
-        }
+        type: 'FilterBar',
+        mode: 'Immediate',
+        immediateModeDelay: 400,
+        showFilterBarStatus: false,
+      }
       : { type: 'Excel' };
   }
 
@@ -184,4 +206,28 @@ export function emptyListHtml(hint: string | null): string {
     `<div class="ar-grid-empty"><p class="ar-grid-empty__lead">${escapeHtml(lead)}</p>` +
     `<p class="ar-grid-empty__more">If you searched or filtered, clear it to see everything.</p></div>`
   );
+}
+
+/**
+ * Standard Indian Rupee currency formatter for table cells (e.g. ₹29,14,994).
+ * Handles amounts in either paise (default for backend ERP) or standard rupees.
+ */
+export function formatGridCurrency(amount: number | null | undefined, isPaise = true): string {
+  if (amount == null || isNaN(amount)) return '₹0';
+  const val = isPaise ? Math.round(amount) / 100 : amount;
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(val);
+}
+
+/**
+ * Standard date formatter for table cells (e.g. 24 Nov 2026).
+ */
+export function formatGridDate(date: string | Date | null | undefined): string {
+  if (!date) return '—';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }

@@ -1031,20 +1031,29 @@
     }
   }
 
+  // Pager styling (matches Customer / Contacts page layout reference)
   .e-gridpager,
   .e-pager {
     display: flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
-    padding: 8px 16px !important;
-    background: #f8fafc !important;
+    justify-content: flex-start !important;
+    padding: 6px 16px !important;
+    min-height: 42px !important;
+    background: #fafbfc !important;
     border-top: 1px solid #e2e8f0 !important;
+    border-radius: 0 0 12px 12px;
     font-size: 12px !important;
 
     .e-pagercontainer {
       display: inline-flex !important;
       align-items: center !important;
-      gap: 3px !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 6px !important;
+      background: #ffffff !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
     }
 
     .e-firstpagedisabled,
@@ -1054,35 +1063,37 @@
     .e-firstpage,
     .e-prevpage,
     .e-nextpage,
-    .e-lastpage {
-      border-radius: 6px !important;
-      border: 1px solid transparent !important;
+    .e-lastpage,
+    .e-first,
+    .e-prev,
+    .e-next,
+    .e-last,
+    .e-numericitem,
+    .e-nextpager,
+    .e-prevpager {
       width: 28px !important;
       height: 28px !important;
+      min-width: 28px !important;
       display: inline-grid !important;
       place-items: center !important;
-      color: #64748b !important;
-
-      &:hover:not([class*="disabled"]) {
-        background: #ffffff !important;
-        border-color: #cbd5e1 !important;
-        color: #0f172a !important;
-      }
-    }
-
-    .e-numericitem {
-      display: inline-grid !important;
-      place-items: center !important;
-      width: 28px !important;
-      height: 28px !important;
-      border-radius: 6px !important;
+      font-size: 12px !important;
       font-weight: 500 !important;
       color: #475569 !important;
-      margin: 0 1px !important;
+      text-decoration: none !important;
+      border: none !important;
+      border-right: 1px solid #e2e8f0 !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #ffffff !important;
 
-      &:hover {
-        background: #ffffff !important;
-        border-color: #cbd5e1 !important;
+      &:last-child {
+        border-right: none !important;
+      }
+
+      &:hover:not([class*="disabled"]):not(.e-disable):not(.e-currentitem) {
+        background: #f8fafc !important;
+        color: #0f172a !important;
       }
 
       &.e-currentitem {
@@ -1090,21 +1101,60 @@
         color: #ffffff !important;
         font-weight: 600 !important;
       }
+
+      &[class*="disabled"],
+      &.e-disable {
+        opacity: 0.45 !important;
+        color: #94a3b8 !important;
+        cursor: default !important;
+        pointer-events: none !important;
+      }
     }
 
-    .e-parentmsgbar {
-      font-size: 12px !important;
-      color: #64748b !important;
-      font-weight: 500 !important;
+    .e-numericcontainer {
+      display: inline-flex !important;
+      align-items: center !important;
+      margin: 0 !important;
+      padding: 0 !important;
+
+      a:last-child {
+        border-right: 1px solid #e2e8f0 !important;
+      }
     }
 
     .e-pagesizes {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      margin-left: 14px !important;
+
       .e-pagerdropdown {
         border-radius: 6px !important;
         border: 1px solid #cbd5e1 !important;
         background: #ffffff !important;
         height: 28px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
       }
+
+      .e-pagerconstant {
+        font-size: 12px !important;
+        color: #475569 !important;
+        font-weight: 400 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+    }
+
+    .e-parentmsgbar {
+      margin-left: auto !important;
+      font-size: 12px !important;
+      color: #64748b !important;
+      font-weight: 500 !important;
+      text-align: right !important;
+      padding: 0 !important;
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+      float: right !important;
     }
   }
 }

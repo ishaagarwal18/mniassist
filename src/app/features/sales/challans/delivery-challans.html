@@ -1,0 +1,388 @@
+<ar-topbar title="Delivery challans"
+  subtitle="Statutory delivery documents under GST Rule 55 for dispatch against sales orders, job work, and goods transit."
+  help="In India, goods cannot move without an invoice or a Delivery Challan. Challans track vehicle numbers, Lorry Receipts (LR/AWB), and statutory 12-digit e-Way Bills before invoice generation.">
+  <div actions class="dc-header-actions">
+    <ar-sales-export [fetch]="exportAll" [fileName]="exportName()" label="Export "
+      hint="Every challan the filters show" />
+    @if (canCreate()) {
+    <button ar-button variant="primary" icon="plus" class="btn-new-challan" (click)="newChallan()">
+      New delivery challan
+    </button>
+    }
+  </div>
+</ar-topbar>
+
+<div class="dc-shell">
+  <!-- Scope filter banner (Customer 360 context) -->
+  @if (scope(); as sc) {
+  <div class="dc-scope-bar" role="status">
+    <div class="dc-scope-bar__content">
+      <ar-icon name="contacts" [size]="16" class="dc-scope-bar__icon" />
+      <span>
+        Showing only delivery challans for <strong translate="no">{{ sc.name || 'this customer' }}</strong>.
+      </span>
+    </div>
+    <button type="button" class="dc-scope-bar__btn" (click)="clearScope()">
+      Show all challans
+    </button>
+  </div>
+  }
+
+  <!-- Error banner -->
+  @if (loadError(); as e) {
+  <div class="dc-error-banner" role="alert">
+    <div class="dc-error-banner__content">
+      <ar-icon name="alert" [size]="16" class="dc-error-banner__icon" />
+      <span>{{ e }}</span>
+    </div>
+    <button ar-button variant="ghost" type="button" (click)="loadChallans()">Try again</button>
+  </div>
+  }
+
+  <!-- 1. Compact Summary KPI Cards Row -->
+  <div class="dc-kpi-grid" role="region" aria-label="Delivery Challan KPI Summary">
+    <!-- Card 1: Total Challans -->
+    <div class="dc-kpi-card" [class.dc-kpi-card--active]="selectedStatus() === null" role="button" tabindex="0"
+      (click)="setStatusFilter(null)" (keydown.enter)="setStatusFilter(null)" (keydown.space)="setStatusFilter(null)"
+      title="Filter by all challans">
+      <div class="dc-kpi-card__top">
+        <span class="dc-kpi-card__label">Total Challans</span>
+        <div class="dc-kpi-card__icon-wrap dc-kpi-card__icon-wrap--all">
+          <ar-icon name="delivery-challans" [size]="18" />
+        </div>
+      </div>
+      <div class="dc-kpi-card__body">
+        <span class="dc-kpi-card__value">{{ totalCount() }}</span>
+        <span class="dc-kpi-card__sub">All registered challans</span>
+      </div>
+      <div class="dc-kpi-card__indicator dc-kpi-card__indicator--all"></div>
+    </div>
+
+    <!-- Card 2: Draft -->
+    <div class="dc-kpi-card" [class.dc-kpi-card--active]="selectedStatus() === DeliveryChallanStatus.Draft"
+      role="button" tabindex="0" (click)="setStatusFilter(DeliveryChallanStatus.Draft)"
+      (keydown.enter)="setStatusFilter(DeliveryChallanStatus.Draft)"
+      (keydown.space)="setStatusFilter(DeliveryChallanStatus.Draft)" title="Filter by draft challans">
+      <div class="dc-kpi-card__top">
+        <span class="dc-kpi-card__label">Draft</span>
+        <div class="dc-kpi-card__icon-wrap dc-kpi-card__icon-wrap--draft">
+          <ar-icon name="edit" [size]="18" />
+        </div>
+      </div>
+      <div class="dc-kpi-card__body">
+        <span class="dc-kpi-card__value">{{ draftCount() }}</span>
+        <span class="dc-kpi-card__sub">Pending dispatch details</span>
+      </div>
+      <div class="dc-kpi-card__indicator dc-kpi-card__indicator--draft"></div>
+    </div>
+
+    <!-- Card 3: Dispatched (In Transit) -->
+    <div class="dc-kpi-card" [class.dc-kpi-card--active]="selectedStatus() === DeliveryChallanStatus.Dispatched"
+      role="button" tabindex="0" (click)="setStatusFilter(DeliveryChallanStatus.Dispatched)"
+      (keydown.enter)="setStatusFilter(DeliveryChallanStatus.Dispatched)"
+      (keydown.space)="setStatusFilter(DeliveryChallanStatus.Dispatched)" title="Filter by dispatched challans">
+      <div class="dc-kpi-card__top">
+        <span class="dc-kpi-card__label">In Transit</span>
+        <div class="dc-kpi-card__icon-wrap dc-kpi-card__icon-wrap--dispatched">
+          <ar-icon name="delivery-challans" [size]="18" />
+        </div>
+      </div>
+      <div class="dc-kpi-card__body">
+        <span class="dc-kpi-card__value">{{ dispatchedCount() }}</span>
+        <span class="dc-kpi-card__sub">Dispatched with LR / Vehicle</span>
+      </div>
+      <div class="dc-kpi-card__indicator dc-kpi-card__indicator--dispatched"></div>
+    </div>
+
+    <!-- Card 4: Delivered -->
+    <div class="dc-kpi-card" [class.dc-kpi-card--active]="selectedStatus() === DeliveryChallanStatus.Delivered"
+      role="button" tabindex="0" (click)="setStatusFilter(DeliveryChallanStatus.Delivered)"
+      (keydown.enter)="setStatusFilter(DeliveryChallanStatus.Delivered)"
+      (keydown.space)="setStatusFilter(DeliveryChallanStatus.Delivered)" title="Filter by delivered challans">
+      <div class="dc-kpi-card__top">
+        <span class="dc-kpi-card__label">Delivered</span>
+        <div class="dc-kpi-card__icon-wrap dc-kpi-card__icon-wrap--delivered">
+          <ar-icon name="check" [size]="18" />
+        </div>
+      </div>
+      <div class="dc-kpi-card__body">
+        <span class="dc-kpi-card__value">{{ deliveredCount() }}</span>
+        <span class="dc-kpi-card__sub">Received by consignee</span>
+      </div>
+      <div class="dc-kpi-card__indicator dc-kpi-card__indicator--delivered"></div>
+    </div>
+
+    <!-- Card 5: Invoiced -->
+    <div class="dc-kpi-card" [class.dc-kpi-card--active]="selectedStatus() === DeliveryChallanStatus.Invoiced"
+      role="button" tabindex="0" (click)="setStatusFilter(DeliveryChallanStatus.Invoiced)"
+      (keydown.enter)="setStatusFilter(DeliveryChallanStatus.Invoiced)"
+      (keydown.space)="setStatusFilter(DeliveryChallanStatus.Invoiced)" title="Filter by invoiced challans">
+      <div class="dc-kpi-card__top">
+        <span class="dc-kpi-card__label">Invoiced</span>
+        <div class="dc-kpi-card__icon-wrap dc-kpi-card__icon-wrap--invoiced">
+          <ar-icon name="sales-invoices" [size]="18" />
+        </div>
+      </div>
+      <div class="dc-kpi-card__body">
+        <span class="dc-kpi-card__value">{{ invoicedCount() }}</span>
+        <span class="dc-kpi-card__sub">GST tax invoice raised</span>
+      </div>
+      <div class="dc-kpi-card__indicator dc-kpi-card__indicator--invoiced"></div>
+    </div>
+  </div>
+
+  <!-- 2. Search & Status Filter Controls Card -->
+  <div class="dc-controls-card">
+    <div class="dc-controls-card__top">
+      <!-- Search Input with clear button -->
+      <div class="dc-search">
+        <ar-icon class="dc-search__icon" name="search" [size]="16" />
+        <input type="text" class="dc-search__input"
+          placeholder="Search by challan #, LR #, vehicle #, order # or customer..." [ngModel]="searchQuery()"
+          (ngModelChange)="onSearchChange($event)" aria-label="Search delivery challans" />
+        @if (searchQuery()) {
+        <button type="button" class="dc-search__clear" title="Clear search" aria-label="Clear search"
+          (click)="clearSearch()">
+          <ar-icon name="close" [size]="13" />
+        </button>
+        }
+      </div>
+
+      <!-- Quick summary indicator -->
+      <div class="dc-controls-card__meta">
+        <span class="dc-meta-count">
+          Showing <strong>{{ filteredChallans().length }}</strong> of <strong>{{ challans().length }}</strong> challans
+        </span>
+      </div>
+    </div>
+
+    <!-- Status filter chips with live dynamic record counts -->
+  </div>
+
+  <!-- 3. Enterprise Data Grid Table Card -->
+  <div class="dc-table-card">
+    <ejs-grid #grid arGrid="delivery-challans"
+      arGridEmpty="No delivery challans match your criteria. Press “New delivery challan” when goods leave, or create one from a sales order."
+      [dataSource]="filteredChallans()" (recordClick)="onChallanClick($event)" aria-label="Delivery challans">
+      <e-columns>
+        <!-- 1. Challan Number -->
+        <e-column field="challanNumber" headerText="Challan #" width="165">
+          <ng-template #template let-dc>
+            <div class="challan-num-cell">
+              <span class="challan-num-link font-mono" [title]="'View challan ' + dc.challanNumber">
+                {{ dc.challanNumber }}
+              </span>
+              @if (dc.eWayBillNumber) {
+              <span class="eway-tag font-mono" [title]="'e-Way Bill: ' + dc.eWayBillNumber">
+                eWB: {{ dc.eWayBillNumber }}
+              </span>
+              }
+            </div>
+          </ng-template>
+        </e-column>
+
+        <!-- 2. Customer / Account -->
+        <e-column field="customerName" headerText="Customer / Account" width="230">
+          <ng-template #template let-dc>
+            <div class="cust-cell">
+              <span class="cust-title" [title]="dc.customerName" translate="no">
+                {{ dc.customerName }}
+              </span>
+              @if (dc.customerAccountName) {
+              <span class="cust-sub" [title]="dc.customerAccountName" translate="no">
+                {{ dc.customerAccountName }}
+              </span>
+              }
+            </div>
+          </ng-template>
+        </e-column>
+
+        <!-- 3. Order Reference -->
+        <e-column field="salesOrderNumber" headerText="Order Reference" width="155">
+          <ng-template #template let-dc>
+            @if (dc.salesOrderNumber) {
+            <div class="order-ref-cell">
+              <span class="order-ref-badge font-mono" [class.order-ref-badge--link]="dc.salesOrderId"
+                [title]="'View sales order ' + dc.salesOrderNumber"
+                (click)="dc.salesOrderId ? viewLinkedOrder($event, dc.salesOrderId) : null">
+                {{ dc.salesOrderNumber }}
+              </span>
+            </div>
+            } @else {
+            <span class="direct-tag">Direct dispatch</span>
+            }
+          </ng-template>
+        </e-column>
+
+        <!-- 4. Purpose (GST Rule 55) -->
+        <e-column field="type" headerText="Purpose (GST Rule 55)" width="185">
+          <ng-template #template let-dc>
+            <div class="purpose-cell">
+              <span class="purpose-tag" [title]="getChallanTypeLabel(dc.type)">
+                {{ getChallanTypeLabel(dc.type) }}
+              </span>
+            </div>
+          </ng-template>
+        </e-column>
+
+        <!-- 5. Dispatch Date -->
+        <e-column field="challanDateUtc" headerText="Dispatch Date" width="140">
+          <ng-template #template let-dc>
+            <div class="date-cell">
+              <span class="date-val">
+                {{ (dc.dispatchedAtUtc || dc.challanDateUtc) | date: 'dd MMM yyyy' }}
+              </span>
+              @if (dc.deliveredAtUtc) {
+              <span class="delivered-date" [title]="'Delivered on ' + (dc.deliveredAtUtc | date: 'dd MMM yyyy')">
+                Delivered {{ dc.deliveredAtUtc | date: 'dd MMM' }}
+              </span>
+              }
+            </div>
+          </ng-template>
+        </e-column>
+
+        <!-- 6. Logistics (LR & Vehicle) -->
+        <e-column headerText="Logistics (LR & Vehicle)" width="200">
+          <ng-template #template let-dc>
+            @if (dc.vehicleNumber || dc.lrNumber) {
+            <div class="logistics-cell">
+              @if (dc.vehicleNumber) {
+              <span class="vehicle-badge font-mono" [title]="'Vehicle: ' + dc.vehicleNumber">
+                {{ dc.vehicleNumber }}
+              </span>
+              }
+              @if (dc.lrNumber) {
+              <span class="lr-text font-mono" [title]="'Lorry Receipt: ' + dc.lrNumber">
+                LR: {{ dc.lrNumber }}
+              </span>
+              }
+              @if (dc.transporterName) {
+              <span class="transporter-text" [title]="'Transporter: ' + dc.transporterName">
+                {{ dc.transporterName }}
+              </span>
+              }
+            </div>
+            } @else {
+            <span class="pending-logistics">Pending dispatch</span>
+            }
+          </ng-template>
+        </e-column>
+
+        <!-- 7. Status Column -->
+        <e-column field="status" headerText="Status" width="140">
+          <ng-template #template let-dc>
+            <span class="dc-status-badge dc-status-badge--{{ getStatusClass(dc.status) }}">
+              <span class="dc-status-badge__dot"></span>
+              <span class="dc-status-badge__text">{{ getStatusLabel(dc.status) }}</span>
+            </span>
+          </ng-template>
+        </e-column>
+
+        <!-- 8. Actions Column -->
+        <e-column headerText="Actions" textAlign="Right" width="165">
+          <ng-template #template let-dc>
+            <div class="row-actions-wrap" (click)="$event.stopPropagation()">
+              <!-- Quick View Button -->
+              <button type="button" class="row-btn-view" title="View challan details" (click)="openChallan(dc)">
+                View
+              </button>
+
+              <!-- More Actions Menu Trigger -->
+              <div class="actions-dropdown-container">
+                <button type="button" class="row-btn-more" [class.row-btn-more--active]="activeActionMenuId() === dc.id"
+                  [attr.aria-expanded]="activeActionMenuId() === dc.id" title="More actions"
+                  (click)="toggleActionMenu($event, dc)">
+                  <ar-icon name="dots" [size]="15" />
+                </button>
+
+                <!-- Floating Dropdown Menu -->
+                @if (activeActionMenuId() === dc.id) {
+                <div class="dc-action-dropdown" role="menu" aria-orientation="vertical"
+                  (click)="$event.stopPropagation()">
+                  <!-- View Details -->
+                  <button type="button" class="dc-action-item" role="menuitem"
+                    (click)="openChallan(dc); closeAllMenus()">
+                    <ar-icon name="document" [size]="14" />
+                    <span>View details</span>
+                  </button>
+
+                  <!-- Edit Draft -->
+                  @if (canEdit(dc)) {
+                  <button type="button" class="dc-action-item" role="menuitem"
+                    (click)="openChallan(dc); closeAllMenus()">
+                    <ar-icon name="edit" [size]="14" />
+                    <span>Edit draft</span>
+                  </button>
+                  }
+
+                  <!-- Dispatch Challan -->
+                  @if (canDispatch(dc)) {
+                  <button type="button" class="dc-action-item dc-action-item--primary" role="menuitem"
+                    (click)="openChallan(dc, true); closeAllMenus()">
+                    <ar-icon name="delivery-challans" [size]="14" />
+                    <span>Dispatch goods</span>
+                  </button>
+                  }
+
+                  <!-- Mark Delivered -->
+                  @if (canDeliver(dc)) {
+                  <button type="button" class="dc-action-item dc-action-item--success" role="menuitem"
+                    (click)="markDelivered(dc); closeAllMenus()">
+                    <ar-icon name="check" [size]="14" />
+                    <span>Mark as delivered</span>
+                  </button>
+                  }
+
+                  <!-- Generate GST Invoice -->
+                  @if (canInvoice(dc)) {
+                  <button type="button" class="dc-action-item dc-action-item--primary" role="menuitem"
+                    (click)="createInvoiceFromChallan(dc); closeAllMenus()">
+                    <ar-icon name="sales-invoices" [size]="14" />
+                    <span>Generate invoice</span>
+                  </button>
+                  }
+
+                  <!-- View Linked Sales Order -->
+                  @if (dc.salesOrderId) {
+                  <button type="button" class="dc-action-item" role="menuitem"
+                    (click)="viewLinkedOrder($event, dc.salesOrderId); closeAllMenus()">
+                    <ar-icon name="sales-orders" [size]="14" />
+                    <span>View sales order</span>
+                  </button>
+                  }
+
+                  <hr class="dc-action-sep" />
+
+                  <!-- Download PDF -->
+                  <button type="button" class="dc-action-item" role="menuitem"
+                    (click)="downloadChallan(dc, SalesExportFormat.Pdf); closeAllMenus()">
+                    <ar-icon name="download" [size]="14" />
+                    <span>Download PDF</span>
+                  </button>
+
+                  <!-- Download Excel -->
+                  <button type="button" class="dc-action-item" role="menuitem"
+                    (click)="downloadChallan(dc, SalesExportFormat.Excel); closeAllMenus()">
+                    <ar-icon name="download" [size]="14" />
+                    <span>Download Excel</span>
+                  </button>
+
+                  <!-- Cancel Challan -->
+                  @if (canCancel(dc)) {
+                  <hr class="dc-action-sep" />
+                  <button type="button" class="dc-action-item dc-action-item--danger" role="menuitem"
+                    (click)="cancelChallan(dc); closeAllMenus()">
+                    <ar-icon name="close" [size]="14" />
+                    <span>Cancel challan</span>
+                  </button>
+                  }
+                </div>
+                }
+              </div>
+            </div>
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
+  </div>
+</div>

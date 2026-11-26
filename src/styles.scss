@@ -33,6 +33,7 @@ a {
   color: var(--ar-blue-600);
   text-decoration: none;
 }
+
 a:hover {
   color: var(--ar-blue-700);
 }
@@ -77,13 +78,16 @@ button {
     width: 6px;
     height: 6px;
   }
+
   &::-webkit-scrollbar-track {
     background: transparent;
   }
+
   &::-webkit-scrollbar-thumb {
     background: var(--ar-line-300);
     border-radius: 3px;
   }
+
   &::-webkit-scrollbar-thumb:hover {
     background: var(--ar-ink-400);
   }
@@ -98,14 +102,17 @@ button {
   flex-direction: column;
   gap: 5px;
 }
+
 .ar-field__label {
   font: 500 11.5px var(--ar-font-sans);
   color: var(--ar-ink-700);
 }
+
 .ar-field__opt {
   font-weight: 400;
   color: var(--ar-ink-400);
 }
+
 .ar-field__input {
   width: 100%;
   height: 36px;
@@ -117,27 +124,33 @@ button {
   border: 1px solid var(--ar-line-300);
   border-radius: var(--ar-radius-control);
 }
+
 textarea.ar-field__input {
   height: auto;
   padding: 9px 11px;
   resize: vertical;
 }
+
 .ar-field__input {
   transition:
     border-color var(--ar-ease),
     box-shadow var(--ar-ease);
 }
+
 .ar-field__input:hover {
   border-color: var(--ar-ink-400);
 }
+
 .ar-field__input:focus-visible {
   outline: none;
   border-color: var(--ar-blue-500);
   box-shadow: var(--ar-focus-ring);
 }
+
 .ar-field__input[aria-invalid='true'] {
   border-color: var(--ar-red-500);
 }
+
 .ar-field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -152,6 +165,7 @@ textarea.ar-field__input {
   overflow-y: auto;
   padding: 18px 24px 32px;
 }
+
 @media (max-width: 640px) {
   .ar-form-page {
     padding: 14px 16px 24px;
@@ -193,9 +207,11 @@ textarea.ar-field__input {
   td:first-child {
     color: var(--ar-ink-900);
   }
+
   tbody tr {
     transition: background var(--ar-ease);
   }
+
   tbody tr:hover td {
     background: var(--ar-bg-50);
   }
@@ -205,6 +221,7 @@ textarea.ar-field__input {
     font-family: var(--ar-font-mono);
     font-size: 11.5px;
   }
+
   .strong {
     font-weight: 500;
     color: var(--ar-ink-900);
@@ -238,10 +255,12 @@ textarea.ar-field__input {
     flex: 1;
     min-height: 0;
   }
+
   ar-topbar {
     z-index: auto;
     padding: 0 18px;
   }
+
   ar-topbar .tb__menu,
   ar-topbar .tb__util-btn,
   ar-topbar .tb__crumb-group-wrap,
@@ -264,15 +283,18 @@ textarea.ar-field__input {
     border-radius: var(--ar-radius-modal) var(--ar-radius-modal) 0 0;
     background: transparent;
   }
+
   .e-dlg-header {
     font: 600 15px var(--ar-font-sans);
     color: var(--ar-ink-900);
   }
+
   .e-dlg-content {
     padding: 18px 20px;
     font: 400 13px/1.5 var(--ar-font-sans);
     color: var(--ar-ink-900);
   }
+
   .e-footer-content {
     padding: 14px 20px;
     border-top: 1px solid var(--ar-line-200);
@@ -593,6 +615,7 @@ textarea.ar-field__input {
     font-weight: 600;
   }
 }
+
 body .e-dlg-overlay {
   background-color: var(--ar-backdrop);
   opacity: 1;
@@ -606,6 +629,7 @@ body .e-dlg-overlay {
 :where(.ar-sf-select, .ar-sf-date) {
   height: 36px;
 }
+
 .e-input-group.e-control-wrapper:is(.ar-sf-select, .ar-sf-date) {
   min-height: 0;
   padding: 0;
@@ -622,10 +646,12 @@ body .e-dlg-overlay {
   &:hover:not(.e-disabled) {
     border-color: var(--ar-ink-400);
   }
+
   &.e-input-focus {
     border-color: var(--ar-blue-500);
     box-shadow: var(--ar-focus-ring);
   }
+
   input.e-input {
     height: 100%;
     min-height: 0;
@@ -635,11 +661,13 @@ body .e-dlg-overlay {
     color: inherit;
     background: transparent;
   }
+
   .e-input-group-icon {
     min-height: 0;
     color: var(--ar-ink-400);
   }
 }
+
 .e-ddl.e-popup,
 .e-datepicker.e-popup-wrapper,
 .e-datetimepicker.e-popup-wrapper {
@@ -675,117 +703,666 @@ input:is([type='checkbox'], [type='radio']):not(.e-control) {
     transform: scale(0);
     transition: transform var(--ar-ease);
   }
+
   &:hover:not(:disabled) {
     border-color: var(--ar-check-fill, var(--ar-primary));
   }
+
   &:focus-visible {
     outline: none;
     box-shadow: var(--ar-focus-ring);
   }
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
 }
+
 input[type='checkbox']:not(.e-control) {
   &::after {
     background: #fff;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 5.2 4 7.6l4.6-5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
-      center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 5.2 4 7.6l4.6-5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
   }
+
   &:indeterminate::after {
     height: 2px;
     border-radius: 1px;
     mask: none;
   }
+
   &:is(:checked, :indeterminate) {
     background: var(--ar-check-fill, var(--ar-primary));
     border-color: var(--ar-check-fill, var(--ar-primary));
+
     &::after {
       transform: scale(1);
     }
   }
 }
+
 input[type='radio']:not(.e-control) {
   border-radius: 50%;
+
   &::after {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: var(--ar-check-fill, var(--ar-primary));
   }
+
   &:checked {
     border-color: var(--ar-check-fill, var(--ar-primary));
+
     &::after {
       transform: scale(1);
     }
   }
 }
 
-/* Syncfusion data grids (ui/grid.ts), in the house table style: a card with
-   small uppercase headers. Colours come from the tokens so both themes match
-   the rest of the app. */
-.e-grid.ar-grid {
-  font-family: var(--ar-font-sans);
-  background: var(--ar-white);
-  border: 1px solid var(--ar-line-200);
-  border-radius: var(--ar-radius-card);
-  box-shadow: var(--ar-shadow-card);
+/* ===========================================================================
+   Syncfusion Data Grids (ui/grid.ts) — Master ERP House Style
+   Inspired by Quotations table:
+   - Crisp uppercase headers (#f8fafc) with subtle filter funnels
+   - Alternating rows (#fafbfc) and soft blue hover highlight (#f0f6ff)
+   - 12px compact typography with vertical centering
+   - Smooth thin scrollbars & clean rounded card container
+   - Universal cell formatting (ref links, customer subtitles, badges, amounts)
+   - Segmented pager (1 2 3 ... > >>, items per page, records counter)
+   =========================================================================== */
+.e-grid.ar-grid,
+.ar-grid.e-grid,
+ejs-grid[arGrid] .e-grid,
+ejs-grid[arGrid] {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  width: 100% !important;
+  font-family: var(--ar-font-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
+  background: #ffffff !important;
+  border: 1px solid var(--ar-line-200, #e2e8f0) !important;
+  border-radius: var(--ar-radius-card, 12px) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
   overflow: hidden;
+  box-sizing: border-box !important;
 
-  .e-toolbar,
-  .e-toolbar .e-toolbar-items,
-  .e-gridheader,
-  .e-headercontent,
-  .e-headercell,
-  .e-gridcontent,
-  .e-content,
-  .e-table,
-  .e-row,
-  .e-emptyrow td,
-  .e-gridpager {
-    background: var(--ar-white);
-  }
-  .e-toolbar {
-    border-bottom: 1px solid var(--ar-line-200);
-  }
-  .e-toolbar .e-tbar-btn-text,
-  .e-toolbar .e-tbar-btn .e-icons {
-    font-size: 12.5px;
-    color: var(--ar-ink-700);
-  }
+  // Header row - Sticky at top
   .e-gridheader {
-    border-bottom: 1px solid var(--ar-line-200);
+    flex: 0 0 auto !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 3 !important;
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
   }
-  .e-headercell,
+
+  .e-headercontent {
+    background: #f8fafc !important;
+  }
+
+  th.e-headercell,
   .e-headercontent .e-headercell {
-    background: var(--ar-bg-50);
+    background: #f8fafc !important;
+    padding: 8px 12px !important;
+    height: 36px !important;
+    border-color: #f1f5f9 !important;
+    vertical-align: middle !important;
+
+    .e-headertext {
+      font: 600 10.5px var(--ar-font-sans, system-ui, sans-serif) !important;
+      letter-spacing: 0.04em !important;
+      text-transform: uppercase !important;
+      color: #475569 !important;
+    }
+
+    // Filter icon (Funnel)
+    .e-icons.e-filtericon,
+    .e-icons.e-icon-filter,
+    .e-filtericon {
+      color: #64748b !important;
+      font-size: 11px !important;
+      opacity: 0.8;
+      transition: color 0.15s ease, opacity 0.15s ease;
+
+      &:hover {
+        color: #2563eb !important;
+        opacity: 1;
+      }
+    }
+
+    &.e-filtered .e-filtericon {
+      color: #2563eb !important;
+      opacity: 1;
+    }
   }
-  .e-headercell .e-headertext {
-    font: 600 10.5px var(--ar-font-sans);
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--ar-ink-400);
+
+  // Content area with smooth scrolling
+  .e-gridcontent {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
   }
-  .e-rowcell {
-    padding-top: 10px;
-    padding-bottom: 10px;
-    font: 400 13px var(--ar-font-sans);
-    color: var(--ar-ink-500);
-    border-color: var(--ar-line-200);
+
+  .e-content {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    background: #ffffff !important;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
   }
-  .e-row:hover .e-rowcell {
-    background: var(--ar-bg-50);
+
+  .e-table {
+    background: #ffffff !important;
+    border-collapse: separate;
   }
+
+  // Row formatting: subtle zebra striping (#fafbfc) and soft blue hover (#f0f6ff)
+  .e-row {
+    background-color: #ffffff !important;
+    transition: background-color 0.12s ease;
+
+    &:nth-child(even),
+    &.e-altrow {
+      background-color: #fafbfc !important;
+    }
+
+    &:hover .e-rowcell,
+    &.e-hover .e-rowcell {
+      background-color: #f0f6ff !important;
+    }
+
+    &.e-selectionbackground .e-rowcell,
+    &.e-active .e-rowcell {
+      background-color: #e0edff !important;
+    }
+
+    td.e-rowcell {
+      padding: 6px 12px !important;
+      border-color: #f1f5f9 !important;
+      color: #1e293b !important;
+      font-size: 12px !important;
+      line-height: 1.35 !important;
+      vertical-align: middle !important;
+    }
+  }
+
   .e-emptyrow td {
-    padding: 26px 12px;
+    padding: 32px 16px !important;
     text-align: center;
-    font: 400 13px var(--ar-font-sans);
-    color: var(--ar-ink-400);
+    background: #ffffff !important;
+    color: var(--ar-ink-400, #94a3b8);
   }
-  .e-gridpager {
-    border-top: 1px solid var(--ar-line-200);
+
+  // Toolbar
+  .e-toolbar {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 6px 12px !important;
+    min-height: 40px !important;
+
+    .e-toolbar-items {
+      background: transparent !important;
+    }
+
+    .e-tbar-btn {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 6px !important;
+      padding: 3px 10px !important;
+      margin: 0 3px !important;
+      transition: all 0.15s ease !important;
+
+      &:hover {
+        background: #f1f5f9 !important;
+        border-color: #94a3b8 !important;
+      }
+
+      .e-tbar-btn-text,
+      .e-icons {
+        color: #334155 !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+      }
+    }
+
+    .e-toolbar-item.e-search-wrapper .e-input-group {
+      border-radius: 6px !important;
+      border-color: #cbd5e1 !important;
+      background: #ffffff !important;
+      height: 30px !important;
+
+      &.e-input-focus {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+      }
+
+      input {
+        font-size: 12px !important;
+        padding-left: 8px !important;
+      }
+    }
+  }
+}
+
+/* ===========================================================================
+   Universal Grid Cell Types (Quotations & ERP House Style)
+   Available to all pages for instant consistent data formatting
+   =========================================================================== */
+
+// 1. Reference Code Link (QT-2026-0003, SO-2026-0012, etc.)
+.cell-ref,
+.ar-cell-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  .ref-link,
+  a {
+    color: #2563eb;
+    font-weight: 600;
+    font-size: 12px;
+    font-family: var(--ar-font-mono, monospace);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+
+    &:hover {
+      text-decoration: underline;
+      color: #1d4ed8;
+    }
+  }
+
+  .rev-pill {
+    display: inline-flex;
+    padding: 1px 5px;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 4px;
+    font: 500 9.5px var(--ar-font-sans, system-ui, sans-serif);
+  }
+}
+
+// 2. Customer / Account Title + Subtitle
+.cell-customer,
+.ar-cell-title-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+
+  .customer-name,
+  .title-main {
+    font-weight: 600;
+    font-size: 12px;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .company-name,
+  .subtitle-muted {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+// 3. Enquiry / Entity Reference Badge
+.cell-enquiry,
+.ar-cell-badge {
+  display: inline-flex;
+  align-items: center;
+
+  .enquiry-badge,
+  .badge-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 4px;
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: var(--ar-font-mono, monospace);
+    text-decoration: none;
+    transition: all 0.12s ease;
+
+    &:hover {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+  }
+
+  .manual-badge {
+    display: inline-flex;
+    padding: 2px 6px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    color: #64748b;
+    font-size: 10.5px;
+    font-weight: 500;
+  }
+}
+
+// 4. Status Badge Pill with Dot
+.status-pill,
+.ar-cell-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  &--issued,
+  &--info,
+  &--blue {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #dbeafe;
+    .status-dot { background: #3b82f6; }
+  }
+
+  &--confirmed,
+  &--delivered,
+  &--success,
+  &--green {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+    .status-dot { background: #10b981; }
+  }
+
+  &--draft,
+  &--pending,
+  &--neutral {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    .status-dot { background: #94a3b8; }
+  }
+
+  &--dispatched,
+  &--warning,
+  &--amber {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+    .status-dot { background: #f59e0b; }
+  }
+
+  &--cancelled,
+  &--danger,
+  &--red {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    .status-dot { background: #ef4444; }
+  }
+}
+
+// 5. Currency / Numbers / Amounts (Right-aligned, tabular monospace)
+.cell-amount,
+.ar-cell-amount {
+  font-family: var(--ar-font-mono, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: #334155;
+
+  &--bold,
+  strong {
+    font-weight: 700;
+    color: #0f172a;
     font-size: 12.5px;
+  }
+}
+
+// 6. Date + Relative time
+.cell-date,
+.ar-cell-date {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+
+  .date-main {
+    font-size: 12px;
+    color: #334155;
+    font-weight: 500;
+  }
+
+  .date-relative {
+    font-size: 10.5px;
+    color: #94a3b8;
+  }
+}
+
+/* ===========================================================================
+   Syncfusion Data Grids & Pagers — Universal House Style
+   Ensures identical pagination across all pages:
+   - 3 visible numbers (1, 2, 3 ... > >>)
+   - Left: Pill container with border, followed by items-per-page dropdown
+   - Right: "1 of N pages (M items)" record counter
+   - Primary blue active page pill (#2165f5)
+   =========================================================================== */
+.e-grid .e-gridpager,
+.e-grid .e-pager,
+.e-treegrid .e-gridpager,
+.e-treegrid .e-pager {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex: 0 0 auto !important;
+  margin-top: auto !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 3 !important;
+  padding: 8px 16px !important;
+  background: #f8fafc !important;
+  border-top: 1px solid #e2e8f0 !important;
+  border-radius: 0 0 var(--ar-radius-card, 12px) var(--ar-radius-card, 12px);
+  font-size: 12px !important;
+  font-family: var(--ar-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
+  box-sizing: border-box !important;
+
+  // Hide any loose navigation buttons outside the bordered container
+  > div[class*="e-first"],
+  > div[class*="e-prev"],
+  > div[class*="e-next"],
+  > div[class*="e-last"],
+  > div[class*="e-mfirst"],
+  > div[class*="e-mprev"],
+  > div[class*="e-mnext"],
+  > div[class*="e-mlast"],
+  > .e-firstpage,
+  > .e-prevpage,
+  > .e-nextpage,
+  > .e-lastpage,
+  > .e-firstpagedisabled,
+  > .e-prevpagedisabled,
+  > .e-nextpagedisabled,
+  > .e-lastpagedisabled,
+  > .e-first,
+  > .e-prev,
+  > .e-next,
+  > .e-last,
+  > .e-mfirst,
+  > .e-mprev,
+  > .e-mnext,
+  > .e-mlast,
+  .e-mfirst,
+  .e-mprev,
+  .e-mnext,
+  .e-mlast {
+    display: none !important;
+  }
+
+  // 1. Segmented page buttons on the LEFT
+  .e-pagercontainer {
+    order: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    background: #ffffff !important;
+    margin: 0 12px 0 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    flex-shrink: 0 !important;
+
+    .e-firstpagedisabled,
+    .e-prevpagedisabled,
+    .e-nextpagedisabled,
+    .e-lastpagedisabled,
+    .e-firstpage,
+    .e-prevpage,
+    .e-nextpage,
+    .e-lastpage,
+    .e-first,
+    .e-prev,
+    .e-next,
+    .e-last {
+      border: none !important;
+      border-right: 1px solid #e2e8f0 !important;
+      border-radius: 0 !important;
+      width: 28px !important;
+      height: 28px !important;
+      min-width: 28px !important;
+      display: inline-grid !important;
+      place-items: center !important;
+      color: #64748b !important;
+      text-decoration: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+
+      &:last-child {
+        border-right: none !important;
+      }
+
+      &:hover:not([class*="disabled"]):not(.e-disable) {
+        background: #f1f5f9 !important;
+        color: #0f172a !important;
+      }
+
+      &[class*="disabled"],
+      &.e-disable {
+        opacity: 0.45 !important;
+        cursor: default !important;
+        pointer-events: none !important;
+      }
+    }
+
+    .e-numericcontainer {
+      display: inline-flex !important;
+      align-items: center !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    .e-numericitem,
+    .e-nextpager,
+    .e-prevpager {
+      display: inline-grid !important;
+      place-items: center !important;
+      width: 28px !important;
+      height: 28px !important;
+      min-width: 28px !important;
+      font-weight: 500 !important;
+      font-size: 12px !important;
+      color: #475569 !important;
+      margin: 0 !important;
+      border: none !important;
+      border-right: 1px solid #e2e8f0 !important;
+      border-radius: 0 !important;
+      text-decoration: none !important;
+
+      &:last-child {
+        border-right: none !important;
+      }
+
+      &:hover {
+        background: #f1f5f9 !important;
+        color: #0f172a !important;
+      }
+
+      &.e-currentitem {
+        background: #2165f5 !important;
+        color: #ffffff !important;
+        font-weight: 600 !important;
+      }
+    }
+  }
+
+  // 2. Dropdown and "Items per page" immediately following on LEFT
+  .e-pagesizes {
+    order: 2 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+
+    .e-pagerdropdown {
+      border-radius: 6px !important;
+      border: 1px solid #cbd5e1 !important;
+      background: #ffffff !important;
+      height: 28px !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    .e-pagerconstant {
+      font-size: 12px !important;
+      color: #475569 !important;
+      font-weight: 500 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      white-space: nowrap !important;
+    }
+  }
+
+  // 3. Record counter on FAR RIGHT
+  .e-parentmsgbar {
+    order: 3 !important;
+    margin-left: auto !important;
+    font-size: 12px !important;
+    color: #475569 !important;
+    font-weight: 500 !important;
+    padding: 0 !important;
+    float: none !important;
+    text-align: right !important;
+    white-space: nowrap !important;
   }
 }
 
@@ -794,19 +1371,23 @@ input[type='radio']:not(.e-control) {
   font: 400 11px/1.4 var(--ar-font-sans);
   color: var(--ar-ink-400);
 }
+
 .ar-field__error {
   font: 500 11.5px/1.4 var(--ar-font-sans);
   color: var(--ar-red-600);
 }
+
 .ar-field__warning {
   font: 500 11.5px/1.4 var(--ar-font-sans);
   color: var(--ar-amber-600);
 }
+
 .ar-invalid,
 .ar-invalid:hover,
 .e-input-group.e-control-wrapper.ar-invalid {
   border-color: var(--ar-red-500) !important;
 }
+
 .ar-invalid:focus-visible,
 .e-input-group.e-control-wrapper.ar-invalid.e-input-focus {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ar-red-500) 25%, transparent) !important;
@@ -823,6 +1404,7 @@ input[type='radio']:not(.e-control) {
   right: 16px !important;
   z-index: 2147483000 !important;
 }
+
 #ar-toasts .e-toast,
 .e-toast-container .e-toast {
   border: 1px solid var(--ar-line-200);
@@ -836,47 +1418,61 @@ input[type='radio']:not(.e-control) {
     font: 600 13px var(--ar-font-sans);
     color: var(--ar-ink-900);
   }
+
   .e-toast-content {
     font: 400 12.5px/1.5 var(--ar-font-sans);
     color: var(--ar-ink-600, var(--ar-ink-500));
   }
+
   .e-toast-close-icon {
     color: var(--ar-ink-400);
   }
+
   &.ar-toast--success {
     border-left-color: var(--ar-green-500);
+
     .e-toast-icon,
     .e-toast-progress {
       color: var(--ar-green-500);
       background-color: var(--ar-green-500);
     }
+
     .e-toast-icon {
       background-color: transparent;
     }
   }
+
   &.ar-toast--error {
     border-left-color: var(--ar-red-500);
+
     .e-toast-icon {
       color: var(--ar-red-500);
     }
+
     .e-toast-progress {
       background-color: var(--ar-red-500);
     }
   }
+
   &.ar-toast--warning {
     border-left-color: var(--ar-amber-500);
+
     .e-toast-icon {
       color: var(--ar-amber-500);
     }
+
     .e-toast-progress {
       background-color: var(--ar-amber-500);
     }
   }
+
   &.ar-toast--info {
     border-left-color: var(--ar-blue-500);
+
     .e-toast-icon {
       color: var(--ar-blue-500);
     }
+
     .e-toast-progress {
       background-color: var(--ar-blue-500);
     }
@@ -903,9 +1499,12 @@ input[type='radio']:not(.e-control) {
   color: var(--ar-ink-500);
   cursor: pointer;
 }
+
 .ar-pane-toggle ar-icon {
-  transform: rotate(180deg); /* points back at the pane it folds */
+  transform: rotate(180deg);
+  /* points back at the pane it folds */
 }
+
 .ar-pane-toggle:hover,
 .ar-pane-toggle:focus-visible {
   color: var(--ar-ink-900);
@@ -922,11 +1521,13 @@ input[type='radio']:not(.e-control) {
   text-align: center;
   white-space: normal;
 }
+
 .ar-grid-empty__lead {
   margin: 0;
   font: 500 13.5px var(--ar-font-sans);
   color: var(--ar-ink-800);
 }
+
 .ar-grid-empty__more {
   margin: 0;
   font: 400 12px var(--ar-font-sans);
@@ -938,10 +1539,8 @@ input[type='radio']:not(.e-control) {
  * what must be filled before pressing Save. Labels that already draw their own * (any class
  * with "req" in it) are left alone.
  */
-label:has(> :is(input, select, textarea):required):not(:has([class*='req']))
-  > :is(.ar-field__label, .fld__k)::after,
-.ar-field:has(:is(input, select, textarea):required):not(:has([class*='req']))
-  > .ar-field__label::after {
+label:has(> :is(input, select, textarea):required):not(:has([class*='req']))> :is(.ar-field__label, .fld__k)::after,
+.ar-field:has(:is(input, select, textarea):required):not(:has([class*='req']))>.ar-field__label::after {
   content: ' *';
   color: var(--ar-bad-600, #b42318);
   font-weight: 600;
@@ -953,13 +1552,15 @@ label:has(> :is(input, select, textarea):required):not(:has([class*='req']))
  * around a screen's actions is unwrapped so its contents follow the same rule.
  */
 @media (max-width: 1280px) {
-  ar-topbar .tb__actions > div:only-child {
+  ar-topbar .tb__actions>div:only-child {
     display: contents;
   }
+
   /* The screen's main action comes first, straight after the title. */
   ar-topbar .tb__actions .ar-btn--primary {
     order: -1;
   }
+
   ar-topbar .tb__actions select,
   ar-topbar .tb__actions .e-input-group,
   ar-topbar .tb__actions input,
@@ -967,9 +1568,10 @@ label:has(> :is(input, select, textarea):required):not(:has([class*='req']))
   ar-topbar .tb__actions ar-period-picker {
     order: 2;
   }
+
   /* Only the header's own items move; the parts inside a picker keep their places. */
-  ar-topbar .tb__actions .e-input-group > *,
-  ar-topbar .tb__actions label > * {
+  ar-topbar .tb__actions .e-input-group>*,
+  ar-topbar .tb__actions label>* {
     order: 0;
   }
 }

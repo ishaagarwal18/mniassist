@@ -94,7 +94,7 @@
   box-sizing: border-box;
   animation: fcFadeIn 0.2s ease-out;
 
-  > * {
+  >* {
     flex-shrink: 0;
   }
 }
@@ -104,6 +104,7 @@
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -269,8 +270,14 @@
   &--cov {
     background: #eff6ff;
     border-color: #dbeafe;
-    .pill-lbl { color: #1d4ed8; }
-    .pill-val { color: #1e40af; }
+
+    .pill-lbl {
+      color: #1d4ed8;
+    }
+
+    .pill-val {
+      color: #1e40af;
+    }
   }
 }
 
@@ -286,6 +293,7 @@
   @media (max-width: 1280px) {
     grid-template-columns: repeat(3, 1fr);
   }
+
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -338,22 +346,27 @@
       background: #eff6ff;
       color: #2563eb;
     }
+
     &--emerald {
       background: #f0fdf4;
       color: #16a34a;
     }
+
     &--teal {
       background: #f0fdfa;
       color: #0d9488;
     }
+
     &--indigo {
       background: #eef2ff;
       color: #4f46e5;
     }
+
     &--purple {
       background: #faf5ff;
       color: #9333ea;
     }
+
     &--amber {
       background: #fffbeb;
       color: #d97706;
@@ -392,11 +405,25 @@
   }
 }
 
-.font-emerald { color: #16a34a !important; }
-.font-teal { color: #0d9488 !important; }
-.font-indigo { color: #4f46e5 !important; }
-.font-purple { color: #9333ea !important; }
-.font-amber { color: #d97706 !important; }
+.font-emerald {
+  color: #16a34a !important;
+}
+
+.font-teal {
+  color: #0d9488 !important;
+}
+
+.font-indigo {
+  color: #4f46e5 !important;
+}
+
+.font-purple {
+  color: #9333ea !important;
+}
+
+.font-amber {
+  color: #d97706 !important;
+}
 
 // ---------------------------------------------------------------------------
 // Target Attainment Dual-Meter Card
@@ -443,8 +470,13 @@
   gap: 4px;
   font: 500 11px var(--ar-font-sans, system-ui, sans-serif);
 
-  &--closed { color: #16a34a; }
-  &--expected { color: #0284c7; }
+  &--closed {
+    color: #16a34a;
+  }
+
+  &--expected {
+    color: #0284c7;
+  }
 }
 
 .meter-dot {
@@ -452,8 +484,13 @@
   height: 6px;
   border-radius: 50%;
 
-  &--closed { background: #16a34a; }
-  &--expected { background: #0284c7; }
+  &--closed {
+    background: #16a34a;
+  }
+
+  &--expected {
+    background: #0284c7;
+  }
 }
 
 .meter-target-info {
@@ -488,6 +525,7 @@
   &--exp {
     background: #7dd3fc;
   }
+
   &--won {
     background: #16a34a;
     z-index: 1;
@@ -832,10 +870,21 @@
   height: 100%;
   border-radius: 3px;
 
-  &--good { background: #16a34a; }
-  &--amber { background: #f59e0b; }
-  &--bad { background: #ef4444; }
-  &--neutral { background: #94a3b8; }
+  &--good {
+    background: #16a34a;
+  }
+
+  &--amber {
+    background: #f59e0b;
+  }
+
+  &--bad {
+    background: #ef4444;
+  }
+
+  &--neutral {
+    background: #94a3b8;
+  }
 }
 
 .cell-muted {
@@ -1124,11 +1173,31 @@
   border-radius: 50%;
   background: #94a3b8;
 
-  &--0 { background: #94a3b8; } // New
-  &--1 { background: #3b82f6; } // Qualified
-  &--2 { background: #6366f1; } // Site Visit
-  &--3 { background: #f59e0b; } // Quoted
-  &--4 { background: #10b981; } // Negotiation
+  &--0 {
+    background: #94a3b8;
+  }
+
+  // New
+  &--1 {
+    background: #3b82f6;
+  }
+
+  // Qualified
+  &--2 {
+    background: #6366f1;
+  }
+
+  // Site Visit
+  &--3 {
+    background: #f59e0b;
+  }
+
+  // Quoted
+  &--4 {
+    background: #10b981;
+  }
+
+  // Negotiation
 }
 
 .stage-prob-metrics {
@@ -1150,7 +1219,10 @@
   &--used {
     background: #eff6ff;
     color: #1d4ed8;
-    strong { font-weight: 700; }
+
+    strong {
+      font-weight: 700;
+    }
   }
 }
 
@@ -1188,8 +1260,15 @@
   font-size: 10.5px;
   color: #64748b;
 
-  .diff-pos { color: #16a34a; font-weight: 600; }
-  .diff-neg { color: #dc2626; font-weight: 600; }
+  .diff-pos {
+    color: #16a34a;
+    font-weight: 600;
+  }
+
+  .diff-neg {
+    color: #dc2626;
+    font-weight: 600;
+  }
 }
 
 .accuracy-chip {
@@ -1808,11 +1887,25 @@
     display: inline-block;
     flex-shrink: 0;
 
-    &--0 { background: #64748b; }
-    &--1 { background: #3b82f6; }
-    &--2 { background: #0ea5e9; }
-    &--3 { background: #f59e0b; }
-    &--4 { background: #10b981; }
+    &--0 {
+      background: #64748b;
+    }
+
+    &--1 {
+      background: #3b82f6;
+    }
+
+    &--2 {
+      background: #0ea5e9;
+    }
+
+    &--3 {
+      background: #f59e0b;
+    }
+
+    &--4 {
+      background: #10b981;
+    }
   }
 
   .stage-progress-preview {
@@ -1828,11 +1921,25 @@
     border-radius: 3px;
     transition: width 0.2s ease;
 
-    &.stage-dot--0 { background: #94a3b8; }
-    &.stage-dot--1 { background: #3b82f6; }
-    &.stage-dot--2 { background: #0ea5e9; }
-    &.stage-dot--3 { background: #f59e0b; }
-    &.stage-dot--4 { background: #10b981; }
+    &.stage-dot--0 {
+      background: #94a3b8;
+    }
+
+    &.stage-dot--1 {
+      background: #3b82f6;
+    }
+
+    &.stage-dot--2 {
+      background: #0ea5e9;
+    }
+
+    &.stage-dot--3 {
+      background: #f59e0b;
+    }
+
+    &.stage-dot--4 {
+      background: #10b981;
+    }
   }
 
   .percent-input-group {
@@ -1964,4 +2071,3 @@
   color: #dc2626;
   font: 500 12px var(--ar-font-sans, system-ui, sans-serif);
 }
-

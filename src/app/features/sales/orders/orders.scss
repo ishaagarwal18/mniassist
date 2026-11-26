@@ -5,9 +5,11 @@
 :host {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  height: 100%;
+  min-height: 0;
   background: var(--ar-bg-50, #f8fafc);
   font-family: var(--ar-font-sans, system-ui, -apple-system, sans-serif);
+  overflow: hidden;
 }
 
 // ---------------------------------------------------------------------------
@@ -45,9 +47,11 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 20px 24px 32px;
+  padding: 16px 24px 20px;
   flex: 1;
+  min-height: 0;
   max-width: 100%;
+  overflow-y: auto;
 }
 
 .so-scope-bar {
@@ -108,6 +112,151 @@
 
   &__icon {
     color: #dc2626;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 2b. Compact Summary Statistics Cards Row
+// ---------------------------------------------------------------------------
+
+.so-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+.so-kpi-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid var(--ar-line-200, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    transform: translateY(-2px);
+  }
+
+  &--active {
+    border-color: var(--ar-primary, #0284c7) !important;
+    background: #ffffff !important;
+    box-shadow:
+      0 0 0 2px rgba(2, 132, 199, 0.15),
+      0 4px 12px rgba(15, 23, 42, 0.06) !important;
+
+    .so-kpi-card__indicator {
+      opacity: 1;
+    }
+  }
+
+  &__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  &__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ar-ink-500, #64748b);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  &__icon-wrap {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    flex-shrink: 0;
+
+    &--all {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    &--draft {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    &--confirmed {
+      background: #eff6ff;
+      color: #0284c7;
+    }
+
+    &--dispatched {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    &--completed {
+      background: #ecfdf5;
+      color: #059669;
+    }
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__value {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ar-ink-900, #0f172a);
+    font-feature-settings: 'tnum';
+  }
+
+  &__sub {
+    font-size: 11.5px;
+    color: var(--ar-ink-400, #94a3b8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__indicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+
+    &--all {
+      background: #2563eb;
+    }
+
+    &--draft {
+      background: #64748b;
+    }
+
+    &--confirmed {
+      background: #0284c7;
+    }
+
+    &--dispatched {
+      background: #f59e0b;
+    }
+
+    &--completed {
+      background: #10b981;
+    }
   }
 }
 
@@ -288,11 +437,15 @@
 // ---------------------------------------------------------------------------
 
 .so-table-card {
+  flex: 1 1 auto;
+  min-height: 440px;
+  display: flex;
+  flex-direction: column;
   background: #ffffff;
   border: 1px solid var(--ar-line-200, #e2e8f0);
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-  overflow: visible;
+  overflow: hidden;
   position: relative;
 }
 
@@ -612,196 +765,12 @@
 }
 
 // ---------------------------------------------------------------------------
-// 7. Syncfusion Grid High-Density Enterprise Overrides
+// 7. Syncfusion Grid Overrides & Enhancements
 // ---------------------------------------------------------------------------
 
 ::ng-deep .so-table-card {
   .e-grid {
     border: none !important;
-    border-radius: 12px;
-    font-family: inherit;
-    background: transparent;
-  }
-
-  // Grid Toolbar: Search, Column Chooser, Excel & CSV Export
-  .e-toolbar {
-    background: #f8fafc !important;
-    border-bottom: 1px solid #e2e8f0 !important;
-    padding: 6px 12px !important;
-    min-height: 44px !important;
-    border-radius: 12px 12px 0 0;
-
-    .e-toolbar-items {
-      background: transparent !important;
-    }
-
-    .e-tbar-btn {
-      background: #ffffff !important;
-      border: 1px solid #cbd5e1 !important;
-      border-radius: 6px !important;
-      padding: 3px 10px !important;
-      margin: 0 4px !important;
-      transition: all 0.15s ease !important;
-
-      &:hover {
-        background: #f1f5f9 !important;
-        border-color: #94a3b8 !important;
-      }
-
-      .e-tbar-btn-text,
-      .e-icons {
-        color: #334155 !important;
-        font-size: 12px !important;
-        font-weight: 500 !important;
-      }
-    }
-
-    // Search bar inside grid toolbar
-    .e-toolbar-item.e-search-wrapper {
-      .e-input-group {
-        border-radius: 6px !important;
-        border-color: #cbd5e1 !important;
-        background: #ffffff !important;
-        height: 32px !important;
-
-        &.e-input-focus {
-          border-color: var(--ar-primary, #0284c7) !important;
-          box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15) !important;
-        }
-
-        input {
-          font-size: 12.5px !important;
-          padding-left: 8px !important;
-        }
-      }
-    }
-  }
-
-  // Header row
-  .e-gridheader {
-    background: #f8fafc !important;
-    border-bottom: 1px solid #e2e8f0 !important;
-
-    .e-headercell {
-      background: #f8fafc !important;
-      padding: 10px 14px !important;
-      height: 42px !important;
-      vertical-align: middle !important;
-      border-color: #e2e8f0 !important;
-
-      .e-headertext {
-        font-weight: 600 !important;
-        font-size: 11px !important;
-        letter-spacing: 0.05em !important;
-        text-transform: uppercase !important;
-        color: #475569 !important;
-      }
-    }
-  }
-
-  // Data rows
-  .e-gridcontent {
-    background: #ffffff !important;
-
-    .e-row {
-      height: 52px !important;
-      transition: background 0.12s ease;
-
-      &:nth-child(even) {
-        background: #fbfcfd;
-      }
-
-      &:hover {
-        background: #f0f7ff !important;
-      }
-
-      .e-rowcell {
-        padding: 8px 14px !important;
-        border-bottom: 1px solid #f1f5f9 !important;
-        font-size: 13px !important;
-        color: #0f172a !important;
-        vertical-align: middle !important;
-      }
-    }
-  }
-
-  // Pager styling
-  .e-gridpager,
-  .e-pager {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 8px 16px !important;
-    background: #f8fafc !important;
-    border-top: 1px solid #e2e8f0 !important;
-    border-radius: 0 0 12px 12px;
-    font-size: 12px !important;
-
-    .e-pagercontainer {
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 3px !important;
-    }
-
-    .e-firstpagedisabled,
-    .e-prevpagedisabled,
-    .e-nextpagedisabled,
-    .e-lastpagedisabled,
-    .e-firstpage,
-    .e-prevpage,
-    .e-nextpage,
-    .e-lastpage {
-      border-radius: 6px !important;
-      border: 1px solid transparent !important;
-      width: 28px !important;
-      height: 28px !important;
-      display: inline-grid !important;
-      place-items: center !important;
-      color: #64748b !important;
-
-      &:hover:not([class*="disabled"]) {
-        background: #ffffff !important;
-        border-color: #cbd5e1 !important;
-        color: #0f172a !important;
-      }
-    }
-
-    .e-numericitem {
-      display: inline-grid !important;
-      place-items: center !important;
-      width: 28px !important;
-      height: 28px !important;
-      border-radius: 6px !important;
-      font-weight: 500 !important;
-      color: #475569 !important;
-      margin: 0 1px !important;
-
-      &:hover {
-        background: #ffffff !important;
-        border-color: #cbd5e1 !important;
-      }
-
-      &.e-currentitem {
-        background: var(--ar-primary, #0284c7) !important;
-        color: #ffffff !important;
-        font-weight: 600 !important;
-      }
-    }
-
-    .e-parentmsgbar {
-      font-size: 12px !important;
-      color: #64748b !important;
-      font-weight: 500 !important;
-    }
-
-    .e-pagesizes {
-      .e-pagerdropdown {
-        border-radius: 6px !important;
-        border: 1px solid #cbd5e1 !important;
-        background: #ffffff !important;
-        height: 28px !important;
-      }
-    }
   }
 
   // Column chooser dialog styling
@@ -828,10 +797,20 @@
 // 8. Responsive Breakpoints
 // ---------------------------------------------------------------------------
 
+@media (max-width: 1200px) {
+  .so-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 900px) {
   .so-shell {
     padding: 16px;
     gap: 12px;
+  }
+
+  .so-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .so-controls-card {
@@ -854,6 +833,10 @@
 }
 
 @media (max-width: 640px) {
+  .so-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
   .so-controls-card__top {
     flex-direction: column;
     align-items: stretch;

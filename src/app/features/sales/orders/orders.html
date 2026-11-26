@@ -1,15 +1,9 @@
-<ar-topbar
-  title="Sales orders"
+<ar-topbar title="Sales orders"
   subtitle="Commercial sales orders received from customers with order acknowledgment, dispatch milestones and billing tracking."
-  help="Sales Orders capture confirmed customer PO numbers, delivery terms, and line items. From here you can issue GST Delivery Challans or Commercial Invoices directly."
->
+  help="Sales Orders capture confirmed customer PO numbers, delivery terms, and line items. From here you can issue GST Delivery Challans or Commercial Invoices directly.">
   <div actions class="so-header-actions">
-    <ar-sales-export
-      [fetch]="exportAll"
-      [fileName]="exportName()"
-      label="Export "
-      hint="Every order the filters show"
-    />
+    <ar-sales-export [fetch]="exportAll" [fileName]="exportName()" label="Export "
+      hint="Every order the filters show" />
     <button ar-button variant="primary" icon="plus" class="btn-new-order" (click)="newOrder()">
       New sales order
     </button>
@@ -19,29 +13,121 @@
 <div class="so-shell">
   <!-- Scope filter banner (Customer 360 context) -->
   @if (scope(); as sc) {
-    <div class="so-scope-bar" role="status">
-      <div class="so-scope-bar__content">
-        <ar-icon name="contacts" [size]="16" class="so-scope-bar__icon" />
-        <span>
-          Showing only orders for <strong translate="no">{{ sc.name || 'this customer' }}</strong>.
-        </span>
-      </div>
-      <button type="button" class="so-scope-bar__btn" (click)="clearScope()">
-        Show all orders
-      </button>
+  <div class="so-scope-bar" role="status">
+    <div class="so-scope-bar__content">
+      <ar-icon name="contacts" [size]="16" class="so-scope-bar__icon" />
+      <span>
+        Showing only orders for <strong translate="no">{{ sc.name || 'this customer' }}</strong>.
+      </span>
     </div>
+    <button type="button" class="so-scope-bar__btn" (click)="clearScope()">
+      Show all orders
+    </button>
+  </div>
   }
 
   <!-- Error banner -->
   @if (loadError(); as e) {
-    <div class="so-error-banner" role="alert">
-      <div class="so-error-banner__content">
-        <ar-icon name="alert" [size]="16" class="so-error-banner__icon" />
-        <span>{{ e }}</span>
-      </div>
-      <button ar-button variant="ghost" type="button" (click)="loadOrders()">Try again</button>
+  <div class="so-error-banner" role="alert">
+    <div class="so-error-banner__content">
+      <ar-icon name="alert" [size]="16" class="so-error-banner__icon" />
+      <span>{{ e }}</span>
     </div>
+    <button ar-button variant="ghost" type="button" (click)="loadOrders()">Try again</button>
+  </div>
   }
+
+  <!-- 1. Compact Summary KPI Cards Row -->
+  <div class="so-kpi-grid" role="region" aria-label="Sales Orders KPI Summary">
+    <!-- Card 1: Total Orders -->
+    <div class="so-kpi-card" [class.so-kpi-card--active]="selectedStatus() === null" role="button" tabindex="0"
+      (click)="setStatusFilter(null)" (keydown.enter)="setStatusFilter(null)" (keydown.space)="setStatusFilter(null)"
+      title="Filter by all sales orders">
+      <div class="so-kpi-card__top">
+        <span class="so-kpi-card__label">Total Orders</span>
+        <div class="so-kpi-card__icon-wrap so-kpi-card__icon-wrap--all">
+          <ar-icon name="sales-orders" [size]="18" />
+        </div>
+      </div>
+      <div class="so-kpi-card__body">
+        <span class="so-kpi-card__value">{{ orders().length }}</span>
+        <span class="so-kpi-card__sub">All commercial orders</span>
+      </div>
+      <div class="so-kpi-card__indicator so-kpi-card__indicator--all"></div>
+    </div>
+
+    <!-- Card 2: Draft -->
+    <div class="so-kpi-card" [class.so-kpi-card--active]="selectedStatus() === SalesOrderStatus.Draft" role="button"
+      tabindex="0" (click)="setStatusFilter(SalesOrderStatus.Draft)"
+      (keydown.enter)="setStatusFilter(SalesOrderStatus.Draft)"
+      (keydown.space)="setStatusFilter(SalesOrderStatus.Draft)" title="Filter by draft orders">
+      <div class="so-kpi-card__top">
+        <span class="so-kpi-card__label">Draft</span>
+        <div class="so-kpi-card__icon-wrap so-kpi-card__icon-wrap--draft">
+          <ar-icon name="edit" [size]="18" />
+        </div>
+      </div>
+      <div class="so-kpi-card__body">
+        <span class="so-kpi-card__value">{{ draftCount() }}</span>
+        <span class="so-kpi-card__sub">Unconfirmed orders</span>
+      </div>
+      <div class="so-kpi-card__indicator so-kpi-card__indicator--draft"></div>
+    </div>
+
+    <!-- Card 3: Confirmed -->
+    <div class="so-kpi-card" [class.so-kpi-card--active]="selectedStatus() === SalesOrderStatus.Confirmed" role="button"
+      tabindex="0" (click)="setStatusFilter(SalesOrderStatus.Confirmed)"
+      (keydown.enter)="setStatusFilter(SalesOrderStatus.Confirmed)"
+      (keydown.space)="setStatusFilter(SalesOrderStatus.Confirmed)" title="Filter by confirmed orders">
+      <div class="so-kpi-card__top">
+        <span class="so-kpi-card__label">Confirmed</span>
+        <div class="so-kpi-card__icon-wrap so-kpi-card__icon-wrap--confirmed">
+          <ar-icon name="check" [size]="18" />
+        </div>
+      </div>
+      <div class="so-kpi-card__body">
+        <span class="so-kpi-card__value">{{ confirmedCount() }}</span>
+        <span class="so-kpi-card__sub">Ready for fulfillment</span>
+      </div>
+      <div class="so-kpi-card__indicator so-kpi-card__indicator--confirmed"></div>
+    </div>
+
+    <!-- Card 4: Dispatched -->
+    <div class="so-kpi-card" [class.so-kpi-card--active]="selectedStatus() === SalesOrderStatus.Dispatched"
+      role="button" tabindex="0" (click)="setStatusFilter(SalesOrderStatus.Dispatched)"
+      (keydown.enter)="setStatusFilter(SalesOrderStatus.Dispatched)"
+      (keydown.space)="setStatusFilter(SalesOrderStatus.Dispatched)" title="Filter by dispatched orders">
+      <div class="so-kpi-card__top">
+        <span class="so-kpi-card__label">Dispatched</span>
+        <div class="so-kpi-card__icon-wrap so-kpi-card__icon-wrap--dispatched">
+          <ar-icon name="delivery-challans" [size]="18" />
+        </div>
+      </div>
+      <div class="so-kpi-card__body">
+        <span class="so-kpi-card__value">{{ dispatchedCount() }}</span>
+        <span class="so-kpi-card__sub">Shipped to customer</span>
+      </div>
+      <div class="so-kpi-card__indicator so-kpi-card__indicator--dispatched"></div>
+    </div>
+
+    <!-- Card 5: Completed -->
+    <div class="so-kpi-card" [class.so-kpi-card--active]="selectedStatus() === SalesOrderStatus.Completed" role="button"
+      tabindex="0" (click)="setStatusFilter(SalesOrderStatus.Completed)"
+      (keydown.enter)="setStatusFilter(SalesOrderStatus.Completed)"
+      (keydown.space)="setStatusFilter(SalesOrderStatus.Completed)" title="Filter by completed orders">
+      <div class="so-kpi-card__top">
+        <span class="so-kpi-card__label">Completed</span>
+        <div class="so-kpi-card__icon-wrap so-kpi-card__icon-wrap--completed">
+          <ar-icon name="sales-invoices" [size]="18" />
+        </div>
+      </div>
+      <div class="so-kpi-card__body">
+        <span class="so-kpi-card__value">{{ completedCount() }}</span>
+        <span class="so-kpi-card__sub">Delivered & billed</span>
+      </div>
+      <div class="so-kpi-card__indicator so-kpi-card__indicator--completed"></div>
+    </div>
+  </div>
 
   <!-- Search & Status Filter Controls Card -->
   <div class="so-controls-card">
@@ -49,24 +135,13 @@
       <!-- Search Input with clear button -->
       <div class="so-search">
         <ar-icon class="so-search__icon" name="search" [size]="16" />
-        <input
-          type="text"
-          class="so-search__input"
-          placeholder="Search by order #, PO #, customer or account..."
-          [ngModel]="searchQuery()"
-          (ngModelChange)="onSearchChange($event)"
-          aria-label="Search sales orders"
-        />
+        <input type="text" class="so-search__input" placeholder="Search by order #, PO #, customer or account..."
+          [ngModel]="searchQuery()" (ngModelChange)="onSearchChange($event)" aria-label="Search sales orders" />
         @if (searchQuery()) {
-          <button
-            type="button"
-            class="so-search__clear"
-            title="Clear search"
-            aria-label="Clear search"
-            (click)="clearSearch()"
-          >
-            <ar-icon name="close" [size]="13" />
-          </button>
+        <button type="button" class="so-search__clear" title="Clear search" aria-label="Clear search"
+          (click)="clearSearch()">
+          <ar-icon name="close" [size]="13" />
+        </button>
         }
       </div>
 
@@ -79,111 +154,13 @@
     </div>
 
     <!-- Status filter chips with live record counts -->
-    <div class="so-status-filters" role="tablist" aria-label="Filter by order status">
-      <button
-        type="button"
-        role="tab"
-        class="so-filter-chip"
-        [class.so-filter-chip--active]="selectedStatus() === null"
-        [attr.aria-selected]="selectedStatus() === null"
-        (click)="setStatusFilter(null)"
-      >
-        <span class="so-filter-chip__label">All</span>
-        <span class="so-filter-chip__count">{{ orders().length }}</span>
-      </button>
-
-      <button
-        type="button"
-        role="tab"
-        class="so-filter-chip so-filter-chip--draft"
-        [class.so-filter-chip--active]="selectedStatus() === SalesOrderStatus.Draft"
-        [attr.aria-selected]="selectedStatus() === SalesOrderStatus.Draft"
-        (click)="setStatusFilter(SalesOrderStatus.Draft)"
-      >
-        <span class="so-filter-chip__dot"></span>
-        <span class="so-filter-chip__label">Draft</span>
-        <span class="so-filter-chip__count">{{ draftCount() }}</span>
-      </button>
-
-      <button
-        type="button"
-        role="tab"
-        class="so-filter-chip so-filter-chip--confirmed"
-        [class.so-filter-chip--active]="selectedStatus() === SalesOrderStatus.Confirmed"
-        [attr.aria-selected]="selectedStatus() === SalesOrderStatus.Confirmed"
-        (click)="setStatusFilter(SalesOrderStatus.Confirmed)"
-      >
-        <span class="so-filter-chip__dot"></span>
-        <span class="so-filter-chip__label">Confirmed</span>
-        <span class="so-filter-chip__count">{{ confirmedCount() }}</span>
-      </button>
-
-      <button
-        type="button"
-        role="tab"
-        class="so-filter-chip so-filter-chip--partial"
-        [class.so-filter-chip--active]="selectedStatus() === SalesOrderStatus.PartiallyDispatched"
-        [attr.aria-selected]="selectedStatus() === SalesOrderStatus.PartiallyDispatched"
-        (click)="setStatusFilter(SalesOrderStatus.PartiallyDispatched)"
-      >
-        <span class="so-filter-chip__dot"></span>
-        <span class="so-filter-chip__label">Partially Dispatched</span>
-        <span class="so-filter-chip__count">{{ partiallyDispatchedCount() }}</span>
-      </button>
-
-      <button
-        type="button"
-        role="tab"
-        class="so-filter-chip so-filter-chip--dispatched"
-        [class.so-filter-chip--active]="selectedStatus() === SalesOrderStatus.Dispatched"
-        [attr.aria-selected]="selectedStatus() === SalesOrderStatus.Dispatched"
-        (click)="setStatusFilter(SalesOrderStatus.Dispatched)"
-      >
-        <span class="so-filter-chip__dot"></span>
-        <span class="so-filter-chip__label">Dispatched</span>
-        <span class="so-filter-chip__count">{{ dispatchedCount() }}</span>
-      </button>
-
-      <button
-        type="button"
-        role="tab"
-        class="so-filter-chip so-filter-chip--completed"
-        [class.so-filter-chip--active]="selectedStatus() === SalesOrderStatus.Completed"
-        [attr.aria-selected]="selectedStatus() === SalesOrderStatus.Completed"
-        (click)="setStatusFilter(SalesOrderStatus.Completed)"
-      >
-        <span class="so-filter-chip__dot"></span>
-        <span class="so-filter-chip__label">Completed</span>
-        <span class="so-filter-chip__count">{{ completedCount() }}</span>
-      </button>
-
-      @if (cancelledCount() > 0) {
-        <button
-          type="button"
-          role="tab"
-          class="so-filter-chip so-filter-chip--cancelled"
-          [class.so-filter-chip--active]="selectedStatus() === SalesOrderStatus.Cancelled"
-          [attr.aria-selected]="selectedStatus() === SalesOrderStatus.Cancelled"
-          (click)="setStatusFilter(SalesOrderStatus.Cancelled)"
-        >
-          <span class="so-filter-chip__dot"></span>
-          <span class="so-filter-chip__label">Cancelled</span>
-          <span class="so-filter-chip__count">{{ cancelledCount() }}</span>
-        </button>
-      }
-    </div>
   </div>
 
   <!-- Enterprise Data Grid Table Card -->
   <div class="so-table-card">
-    <ejs-grid
-      #grid
-      arGrid="sales-orders"
+    <ejs-grid #grid arGrid="sales-orders"
       arGridEmpty="No sales orders match your criteria. Press “New sales order” when a customer confirms their purchase."
-      [dataSource]="filteredOrders()"
-      (recordClick)="onOrderClick($event)"
-      aria-label="Sales orders"
-    >
+      [dataSource]="filteredOrders()" (recordClick)="onOrderClick($event)" aria-label="Sales orders">
       <e-columns>
         <!-- 1. Order Number -->
         <e-column field="orderNumber" headerText="Order #" width="160">
@@ -204,9 +181,9 @@
                 {{ order.customerName }}
               </span>
               @if (order.customerAccountName) {
-                <span class="cust-sub" [title]="order.customerAccountName" translate="no">
-                  {{ order.customerAccountName }}
-                </span>
+              <span class="cust-sub" [title]="order.customerAccountName" translate="no">
+                {{ order.customerAccountName }}
+              </span>
               }
             </div>
           </ng-template>
@@ -216,18 +193,18 @@
         <e-column field="customerPoNumber" headerText="Customer PO" width="165">
           <ng-template #template let-order>
             @if (order.customerPoNumber) {
-              <div class="po-cell">
-                <span class="po-badge font-mono" [title]="'PO: ' + order.customerPoNumber">
-                  {{ order.customerPoNumber }}
-                </span>
-                @if (order.customerPoDate) {
-                  <span class="po-date">
-                    {{ order.customerPoDate | date: 'dd MMM yyyy' }}
-                  </span>
-                }
-              </div>
+            <div class="po-cell">
+              <span class="po-badge font-mono" [title]="'PO: ' + order.customerPoNumber">
+                {{ order.customerPoNumber }}
+              </span>
+              @if (order.customerPoDate) {
+              <span class="po-date">
+                {{ order.customerPoDate | date: 'dd MMM yyyy' }}
+              </span>
+              }
+            </div>
             } @else {
-              <span class="po-empty">—</span>
+            <span class="po-empty">—</span>
             }
           </ng-template>
         </e-column>
@@ -251,12 +228,7 @@
         </e-column>
 
         <!-- 6. Grand Total (INR) -->
-        <e-column
-          field="grandTotalInPaise"
-          headerText="Grand Total"
-          textAlign="Right"
-          width="155"
-        >
+        <e-column field="grandTotalInPaise" headerText="Grand Total" textAlign="Right" width="155">
           <ng-template #template let-order>
             <div class="amount-cell">
               <span class="amount-val font-mono">
@@ -281,134 +253,89 @@
           <ng-template #template let-order>
             <div class="row-actions-wrap" (click)="$event.stopPropagation()">
               <!-- Quick View Button -->
-              <button
-                type="button"
-                class="row-btn-view"
-                title="View order details"
-                (click)="openOrder(order)"
-              >
+              <button type="button" class="row-btn-view" title="View order details" (click)="openOrder(order)">
                 View
               </button>
 
               <!-- More Actions Menu Trigger -->
               <div class="actions-dropdown-container">
-                <button
-                  type="button"
-                  class="row-btn-more"
+                <button type="button" class="row-btn-more"
                   [class.row-btn-more--active]="activeActionMenuId() === order.id"
-                  [attr.aria-expanded]="activeActionMenuId() === order.id"
-                  title="More actions"
-                  (click)="toggleActionMenu($event, order)"
-                >
+                  [attr.aria-expanded]="activeActionMenuId() === order.id" title="More actions"
+                  (click)="toggleActionMenu($event, order)">
                   <ar-icon name="dots" [size]="15" />
                 </button>
 
                 <!-- Floating Dropdown Menu -->
                 @if (activeActionMenuId() === order.id) {
-                  <div
-                    class="order-action-dropdown"
-                    role="menu"
-                    aria-orientation="vertical"
-                    (click)="$event.stopPropagation()"
-                  >
-                    <!-- View -->
-                    <button
-                      type="button"
-                      class="order-action-item"
-                      role="menuitem"
-                      (click)="openOrder(order); closeAllMenus()"
-                    >
-                      <ar-icon name="document" [size]="14" />
-                      <span>View details</span>
-                    </button>
+                <div class="order-action-dropdown" role="menu" aria-orientation="vertical"
+                  (click)="$event.stopPropagation()">
+                  <!-- View -->
+                  <button type="button" class="order-action-item" role="menuitem"
+                    (click)="openOrder(order); closeAllMenus()">
+                    <ar-icon name="document" [size]="14" />
+                    <span>View details</span>
+                  </button>
 
-                    <!-- Confirm Order (Draft only) -->
-                    @if (mayConfirm() && canConfirm(order)) {
-                      <button
-                        type="button"
-                        class="order-action-item order-action-item--primary"
-                        role="menuitem"
-                        (click)="confirmOrder(order); closeAllMenus()"
-                      >
-                        <ar-icon name="check" [size]="14" />
-                        <span>Confirm order</span>
-                      </button>
-                    }
+                  <!-- Confirm Order (Draft only) -->
+                  @if (mayConfirm() && canConfirm(order)) {
+                  <button type="button" class="order-action-item order-action-item--primary" role="menuitem"
+                    (click)="confirmOrder(order); closeAllMenus()">
+                    <ar-icon name="check" [size]="14" />
+                    <span>Confirm order</span>
+                  </button>
+                  }
 
-                    <!-- Fulfill Actions (Confirmed or Partially Dispatched) -->
-                    @if (canFulfil(order)) {
-                      <button
-                        type="button"
-                        class="order-action-item"
-                        role="menuitem"
-                        (click)="createChallan(order); closeAllMenus()"
-                      >
-                        <ar-icon name="delivery-challans" [size]="14" />
-                        <span>Create Challan</span>
-                      </button>
-                      <button
-                        type="button"
-                        class="order-action-item"
-                        role="menuitem"
-                        (click)="createInvoice(order); closeAllMenus()"
-                      >
-                        <ar-icon name="sales-invoices" [size]="14" />
-                        <span>Generate Invoice</span>
-                      </button>
-                    }
+                  <!-- Fulfill Actions (Confirmed or Partially Dispatched) -->
+                  @if (canFulfil(order)) {
+                  <button type="button" class="order-action-item" role="menuitem"
+                    (click)="createChallan(order); closeAllMenus()">
+                    <ar-icon name="delivery-challans" [size]="14" />
+                    <span>Create Challan</span>
+                  </button>
+                  <button type="button" class="order-action-item" role="menuitem"
+                    (click)="createInvoice(order); closeAllMenus()">
+                    <ar-icon name="sales-invoices" [size]="14" />
+                    <span>Generate Invoice</span>
+                  </button>
+                  }
 
-                    <hr class="order-action-sep" />
+                  <hr class="order-action-sep" />
 
-                    <!-- Export single order PDF -->
-                    <button
-                      type="button"
-                      class="order-action-item"
-                      role="menuitem"
-                      (click)="downloadOrderPdf(order); closeAllMenus()"
-                    >
-                      <ar-icon name="download" [size]="14" />
-                      <span>Download PDF</span>
-                    </button>
+                  <!-- Export single order PDF -->
+                  <button type="button" class="order-action-item" role="menuitem"
+                    (click)="downloadOrderPdf(order); closeAllMenus()">
+                    <ar-icon name="download" [size]="14" />
+                    <span>Download PDF</span>
+                  </button>
 
-                    <!-- Export single order Excel -->
-                    <button
-                      type="button"
-                      class="order-action-item"
-                      role="menuitem"
-                      (click)="downloadOrderExcel(order); closeAllMenus()"
-                    >
-                      <ar-icon name="download" [size]="14" />
-                      <span>Download Excel</span>
-                    </button>
+                  <!-- Export single order Excel -->
+                  <button type="button" class="order-action-item" role="menuitem"
+                    (click)="downloadOrderExcel(order); closeAllMenus()">
+                    <ar-icon name="download" [size]="14" />
+                    <span>Download Excel</span>
+                  </button>
 
-                    <!-- Delete draft order -->
-                    @if (canDelete(order)) {
-                      <hr class="order-action-sep" />
-                      <button
-                        type="button"
-                        class="order-action-item order-action-item--danger"
-                        role="menuitem"
-                        (click)="deleteOrder(order); closeAllMenus()"
-                      >
-                        <ar-icon name="trash" [size]="14" />
-                        <span>Delete draft</span>
-                      </button>
-                    }
+                  <!-- Delete draft order -->
+                  @if (canDelete(order)) {
+                  <hr class="order-action-sep" />
+                  <button type="button" class="order-action-item order-action-item--danger" role="menuitem"
+                    (click)="deleteOrder(order); closeAllMenus()">
+                    <ar-icon name="trash" [size]="14" />
+                    <span>Delete draft</span>
+                  </button>
+                  }
 
-                    <!-- Cancel order -->
-                    @if (canCancel(order)) {
-                      <hr class="order-action-sep" />
-                      <button
-                        type="button"
-                        class="order-action-item order-action-item--danger"
-                        role="menuitem"
-                        (click)="cancelOrder(order); closeAllMenus()"
-                      >
-                        <ar-icon name="close" [size]="14" />
-                        <span>Cancel order</span>
-                      </button>
-                    }
-                  </div>
+                  <!-- Cancel order -->
+                  @if (canCancel(order)) {
+                  <hr class="order-action-sep" />
+                  <button type="button" class="order-action-item order-action-item--danger" role="menuitem"
+                    (click)="cancelOrder(order); closeAllMenus()">
+                    <ar-icon name="close" [size]="14" />
+                    <span>Cancel order</span>
+                  </button>
+                  }
+                </div>
                 }
               </div>
             </div>
