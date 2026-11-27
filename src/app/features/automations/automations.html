@@ -37,11 +37,7 @@
     </label>
     <label class="ar-field">
       <span class="ar-field__label">Trigger</span>
-      <select
-        required
-        class="ar-field__input"
-        (change)="newTrigger.set(+$any($event.target).value)"
-      >
+      <select required class="ar-field__input" (change)="pickTrigger(+$any($event.target).value)">
         @for (t of triggers; track t.value) {
           <option [value]="t.value" [selected]="t.value === newTrigger()">{{ t.label }}</option>
         }
@@ -112,6 +108,21 @@
         Calls placed by an automation's own AI voice call step don't start these triggers, so
         automations can't call someone in a loop.
       </p>
+    }
+    @if (isDueDateTrigger(newTrigger())) {
+      <label class="ar-field">
+        <span class="ar-field__label">{{ dueDaysLabel(newTrigger()) }}</span>
+        <input
+          class="ar-field__input"
+          type="number"
+          min="0"
+          [max]="dueMaxDays"
+          step="1"
+          [value]="newDueDays()"
+          (input)="newDueDays.set($any($event.target).value)"
+        />
+      </label>
+      <p class="ar-field__hint">{{ dueHint }}</p>
     }
     @if (error(); as e) {
       <p class="au__dialog-err">{{ e }}</p>

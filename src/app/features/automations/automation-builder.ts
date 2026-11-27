@@ -15,6 +15,15 @@ import {
   aiCallTriggerConfig,
   isAiCallTrigger,
 } from './ai-call-trigger';
+import {
+  DUE_MAX_DAYS,
+  DUE_TRIGGER_HINT,
+  dueCallVariables,
+  dueDaysLabel,
+  isDueDateTrigger,
+  parseDueDays,
+  readDueDays,
+} from './due-date-trigger';
 
 import {
   BuilderStep,
@@ -173,6 +182,12 @@ const CONDITION_FIELDS: { value: string; label: string }[] = [
   { value: 'call.endreason', label: 'AI call: end reason' },
   { value: 'call.duration', label: 'AI call: length in seconds' },
   { value: 'call.handoff', label: 'AI call: asked for a person (none / taken / missed)' },
+  // The invoice, contract or visit that started a date trigger's journey, as it is now. DueDetails.Read on the API.
+  { value: 'due.number', label: 'Due record: invoice or contract number' },
+  { value: 'due.amount', label: 'Due record: amount due (invoices)' },
+  { value: 'due.date', label: 'Due record: due, end or visit date' },
+  { value: 'due.days', label: 'Due record: days overdue or days left' },
+  { value: 'due.equipment', label: 'Due record: equipment (contracts and visits)' },
 ];
 const CUSTOM_ATTRIBUTE = 'attr.';
 /** An after-call analysis field of the journey's AI call, by its key. */
@@ -268,6 +283,17 @@ export class ArAutomationBuilder {
   protected readonly callOutcomes = AI_CALL_OUTCOMES;
   protected readonly callDirection = signal('');
   protected readonly callOutcome = signal('');
+  protected readonly isDueDateTrigger = isDueDateTrigger;
+  protected readonly dueDaysLabel = dueDaysLabel;
+  protected readonly dueCallVariables = dueCallVariables;
+  protected readonly dueHint = DUE_TRIGGER_HINT;
+  protected readonly dueMaxDays = DUE_MAX_DAYS;
+  /** {{name}}, as typed in a reason or the agent's instructions. */
+  protected placeholder(name: string): string {
+    return `{{${name}}}`;
+  }
+  /** A date trigger's number of days, as typed. */
+  protected readonly dueDays = signal('7');
 
   protected stagesOfPipeline() {
     return this.pipelines().find((p) => p.id === this.stagePipelineId())?.stages ?? [];
@@ -341,6 +367,7 @@ export class ArAutomationBuilder {
         this.stageId.set(tc.stageId ?? '');
         this.callDirection.set(tc.direction ?? '');
         this.callOutcome.set(tc.outcome ?? '');
+        this.dueDays.set(String(readDueDays(this.trigger(), this.rawTriggerConfig)));
       } catch {
         this.keywords.set('');
       }
@@ -1006,6 +1033,10 @@ export class ArAutomationBuilder {
       return JSON.stringify(
         aiCallTriggerConfig(this.trigger(), this.callDirection(), this.callOutcome()),
       );
+    }
+    if (isDueDateTrigger(this.trigger())) {
+      // An invalid number is sent as typed so the API refuses it with its message, rather than being saved as something else.
+      return JSON.stringify({ days: parseDueDays(this.dueDays()) ?? this.dueDays() });
     }
     // Every other trigger (a segment drip's segment, for one) is configured elsewhere: save it back untouched.
     return this.rawTriggerConfig;
