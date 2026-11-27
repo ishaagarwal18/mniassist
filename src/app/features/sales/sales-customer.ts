@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   inject,
   input,
   output,
@@ -43,6 +44,10 @@ interface AccountOption {
   selector: 'ar-sales-customer',
   imports: [ArContactPicker, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'onDocumentClick($event)',
+    '(document:keydown.escape)': 'accountResults.set([])',
+  },
   template: `
     <div class="sc__seg" role="radiogroup" aria-label="For an account or a contact">
       <button
@@ -148,25 +153,31 @@ interface AccountOption {
     .sc__seg {
       display: inline-flex;
       align-self: flex-start;
-      border: 1px solid var(--ar-line-300);
-      border-radius: var(--ar-radius-control);
-      overflow: hidden;
+      background: #f1f5f9;
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      gap: 2px;
     }
     .sc__seg-btn {
       padding: 6px 16px;
-      background: var(--ar-white);
+      background: transparent;
       border: 0;
       cursor: pointer;
-      font: 500 12.5px var(--ar-font-sans);
-      color: var(--ar-ink-700);
+      font: 500 12.5px var(--ar-font-sans, system-ui, sans-serif);
+      color: #64748b;
+      border-radius: 6px;
+      transition: all 0.15s ease;
     }
-    .sc__seg-btn + .sc__seg-btn {
-      border-left: 1px solid var(--ar-line-300);
+    .sc__seg-btn:hover:not(.sc__seg-btn--on) {
+      color: #1e293b;
+      background: rgba(255, 255, 255, 0.5);
     }
     .sc__seg-btn--on {
-      background: var(--ar-blue-100);
-      color: var(--ar-blue-700);
+      background: #ffffff;
+      color: #2563eb;
       font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
     .sc__grid {
       display: grid;
@@ -248,6 +259,7 @@ interface AccountOption {
   `,
 })
 export class ArSalesCustomer {
+  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly contactsApi = inject(ContactService);
   private readonly accountsApi = inject(CustomerAccountService);
   private readonly parties = inject(SalesPartyService);
@@ -281,6 +293,12 @@ export class ArSalesCustomer {
   private accountTimer?: ReturnType<typeof setTimeout>;
   private accountSeq = 0;
   private partySeq = 0;
+
+  protected onDocumentClick(event: MouseEvent): void {
+    if (this.accountResults().length && !this.elementRef.nativeElement.contains(event.target as Node)) {
+      this.accountResults.set([]);
+    }
+  }
 
   protected setMode(mode: SalesCustomerMode): void {
     if (mode === this.mode()) return;

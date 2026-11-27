@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   input,
@@ -9,17 +10,20 @@ import {
   untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { PickerOption } from '../../../core/services/pipeline.service';
+import { ArTopbar } from '../../../layout/topbar';
 import type { ProductDto } from '../../../proxy/library/product.service';
 import { CreateSalesOrderDto, SalesOrderDto } from '../../../proxy/sales/sales-order.models';
 import { SalesOrderService } from '../../../proxy/sales/sales-order.service';
-import { ArButton, ArDialog } from '../../../ui';
+import { ArBanner, ArButton, ArCard, ArIcon } from '../../../ui';
 import { ArSelect } from '../../../ui/select';
 import { errorMessage } from '../../activities/activity-logic';
 import { ArCatalogueItem, CatalogueSearch } from '../catalogue-item';
 import { ArSalesCustomer, SalesCustomerChoice } from '../sales-customer';
 import { EMPTY_PARTY, SalesParty, defaultShipIndex, shipToText } from '../sales-party';
 import {
+  DEFAULT_TAX_BPS,
   OrderLine,
   blankLine,
   editLine,
@@ -29,314 +33,26 @@ import {
 } from './new-sales-order.logic';
 
 /**
- * A new sales order, shown as the page at /sales/orders/new (from Sales orders or Customer 360). The customer is an account and
- * the contact person who placed the order (or a contact with no account); choosing them fills the billing and site addresses from
- * the account, the site from its default shipping address. Each item's name searches the product catalogue: picking one fills
- * the item number, description, HSN, price and GST. Emits the created order, or null when cancelled.
+ * Enterprise Create / Edit Sales Order Component.
+ * Styled after the Account Form with 100% full-width layout, structured modular cards,
+ * clear visual hierarchy, dynamic calculations, and accessible ERP controls.
  */
 @Component({
   selector: 'ar-new-sales-order',
-  imports: [FormsModule, ArButton, ArDialog, ArSalesCustomer, ArCatalogueItem, ArSelect],
+  imports: [
+    FormsModule,
+    ArTopbar,
+    ArCard,
+    ArBanner,
+    ArButton,
+    ArIcon,
+    ArSalesCustomer,
+    ArCatalogueItem,
+    ArSelect,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <ar-dialog
-      [title]="editing() ? 'Edit ' + editing()!.orderNumber : 'Create New Sales Order'"
-      width="min(920px, calc(100vw - 32px))"
-      (dismiss)="closed.emit(null)"
-    >
-      <div class="so">
-        @if (editing(); as e) {
-          <p class="so__fixed">
-            Customer: <strong translate="no">{{ e.customerName }}</strong>
-            @if (e.customerAccountName) {
-              · <span translate="no">{{ e.customerAccountName }}</span>
-            }
-          </p>
-        } @else {
-          <ar-sales-customer [initialCustomer]="initialCustomer()" (changed)="onCustomer($event)" />
-        }
-
-        <div class="so__grid">
-          <label class="ar-field" for="so-po">
-            <span class="ar-field__label">Customer PO number <span class="so__req">*</span></span>
-            <input
-              id="so-po"
-              type="text"
-              class="ar-field__input"
-              [(ngModel)]="order.customerPoNumber"
-              placeholder="e.g. PO-KF-1029"
-            />
-          </label>
-          <label class="ar-field" for="so-days">
-            <span class="ar-field__label">Payment terms (days)</span>
-            <input
-              id="so-days"
-              type="number"
-              class="ar-field__input"
-              [(ngModel)]="order.paymentTermsDays"
-              placeholder="30"
-            />
-          </label>
-          <label class="ar-field so__wide" for="so-delivery">
-            <span class="ar-field__label">Delivery terms</span>
-            <input
-              id="so-delivery"
-              type="text"
-              class="ar-field__input"
-              [(ngModel)]="order.deliveryTerms"
-              placeholder="Ex-Works / FOR Destination"
-            />
-          </label>
-
-          <label class="ar-field so__half" for="so-bill">
-            <span class="ar-field__label">Billing address</span>
-            <textarea
-              id="so-bill"
-              class="ar-field__input"
-              rows="3"
-              [value]="billingAddress()"
-              (input)="billingAddress.set($any($event.target).value)"
-            ></textarea>
-          </label>
-          <div class="ar-field so__half">
-            <label class="ar-field__label" for="so-ship">Shipping / Site address</label>
-            @if (party().shipTo.length) {
-              <select
-                class="ar-field__input"
-                aria-label="Ship to"
-                (change)="chooseShipTo(+$any($event.target).value)"
-              >
-                @for (s of party().shipTo; track $index; let i = $index) {
-                  <option [value]="i" [selected]="i === shipIndex()">
-                    {{ s.label }}{{ s.isDefault ? ' (default)' : '' }}
-                  </option>
-                }
-                <option [value]="-1" [selected]="shipIndex() === -1">Billing address</option>
-              </select>
-            }
-            <textarea
-              id="so-ship"
-              class="ar-field__input"
-              rows="3"
-              placeholder="Site delivery address"
-              [value]="shippingAddress()"
-              (input)="shippingAddress.set($any($event.target).value)"
-            ></textarea>
-          </div>
-          <label class="ar-field so__half" for="so-notes">
-            <span class="ar-field__label"
-              >Notes <span class="ar-field__opt">printed on the order</span></span
-            >
-            <textarea
-              id="so-notes"
-              class="ar-field__input"
-              rows="3"
-              maxlength="2000"
-              [value]="notes()"
-              (input)="notes.set($any($event.target).value)"
-            ></textarea>
-          </label>
-          <label class="ar-field so__half" for="so-internal">
-            <span class="ar-field__label"
-              >Internal notes <span class="ar-field__opt">only your team sees these</span></span
-            >
-            <textarea
-              id="so-internal"
-              class="ar-field__input"
-              rows="3"
-              maxlength="2000"
-              placeholder="e.g. Agreed 2% extra discount on next order"
-              [value]="internalNotes()"
-              (input)="internalNotes.set($any($event.target).value)"
-            ></textarea>
-          </label>
-        </div>
-
-        <h4 class="so__h">Order items</h4>
-        @if (catalogue.blocked()) {
-          <span class="ar-field__hint">
-            The product catalogue isn't available to your role: type the item number and
-            description.
-          </span>
-        }
-        <div class="so__lines">
-          <div class="so__line so__line--head" aria-hidden="true">
-            <span>Item name</span><span>Item no.</span><span>Description</span><span>Qty</span
-            ><span>Price ₹</span><span></span>
-          </div>
-          @for (l of lines(); track $index; let i = $index) {
-            <div class="so__line">
-              <ar-catalogue-item
-                [value]="l.itemName"
-                (typed)="patchLine(i, { itemName: $event })"
-                (picked)="pickItem(i, $event)"
-              />
-              <input
-                class="ar-field__input ar-mono"
-                aria-label="Item number"
-                placeholder="Item no."
-                [value]="l.partNumber"
-                (input)="patchLine(i, { partNumber: $any($event.target).value })"
-              />
-              <input
-                class="ar-field__input"
-                aria-label="Description"
-                placeholder="Description"
-                [value]="l.description"
-                (input)="patchLine(i, { description: $any($event.target).value })"
-              />
-              <input
-                type="number"
-                min="0"
-                class="ar-field__input so__num"
-                aria-label="Quantity"
-                [value]="l.quantity"
-                (input)="patchLine(i, { quantity: +$any($event.target).value })"
-              />
-              <input
-                type="number"
-                min="0"
-                class="ar-field__input so__num"
-                aria-label="Price in rupees"
-                [value]="l.unitPrice"
-                (input)="patchLine(i, { unitPrice: +$any($event.target).value })"
-              />
-              <button
-                type="button"
-                class="so__x"
-                aria-label="Remove item"
-                [disabled]="lines().length === 1"
-                (click)="removeLine(i)"
-              >
-                ✕
-              </button>
-            </div>
-          }
-        </div>
-        <button type="button" class="so__add" (click)="addLine()">+ Add line item</button>
-
-        @if (error(); as e) {
-          <p class="so__error" role="alert">{{ e }}</p>
-        }
-      </div>
-      <div dialogActions>
-        <button ar-button variant="ghost" (click)="closed.emit(null)">Cancel</button>
-        <button ar-button variant="primary" [disabled]="creating()" (click)="submit()">
-          {{ creating() ? 'Saving…' : editing() ? 'Save changes' : 'Create Sales Order' }}
-        </button>
-      </div>
-    </ar-dialog>
-  `,
-  styles: `
-    .so {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .so__grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px 14px;
-      align-items: start;
-    }
-    .so__wide {
-      grid-column: 1 / -1;
-    }
-    .so__half {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .so__req {
-      color: var(--ar-bad-600);
-    }
-    .so__h {
-      margin: 4px 0 0;
-      font: 700 12px var(--ar-font-sans);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--ar-ink-500);
-    }
-    .so__lines {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .so__line {
-      display: grid;
-      grid-template-columns:
-        minmax(150px, 2fr) minmax(100px, 1.2fr) minmax(140px, 2.2fr)
-        70px 100px 32px;
-      gap: 8px;
-      align-items: start;
-    }
-    .so__line > input {
-      min-width: 0;
-    }
-    .so__line--head {
-      font: 600 11px var(--ar-font-sans);
-      color: var(--ar-ink-500);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .so__num {
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-    .so__x {
-      height: 36px;
-      background: none;
-      border: 0;
-      color: var(--ar-ink-500);
-      cursor: pointer;
-      border-radius: var(--ar-radius-control);
-    }
-    .so__x:hover:not(:disabled) {
-      color: var(--ar-bad-600);
-      background: var(--ar-red-100);
-    }
-    .so__x:disabled {
-      opacity: 0.3;
-      cursor: default;
-    }
-    .so__add {
-      align-self: flex-start;
-      background: none;
-      border: 1px dashed var(--ar-line-300);
-      border-radius: var(--ar-radius-control);
-      padding: 7px 12px;
-      font: 600 12.5px var(--ar-font-sans);
-      color: var(--ar-blue-600);
-      cursor: pointer;
-    }
-    .so__add:hover {
-      background: var(--ar-blue-100);
-    }
-    .so__error {
-      margin: 0;
-      padding: 0.75rem 1rem;
-      border: 1px solid var(--ar-red-200);
-      border-radius: 8px;
-      background: var(--ar-red-100);
-      color: var(--ar-bad-600);
-    }
-    .so__fixed {
-      margin: 0;
-      font: 400 13px var(--ar-font-sans);
-      color: var(--ar-ink-700);
-    }
-    @media (max-width: 760px) {
-      .so__grid {
-        grid-template-columns: minmax(0, 1fr);
-      }
-      .so__line {
-        grid-template-columns: 1fr 1fr;
-      }
-      .so__line--head {
-        display: none;
-      }
-    }
-  `,
+  templateUrl: './new-sales-order.html',
+  styleUrl: './new-sales-order.scss',
 })
 export class ArNewSalesOrder {
   private readonly orderService = inject(SalesOrderService);
@@ -365,6 +81,61 @@ export class ArNewSalesOrder {
     deliveryTerms: 'Ex-Works',
   };
 
+  /** Standard supported delivery terms */
+  protected readonly deliveryTermsOptions = [
+    'Ex-Works',
+    'FOR Destination',
+    'Door Delivery',
+    'FOB',
+    'CIF',
+  ];
+
+  // ---- Dynamic Order Calculations ------------------------------------------------
+
+  protected readonly itemCount = computed(
+    () =>
+      this.lines().filter((l) => l.partNumber.trim() || l.quantity > 0 || l.itemName.trim())
+        .length,
+  );
+
+  protected readonly totalQuantity = computed(() =>
+    this.lines().reduce((sum, l) => sum + (Number(l.quantity) || 0), 0),
+  );
+
+  protected readonly subtotal = computed(() =>
+    this.lines().reduce(
+      (sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0),
+      0,
+    ),
+  );
+
+  protected readonly totalGst = computed(() =>
+    this.lines().reduce(
+      (sum, l) =>
+        sum +
+        (Number(l.quantity) || 0) *
+          (Number(l.unitPrice) || 0) *
+          ((l.taxRateBasisPoints ?? DEFAULT_TAX_BPS) / 10000),
+      0,
+    ),
+  );
+
+  protected readonly grandTotal = computed(() => this.subtotal() + this.totalGst());
+
+  protected lineTotal(l: OrderLine): number {
+    return (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0);
+  }
+
+  protected formatInr(val: number): string {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(val || 0);
+  }
+
+  // ---- Customer & Address Actions -----------------------------------------------
+
   /** A new customer choice; a new account (or none) refills the billing and site addresses from it. */
   protected onCustomer(choice: SalesCustomerChoice): void {
     this.choice.set(choice);
@@ -379,6 +150,11 @@ export class ArNewSalesOrder {
   protected chooseShipTo(index: number): void {
     this.shipIndex.set(index);
     this.shippingAddress.set(shipToText(this.party(), index));
+  }
+
+  protected copyBillingToShipping(): void {
+    this.shippingAddress.set(this.billingAddress());
+    this.shipIndex.set(-1);
   }
 
   // ---- Items ---------------------------------------------------------------------
@@ -399,7 +175,11 @@ export class ArNewSalesOrder {
     this.lines.update((ls) => ls.map((l, i) => (i === index ? lineFromProduct(p, l) : l)));
   }
 
-  // ---- Save ----------------------------------------------------------------------
+  protected cancel(): void {
+    this.closed.emit(null);
+  }
+
+  // ---- Save / Submit -------------------------------------------------------------
 
   constructor() {
     // An edit starts from the saved order.
