@@ -3,6 +3,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GridModule, RecordClickEventArgs } from '@syncfusion/ej2-angular-grids';
+import { PermissionService } from '@abp/ng.core';
+
+import { ConfirmService } from '../../../core/ui/confirm.service';
 import { ToastService } from '../../../core/ui/toast.service';
 import { CustomerScope, readCustomerScope } from '../../../core/util/customer-scope';
 import { errorMessage } from '../../activities/activity-logic';
@@ -10,11 +13,11 @@ import { ArTopbar } from '../../../layout/topbar';
 import { SalesInvoiceDto } from '../../../proxy/sales/sales-invoice.models';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { SalesExportFormat, SalesInvoiceStatus } from '../../../proxy/sales/sales-enums';
-import { ArButton, ArChip } from '../../../ui';
+import { ArButton, ArChip, ArIcon } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
-import { PermissionService } from '@abp/ng.core';
 import { grantedPolicy } from '../../../core/auth/permission';
 import {
+  canCancelInvoice,
   canIssueInvoice,
   canPayInvoice,
   invoiceStatusLabel,
@@ -34,399 +37,32 @@ import { ArSalesExport } from '../sales-export';
     ArTopbar,
     ArButton,
     ArChip,
+    ArIcon,
     ArSalesExport,
     ArGrid,
     GridModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <ar-topbar
-      title="Commercial sales invoices"
-      subtitle="Statutory GST commercial tax invoices, credit notes and debit notes with itemized tax breakdowns and payment receipts."
-      help="Issue GST invoices against orders or delivery challans. Compute statutory CGST+SGST or IGST automatically, track outstanding customer balances, and record payments received."
-    >
-      @if (canCreate()) {
-        <ar-sales-export
-          [fetch]="exportAll"
-          [fileName]="exportName()"
-          label="Export "
-          hint="Every invoice the filters show"
-        />
-        <button ar-button type="button" variant="primary" icon="plus" (click)="newInvoice()">
-          New sales invoice
-        </button>
-      }
-    </ar-topbar>
-
-    <div class="invoices-shell">
-      @if (scope(); as sc) {
-        <p class="scope-bar" role="status">
-          Showing only {{ sc.name || 'this customer' }}'s invoices.
-          <button type="button" class="scope-bar__all" (click)="clearScope()">
-            Show all invoices
-          </button>
-        </p>
-      }
-      @if (loadError(); as e) {
-        <p class="load-error" role="alert">
-          {{ e }}
-          <button ar-button variant="ghost" (click)="loadInvoices()">Try again</button>
-        </p>
-      }
-      <!-- Summary metrics cards -->
-      <div class="metrics-row">
-        <div class="metric-card">
-          <span class="m-lbl">Total billed</span>
-          <span class="m-val">₹{{ totalBilled() / 100 | number: '1.2-2' }}</span>
-        </div>
-        <div class="metric-card">
-          <span class="m-lbl">Collections received</span>
-          <span class="m-val text-success">₹{{ totalCollected() / 100 | number: '1.2-2' }}</span>
-        </div>
-        <div class="metric-card">
-          <span class="m-lbl">Outstanding balance</span>
-          <span class="m-val text-danger">₹{{ totalOutstanding() / 100 | number: '1.2-2' }}</span>
-        </div>
-      </div>
-
-      <!-- Filters -->
-      <div class="filters-bar">
-        <div class="search-input-wrap">
-          <input
-            type="text"
-            class="ar-input"
-            placeholder="Search invoice #, customer or GSTIN..."
-            [ngModel]="searchQuery()"
-            (ngModelChange)="searchQuery.set($event)"
-          />
-        </div>
-        <div class="status-pills">
-          <button
-            class="pill-btn"
-            [class.active]="selectedStatus() === null"
-            (click)="selectedStatus.set(null)"
-          >
-            All ({{ invoices().length }})
-          </button>
-          <button
-            class="pill-btn"
-            [class.active]="selectedStatus() === SalesInvoiceStatus.Draft"
-            (click)="selectedStatus.set(SalesInvoiceStatus.Draft)"
-          >
-            Draft
-          </button>
-          <button
-            class="pill-btn"
-            [class.active]="selectedStatus() === SalesInvoiceStatus.Issued"
-            (click)="selectedStatus.set(SalesInvoiceStatus.Issued)"
-          >
-            Issued
-          </button>
-          <button
-            class="pill-btn"
-            [class.active]="selectedStatus() === SalesInvoiceStatus.PartiallyPaid"
-            (click)="selectedStatus.set(SalesInvoiceStatus.PartiallyPaid)"
-          >
-            Partially Paid
-          </button>
-          <button
-            class="pill-btn"
-            [class.active]="selectedStatus() === SalesInvoiceStatus.Paid"
-            (click)="selectedStatus.set(SalesInvoiceStatus.Paid)"
-          >
-            Paid
-          </button>
-        </div>
-      </div>
-
-      <!-- Invoices Table -->
-      <div class="table-card">
-        <ejs-grid
-          arGrid="sales-invoices"
-          arGridEmpty="No invoices yet. Press “New sales invoice”, or generate one from a sales order."
-          [dataSource]="filteredInvoices()"
-          (recordClick)="onInvoiceClick($event)"
-          aria-label="Sales invoices"
-        >
-          <e-columns>
-            <e-column field="invoiceNumber" headerText="Invoice #" width="160">
-              <ng-template #template let-inv>
-                <span class="font-mono font-bold text-primary">{{ inv.invoiceNumber }}</span>
-              </ng-template>
-            </e-column>
-            <e-column field="customerName" headerText="Customer" width="220">
-              <ng-template #template let-inv>
-                <div class="font-semibold">{{ inv.customerName }}</div>
-                @if (inv.customerGstin) {
-                  <div class="font-mono text-xs text-muted">{{ inv.customerGstin }}</div>
-                }
-              </ng-template>
-            </e-column>
-            <e-column field="issueDateUtc" headerText="Issue Date" width="130">
-              <ng-template #template let-inv>
-                {{ inv.issueDateUtc | date: 'dd MMM yyyy' }}
-              </ng-template>
-            </e-column>
-            <e-column field="dueDateUtc" headerText="Due Date" width="130">
-              <ng-template #template let-inv>
-                <span [class.text-danger]="isOverdue(inv)">
-                  {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}
-                </span>
-              </ng-template>
-            </e-column>
-            <e-column field="subtotalInPaise" headerText="Subtotal" textAlign="Right" width="130">
-              <ng-template #template let-inv>
-                <span class="num-col">₹{{ inv.subtotalInPaise / 100 | number: '1.2-2' }}</span>
-              </ng-template>
-            </e-column>
-            <e-column field="totalTaxInPaise" headerText="GST" textAlign="Right" width="120">
-              <ng-template #template let-inv>
-                <span class="num-col">₹{{ inv.totalTaxInPaise / 100 | number: '1.2-2' }}</span>
-              </ng-template>
-            </e-column>
-            <e-column
-              field="grandTotalInPaise"
-              headerText="Grand Total"
-              textAlign="Right"
-              width="140"
-            >
-              <ng-template #template let-inv>
-                <span class="num-col font-bold">
-                  ₹{{ inv.grandTotalInPaise / 100 | number: '1.2-2' }}
-                </span>
-              </ng-template>
-            </e-column>
-            <e-column
-              field="balanceDueInPaise"
-              headerText="Balance Due"
-              textAlign="Right"
-              width="140"
-            >
-              <ng-template #template let-inv>
-                <span class="num-col font-bold" [class.text-danger]="inv.balanceDueInPaise > 0">
-                  ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
-                </span>
-              </ng-template>
-            </e-column>
-            <e-column field="status" headerText="Status" width="130">
-              <ng-template #template let-inv>
-                <ar-chip [tone]="getStatusTone(inv.status)">
-                  {{ getStatusLabel(inv.status) }}
-                </ar-chip>
-              </ng-template>
-            </e-column>
-            <e-column headerText="Actions" width="200">
-              <ng-template #template let-inv>
-                <div class="row-actions">
-                  <button class="action-btn" (click)="openInvoice(inv)">View</button>
-                  @if (canIssue(inv)) {
-                    <button class="action-btn primary" (click)="issueInvoice(inv)">Issue</button>
-                  }
-                  @if (canPay(inv)) {
-                    <button class="action-btn success" (click)="openInvoice(inv, true)">Pay</button>
-                  }
-                </div>
-              </ng-template>
-            </e-column>
-          </e-columns>
-        </ejs-grid>
-      </div>
-    </div>
-  `,
-  styles: [
-    `
-      .scope-bar {
-        margin: 0;
-        padding: 0.6rem 0.9rem;
-        border: 1px solid var(--ar-line-200);
-        border-radius: 8px;
-        background: var(--ar-blue-100, #eff6ff);
-        font-size: 0.8125rem;
-      }
-      .scope-bar__all {
-        margin-left: 0.5rem;
-        background: none;
-        border: 0;
-        padding: 0;
-        color: var(--ar-primary, #0284c7);
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .load-error {
-        margin: 0;
-        padding: 0.75rem 1rem;
-        border: 1px solid var(--ar-bad-200, #fecaca);
-        border-radius: 8px;
-        background: var(--ar-bad-50, #fef2f2);
-        color: var(--ar-bad-700, #b91c1c);
-      }
-      .load-error button {
-        margin-left: 0.5rem;
-      }
-      .invoices-shell {
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-      }
-      .metrics-row {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1rem;
-      }
-      .metric-card {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-line, #e2e8f0);
-        padding: 1rem 1.25rem;
-        border-radius: 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-      }
-      .m-lbl {
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        color: var(--ar-ink-muted, #64748b);
-      }
-      .m-val {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--ar-ink-heavy, #0f172a);
-      }
-      .text-success {
-        color: #059669;
-      }
-      .text-danger {
-        color: #dc2626;
-      }
-      .filters-bar {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-      }
-      .search-input-wrap {
-        flex: 1;
-        min-width: 280px;
-        max-width: 450px;
-      }
-      .ar-input {
-        width: 100%;
-        padding: 0.5rem 0.75rem;
-        border-radius: 6px;
-        border: 1px solid var(--ar-line-strong, #cbd5e1);
-        background: var(--ar-surface, #ffffff);
-        color: var(--ar-ink-heavy, #0f172a);
-        font-size: 0.875rem;
-      }
-      .status-pills {
-        display: flex;
-        gap: 0.375rem;
-        flex-wrap: wrap;
-      }
-      .pill-btn {
-        padding: 0.375rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        background: var(--ar-surface-sunken, #f1f5f9);
-        border: 1px solid var(--ar-line, #e2e8f0);
-        color: var(--ar-ink-muted, #64748b);
-        cursor: pointer;
-        transition: all 0.15s ease;
-      }
-      .pill-btn.active {
-        background: var(--ar-primary, #0284c7);
-        color: #ffffff;
-        border-color: var(--ar-primary, #0284c7);
-      }
-      .table-card {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-line, #e2e8f0);
-        border-radius: 8px;
-        overflow-x: auto;
-      }
-      .ar-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.875rem;
-        text-align: left;
-      }
-      .ar-table th {
-        background: var(--ar-surface-sunken, #f8fafc);
-        color: var(--ar-ink-muted, #64748b);
-        font-weight: 600;
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid var(--ar-line, #e2e8f0);
-      }
-      .ar-table td {
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid var(--ar-line-weak, #f1f5f9);
-        color: var(--ar-ink-heavy, #0f172a);
-      }
-      .inv-row {
-        cursor: pointer;
-        transition: background-color 0.1s ease;
-      }
-      .inv-row:hover {
-        background-color: var(--ar-surface-hover, #f8fafc);
-      }
-      .num-col {
-        text-align: right;
-      }
-      .actions-col {
-        text-align: right;
-        width: 140px;
-      }
-      .row-actions {
-        display: flex;
-        gap: 0.25rem;
-        justify-content: flex-end;
-      }
-      .action-btn {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-        border-radius: 4px;
-        border: 1px solid var(--ar-line-strong, #cbd5e1);
-        background: var(--ar-surface, #ffffff);
-        color: var(--ar-ink-heavy, #0f172a);
-        cursor: pointer;
-      }
-      .action-btn.primary {
-        background: var(--ar-primary, #0284c7);
-        color: #ffffff;
-        border-color: var(--ar-primary, #0284c7);
-      }
-      .action-btn.success {
-        background: #059669;
-        color: #ffffff;
-        border-color: #059669;
-      }
-      .empty-state {
-        text-align: center;
-        padding: 3rem 1rem;
-        color: var(--ar-ink-muted, #64748b);
-      }
-    `,
-  ],
+  templateUrl: './sales-invoices.html',
+  styleUrl: './sales-invoices.scss',
 })
 export class ArSalesInvoices {
   private readonly invoiceService = inject(SalesInvoiceService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
+  private readonly permissions = inject(PermissionService);
+
   /** Opened from Customer 360 for one customer or account: only their invoices. */
   protected readonly scope = signal<CustomerScope | null>(readCustomerScope());
 
   readonly SalesInvoiceStatus = SalesInvoiceStatus;
 
-  private readonly toasts = inject(ToastService);
-  private readonly permissions = inject(PermissionService);
-
   protected readonly canCreate = grantedPolicy('AutoReach.SalesInvoices.Create', this.permissions);
 
   invoices = signal<SalesInvoiceDto[]>([]);
+  loading = signal<boolean>(false);
   loadError = signal<string | null>(null);
   searchQuery = signal<string>('');
   selectedStatus = signal<SalesInvoiceStatus | null>(null);
@@ -435,6 +71,22 @@ export class ArSalesInvoices {
   totalCollected = computed(() => this.invoices().reduce((acc, i) => acc + i.paidAmountInPaise, 0));
   totalOutstanding = computed(() =>
     this.invoices().reduce((acc, i) => acc + i.balanceDueInPaise, 0),
+  );
+
+  readonly draftCount = computed(
+    () => this.invoices().filter((i) => i.status === SalesInvoiceStatus.Draft).length,
+  );
+  readonly issuedCount = computed(
+    () => this.invoices().filter((i) => i.status === SalesInvoiceStatus.Issued).length,
+  );
+  readonly partiallyPaidCount = computed(
+    () => this.invoices().filter((i) => i.status === SalesInvoiceStatus.PartiallyPaid).length,
+  );
+  readonly paidCount = computed(
+    () => this.invoices().filter((i) => i.status === SalesInvoiceStatus.Paid).length,
+  );
+  readonly overdueCount = computed(
+    () => this.invoices().filter((i) => this.isOverdue(i)).length,
   );
 
   filteredInvoices = computed(() => {
@@ -485,9 +137,21 @@ export class ArSalesInvoices {
     }
   }
 
+  setStatusFilter(status: SalesInvoiceStatus | null): void {
+    this.selectedStatus.set(status);
+  }
+
+  clearSearch(): void {
+    this.searchQuery.set('');
+  }
+
+  onSearchChange(text: string): void {
+    this.searchQuery.set(text);
+  }
+
   onInvoiceClick(e: RecordClickEventArgs): void {
     const target = e.target as HTMLElement | null;
-    if (target?.closest('.row-actions, button, a')) return;
+    if (target?.closest('.si-row-actions, button, a')) return;
     const row = e.rowData as SalesInvoiceDto | undefined;
     if (row) this.openInvoice(row);
   }
@@ -513,6 +177,7 @@ export class ArSalesInvoices {
   }
 
   loadInvoices() {
+    this.loading.set(true);
     this.invoiceService
       .getList({
         maxResultCount: 100,
@@ -523,20 +188,62 @@ export class ArSalesInvoices {
         next: (res) => {
           this.invoices.set(res?.items ?? []);
           this.loadError.set(null);
+          this.loading.set(false);
         },
         error: (e: unknown) => {
           this.loadError.set(errorMessage(e, 'Invoices could not be loaded.'));
+          this.loading.set(false);
         },
       });
+  }
+
+  async confirmIssue(inv: SalesInvoiceDto): Promise<void> {
+    if (!inv.id) return;
+    const ok = await this.dialogs.confirm({
+      title: `Issue invoice ${inv.invoiceNumber}?`,
+      message:
+        'Once issued, this invoice is finalized and customer ledger entries will be updated. Tax amounts will be locked.',
+      confirmText: 'Issue invoice',
+      cancelText: 'Keep draft',
+      tone: 'primary',
+    });
+    if (!ok) return;
+
+    this.issueInvoice(inv);
   }
 
   issueInvoice(inv: SalesInvoiceDto) {
     if (!inv.id) return;
 
     this.invoiceService.issue(inv.id).subscribe({
-      next: (updated) => this.updateInvoiceInList(updated),
+      next: (updated) => {
+        this.updateInvoiceInList(updated);
+        this.toasts.success(`Invoice ${inv.invoiceNumber} issued successfully.`);
+      },
       error: (e: unknown) =>
         this.toasts.error(errorMessage(e, `${inv.invoiceNumber} could not be issued.`)),
+    });
+  }
+
+  async confirmCancel(inv: SalesInvoiceDto): Promise<void> {
+    if (!inv.id) return;
+    const ok = await this.dialogs.confirm({
+      title: `Cancel invoice ${inv.invoiceNumber}?`,
+      message:
+        'Once cancelled, no payment can be recorded against this invoice. This action cannot be undone.',
+      confirmText: 'Cancel invoice',
+      cancelText: 'Keep invoice',
+      tone: 'danger',
+    });
+    if (!ok) return;
+
+    this.invoiceService.cancel(inv.id).subscribe({
+      next: (updated) => {
+        this.updateInvoiceInList(updated);
+        this.toasts.success(`Invoice ${inv.invoiceNumber} has been cancelled.`);
+      },
+      error: (e: unknown) =>
+        this.toasts.error(errorMessage(e, `${inv.invoiceNumber} could not be cancelled.`)),
     });
   }
 
@@ -552,4 +259,5 @@ export class ArSalesInvoices {
   readonly getStatusTone = invoiceStatusTone;
   readonly canIssue = canIssueInvoice;
   readonly canPay = canPayInvoice;
+  readonly canCancel = canCancelInvoice;
 }

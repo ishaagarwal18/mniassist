@@ -47,6 +47,9 @@ export class CatalogueSearch {
 @Component({
   selector: 'ar-catalogue-item',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown.escape)': 'showing.set(false)',
+  },
   template: `
     <input
       #box

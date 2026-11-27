@@ -1,0 +1,383 @@
+<ar-topbar
+  title="Commercial sales invoices"
+  subtitle="Statutory GST commercial tax invoices, credit notes and debit notes with itemized tax breakdowns and payment receipts."
+  help="Issue GST invoices against orders or delivery challans. Compute statutory CGST+SGST or IGST automatically, track outstanding customer balances, and record payments received."
+>
+  <div actions class="si-header-actions">
+    @if (canCreate()) {
+      <ar-sales-export
+        [fetch]="exportAll"
+        [fileName]="exportName()"
+        label="Export "
+        hint="Every invoice the filters show"
+      />
+      <button ar-button type="button" variant="primary" icon="plus" class="btn-new-invoice" (click)="newInvoice()">
+        New sales invoice
+      </button>
+    }
+  </div>
+</ar-topbar>
+
+<div class="si-shell">
+  <!-- Customer 360 Scope Banner -->
+  @if (scope(); as sc) {
+    <div class="si-scope-bar" role="status">
+      <div class="si-scope-bar__content">
+        <ar-icon name="contacts" [size]="16" class="si-scope-bar__icon" />
+        <span>
+          Showing only invoices for <strong translate="no">{{ sc.name || 'this customer' }}</strong>.
+        </span>
+      </div>
+      <button type="button" class="si-scope-bar__btn" (click)="clearScope()">
+        Show all invoices
+      </button>
+    </div>
+  }
+
+  <!-- Error Banner -->
+  @if (loadError(); as e) {
+    <div class="si-error-banner" role="alert">
+      <div class="si-error-banner__content">
+        <ar-icon name="alert" [size]="16" class="si-error-banner__icon" />
+        <span>{{ e }}</span>
+      </div>
+      <button ar-button variant="ghost" type="button" (click)="loadInvoices()">Try again</button>
+    </div>
+  }
+
+  <!-- 1. Financial KPI Summary Cards Row (100% full-width, 3 balanced columns) -->
+  <div class="si-kpi-grid" role="region" aria-label="Financial KPI Summary">
+    <!-- Card 1: Total Billed -->
+    <div
+      class="si-kpi-card"
+      [class.si-kpi-card--active]="selectedStatus() === null"
+      role="button"
+      tabindex="0"
+      (click)="setStatusFilter(null)"
+      (keydown.enter)="setStatusFilter(null)"
+      (keydown.space)="setStatusFilter(null)"
+      title="Filter by all invoices"
+    >
+      <div class="si-kpi-card__top">
+        <span class="si-kpi-card__label">Total Billed</span>
+        <div class="si-kpi-card__icon-wrap si-kpi-card__icon-wrap--billed">
+          <ar-icon name="sales-invoices" [size]="15" />
+        </div>
+      </div>
+      <div class="si-kpi-card__body">
+        <span class="si-kpi-card__value font-mono">₹{{ totalBilled() / 100 | number: '1.2-2' }}</span>
+        <span class="si-kpi-card__sub">{{ invoices().length }} total commercial invoices</span>
+      </div>
+      <div class="si-kpi-card__indicator si-kpi-card__indicator--billed"></div>
+    </div>
+
+    <!-- Card 2: Collections Received -->
+    <div
+      class="si-kpi-card"
+      [class.si-kpi-card--active]="selectedStatus() === SalesInvoiceStatus.Paid"
+      role="button"
+      tabindex="0"
+      (click)="setStatusFilter(SalesInvoiceStatus.Paid)"
+      (keydown.enter)="setStatusFilter(SalesInvoiceStatus.Paid)"
+      (keydown.space)="setStatusFilter(SalesInvoiceStatus.Paid)"
+      title="Filter by paid invoices"
+    >
+      <div class="si-kpi-card__top">
+        <span class="si-kpi-card__label">Collections Received</span>
+        <div class="si-kpi-card__icon-wrap si-kpi-card__icon-wrap--collected">
+          <ar-icon name="check" [size]="15" />
+        </div>
+      </div>
+      <div class="si-kpi-card__body">
+        <span class="si-kpi-card__value si-kpi-card__value--success font-mono">₹{{ totalCollected() / 100 | number: '1.2-2' }}</span>
+        <span class="si-kpi-card__sub">{{ paidCount() }} fully settled payments</span>
+      </div>
+      <div class="si-kpi-card__indicator si-kpi-card__indicator--collected"></div>
+    </div>
+
+    <!-- Card 3: Outstanding Balance -->
+    <div
+      class="si-kpi-card"
+      [class.si-kpi-card--active]="selectedStatus() === SalesInvoiceStatus.Issued || selectedStatus() === SalesInvoiceStatus.PartiallyPaid"
+      role="button"
+      tabindex="0"
+      (click)="setStatusFilter(SalesInvoiceStatus.Issued)"
+      (keydown.enter)="setStatusFilter(SalesInvoiceStatus.Issued)"
+      (keydown.space)="setStatusFilter(SalesInvoiceStatus.Issued)"
+      title="Filter by pending/unpaid invoices"
+    >
+      <div class="si-kpi-card__top">
+        <span class="si-kpi-card__label">Outstanding Balance</span>
+        <div class="si-kpi-card__icon-wrap si-kpi-card__icon-wrap--due">
+          <ar-icon name="alert" [size]="15" />
+        </div>
+      </div>
+      <div class="si-kpi-card__body">
+        <span class="si-kpi-card__value si-kpi-card__value--danger font-mono">₹{{ totalOutstanding() / 100 | number: '1.2-2' }}</span>
+        <span class="si-kpi-card__sub">
+          @if (overdueCount() > 0) {
+            <strong class="text-danger">{{ overdueCount() }} overdue</strong> · {{ issuedCount() + partiallyPaidCount() }} pending collections
+          } @else {
+            {{ issuedCount() + partiallyPaidCount() }} awaiting client payment
+          }
+        </span>
+      </div>
+      <div class="si-kpi-card__indicator si-kpi-card__indicator--due"></div>
+    </div>
+  </div>
+
+  <!-- 2. Search & Status Filter Controls Card -->
+  <div class="si-controls-card">
+    <div class="si-controls-card__top">
+      <!-- Search Input with clear button -->
+      <div class="si-search">
+        <ar-icon class="si-search__icon" name="search" [size]="16" />
+        <input
+          type="text"
+          class="si-search__input"
+          placeholder="Search by invoice #, customer or GSTIN..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="onSearchChange($event)"
+          aria-label="Search sales invoices"
+        />
+        @if (searchQuery()) {
+          <button
+            type="button"
+            class="si-search__clear"
+            title="Clear search"
+            aria-label="Clear search"
+            (click)="clearSearch()"
+          >
+            <ar-icon name="close" [size]="13" />
+          </button>
+        }
+      </div>
+
+      <!-- Quick summary indicator -->
+      <div class="si-controls-card__meta">
+        <span class="si-meta-count">
+          Showing <strong>{{ filteredInvoices().length }}</strong> of <strong>{{ invoices().length }}</strong> invoices
+        </span>
+      </div>
+    </div>
+
+    <!-- Status filter chips with live record counts -->
+    <div class="si-status-filters" role="tablist" aria-label="Invoice status filters">
+      <button
+        type="button"
+        class="si-filter-btn"
+        [class.si-filter-btn--active]="selectedStatus() === null"
+        (click)="setStatusFilter(null)"
+      >
+        <span>All</span>
+        <span class="si-filter-btn__badge">{{ invoices().length }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="si-filter-btn"
+        [class.si-filter-btn--active]="selectedStatus() === SalesInvoiceStatus.Draft"
+        (click)="setStatusFilter(SalesInvoiceStatus.Draft)"
+      >
+        <span>Draft</span>
+        <span class="si-filter-btn__badge">{{ draftCount() }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="si-filter-btn"
+        [class.si-filter-btn--active]="selectedStatus() === SalesInvoiceStatus.Issued"
+        (click)="setStatusFilter(SalesInvoiceStatus.Issued)"
+      >
+        <span>Issued</span>
+        <span class="si-filter-btn__badge">{{ issuedCount() }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="si-filter-btn"
+        [class.si-filter-btn--active]="selectedStatus() === SalesInvoiceStatus.PartiallyPaid"
+        (click)="setStatusFilter(SalesInvoiceStatus.PartiallyPaid)"
+      >
+        <span>Partially Paid</span>
+        <span class="si-filter-btn__badge">{{ partiallyPaidCount() }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="si-filter-btn"
+        [class.si-filter-btn--active]="selectedStatus() === SalesInvoiceStatus.Paid"
+        (click)="setStatusFilter(SalesInvoiceStatus.Paid)"
+      >
+        <span>Paid</span>
+        <span class="si-filter-btn__badge">{{ paidCount() }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. Enterprise Data Grid Table Card -->
+  <div class="si-table-card">
+    @if (loading()) {
+      <div class="si-loading-overlay">
+        <div class="si-spinner"></div>
+        <span>Loading sales invoices…</span>
+      </div>
+    }
+
+    <ejs-grid
+      #grid
+      arGrid="sales-invoices"
+      arGridEmpty="No sales invoices match your criteria. Press “New sales invoice”, or generate one directly from a sales order or delivery challan."
+      [dataSource]="filteredInvoices()"
+      (recordClick)="onInvoiceClick($event)"
+      aria-label="Sales invoices"
+    >
+      <e-columns>
+        <!-- 1. Invoice Number -->
+        <e-column field="invoiceNumber" headerText="Invoice #" width="165">
+          <ng-template #template let-inv>
+            <div class="si-num-cell">
+              <span class="si-num-link font-mono" [title]="'View invoice ' + inv.invoiceNumber">
+                {{ inv.invoiceNumber }}
+              </span>
+            </div>
+          </ng-template>
+        </e-column>
+
+        <!-- 2. Customer & GSTIN -->
+        <e-column field="customerName" headerText="Customer" width="240">
+          <ng-template #template let-inv>
+            <div class="si-cust-cell">
+              <span class="si-cust-title" [title]="inv.customerName" translate="no">
+                {{ inv.customerName }}
+              </span>
+              @if (inv.customerGstin) {
+                <span class="si-cust-sub font-mono" [title]="'GSTIN: ' + inv.customerGstin">
+                  GSTIN: {{ inv.customerGstin }}
+                </span>
+              }
+            </div>
+          </ng-template>
+        </e-column>
+
+        <!-- 3. Issue Date -->
+        <e-column field="issueDateUtc" headerText="Issue Date" width="130">
+          <ng-template #template let-inv>
+            <span class="si-date-cell">
+              {{ inv.issueDateUtc | date: 'dd MMM yyyy' }}
+            </span>
+          </ng-template>
+        </e-column>
+
+        <!-- 4. Due Date -->
+        <e-column field="dueDateUtc" headerText="Due Date" width="150">
+          <ng-template #template let-inv>
+            <div class="si-due-date-cell">
+              <span [class.text-danger]="isOverdue(inv)" [class.font-semibold]="isOverdue(inv)">
+                {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}
+              </span>
+              @if (isOverdue(inv)) {
+                <span class="si-overdue-pill" title="Payment is overdue">Overdue</span>
+              }
+            </div>
+          </ng-template>
+        </e-column>
+
+        <!-- 5. Subtotal -->
+        <e-column field="subtotalInPaise" headerText="Subtotal" textAlign="Right" width="130">
+          <ng-template #template let-inv>
+            <span class="si-amount-col font-mono">
+              ₹{{ inv.subtotalInPaise / 100 | number: '1.2-2' }}
+            </span>
+          </ng-template>
+        </e-column>
+
+        <!-- 6. GST Tax -->
+        <e-column field="totalTaxInPaise" headerText="GST" textAlign="Right" width="120">
+          <ng-template #template let-inv>
+            <span class="si-amount-col font-mono text-muted">
+              ₹{{ inv.totalTaxInPaise / 100 | number: '1.2-2' }}
+            </span>
+          </ng-template>
+        </e-column>
+
+        <!-- 7. Grand Total -->
+        <e-column field="grandTotalInPaise" headerText="Grand Total" textAlign="Right" width="145">
+          <ng-template #template let-inv>
+            <span class="si-amount-col si-amount-col--total font-mono">
+              ₹{{ inv.grandTotalInPaise / 100 | number: '1.2-2' }}
+            </span>
+          </ng-template>
+        </e-column>
+
+        <!-- 8. Balance Due -->
+        <e-column field="balanceDueInPaise" headerText="Balance Due" textAlign="Right" width="145">
+          <ng-template #template let-inv>
+            <span
+              class="si-amount-col font-mono"
+              [class.si-amount-col--due]="inv.balanceDueInPaise > 0"
+              [class.font-bold]="inv.balanceDueInPaise > 0"
+            >
+              ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
+            </span>
+          </ng-template>
+        </e-column>
+
+        <!-- 9. Status -->
+        <e-column field="status" headerText="Status" width="140">
+          <ng-template #template let-inv>
+            <ar-chip [tone]="getStatusTone(inv.status)">
+              {{ getStatusLabel(inv.status) }}
+            </ar-chip>
+          </ng-template>
+        </e-column>
+
+        <!-- 10. Actions -->
+        <e-column headerText="Actions" width="200" textAlign="Right">
+          <ng-template #template let-inv>
+            <div class="si-row-actions">
+              <button
+                type="button"
+                class="si-action-btn si-action-btn--view"
+                title="View full tax invoice details"
+                (click)="openInvoice(inv)"
+              >
+                View
+              </button>
+              @if (canIssue(inv)) {
+                <button
+                  type="button"
+                  class="si-action-btn si-action-btn--issue"
+                  title="Issue statutory tax invoice"
+                  (click)="confirmIssue(inv)"
+                >
+                  Issue
+                </button>
+              }
+              @if (canPay(inv)) {
+                <button
+                  type="button"
+                  class="si-action-btn si-action-btn--pay"
+                  title="Record received payment against this invoice"
+                  (click)="openInvoice(inv, true)"
+                >
+                  Pay
+                </button>
+              }
+              @if (canCancel(inv)) {
+                <button
+                  type="button"
+                  class="si-action-btn si-action-btn--cancel"
+                  title="Cancel invoice"
+                  (click)="confirmCancel(inv)"
+                >
+                  Cancel
+                </button>
+              }
+            </div>
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
+  </div>
+</div>

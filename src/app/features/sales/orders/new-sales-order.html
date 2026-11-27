@@ -1,0 +1,382 @@
+<ar-topbar
+  [title]="editing() ? ('Edit Sales Order · ' + editing()!.orderNumber) : 'New Sales Order'"
+  [subtitle]="
+    editing()
+      ? 'Update customer reference, delivery addresses, and line item specifications'
+      : 'Raise a commercial sales order with customer PO reference, delivery terms, and line items'
+  "
+  help="Sales orders capture confirmed purchase orders from customers with delivery schedules, pricing, and billing milestones."
+>
+  <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
+  <button
+    ar-button
+    type="button"
+    variant="primary"
+    icon="check"
+    [disabled]="creating()"
+    (click)="submit()"
+  >
+    {{ creating() ? 'Saving…' : editing() ? 'Save Changes' : 'Create Sales Order' }}
+  </button>
+</ar-topbar>
+
+<div class="so-form-page ar-scroll">
+  <div class="so-form-container">
+    @if (error(); as err) {
+      <ar-banner tone="bad">{{ err }}</ar-banner>
+    }
+
+    <!-- Visual Placement Banner Card (Reference: Account Form Hierarchy Card) -->
+    <div class="so-banner-card">
+      <div class="so-banner-card__icon">
+        <ar-icon name="sales-orders" [size]="22" />
+      </div>
+      <div class="so-banner-card__content">
+        <strong class="so-banner-card__title">
+          {{ editing() ? ('Editing Sales Order #' + editing()!.orderNumber) : 'Commercial Sales Order Entry' }}
+        </strong>
+        <p class="so-banner-card__desc">
+          {{
+            editing()
+              ? 'Update customer purchase order details, site addresses, and item specifications. Linked billing schedules and challans will reflect changes.'
+              : 'Select customer account and contact person, configure PO and delivery terms, and specify line items to generate an official sales order.'
+          }}
+        </p>
+      </div>
+    </div>
+
+    <!-- 1. Customer & Commercial Information Card -->
+    <ar-card heading="Customer & Commercial Information">
+      <div class="so-form-sections">
+        <!-- Customer Identity -->
+        <div class="so-form-group">
+          <h3 class="so-form-group__heading">
+            <ar-icon name="contacts" [size]="16" />
+            <span>Customer Identity</span>
+          </h3>
+
+          @if (editing(); as e) {
+            <div class="so-readonly-customer">
+              <div class="so-readonly-customer__info">
+                <span class="so-readonly-customer__name" translate="no">{{ e.customerName }}</span>
+                @if (e.customerAccountName) {
+                  <span class="so-readonly-customer__account">· {{ e.customerAccountName }}</span>
+                }
+              </div>
+              <span class="so-status-badge">Locked for existing order</span>
+            </div>
+          } @else {
+            <ar-sales-customer [initialCustomer]="initialCustomer()" (changed)="onCustomer($event)" />
+          }
+        </div>
+
+        <!-- Commercial & Delivery Terms -->
+        <div class="so-form-group">
+          <h3 class="so-form-group__heading">
+            <ar-icon name="delivery-challans" [size]="16" />
+            <span>Commercial &amp; Delivery Terms</span>
+          </h3>
+
+          <div class="so-form-grid so-form-grid--3col">
+            <!-- Customer PO Number -->
+            <label class="ar-field">
+              <span class="ar-field__label">Customer PO Number <span class="ar-field__req">*</span></span>
+              <input
+                required
+                class="ar-field__input"
+                placeholder="e.g. PO-KF-1029"
+                [(ngModel)]="order.customerPoNumber"
+                autocomplete="off"
+              />
+              <span class="ar-field__hint">Customer's official purchase order reference</span>
+            </label>
+
+            <!-- Payment Terms -->
+            <label class="ar-field">
+              <span class="ar-field__label">Payment Terms (Days)</span>
+              <input
+                type="number"
+                min="0"
+                class="ar-field__input"
+                placeholder="30"
+                [(ngModel)]="order.paymentTermsDays"
+              />
+              <span class="ar-field__hint">Credit period in days (default: 30 days)</span>
+            </label>
+
+            <!-- Delivery Terms -->
+            <label class="ar-field">
+              <span class="ar-field__label">Delivery Terms</span>
+              <select class="ar-field__input" [(ngModel)]="order.deliveryTerms">
+                @for (term of deliveryTermsOptions; track term) {
+                  <option [value]="term">{{ term }}</option>
+                }
+              </select>
+              <span class="ar-field__hint">Incoterms / delivery logistics arrangement</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </ar-card>
+
+    <!-- 2. Address & Notes Information Card -->
+    <ar-card heading="Address & Order Notes">
+      <div class="so-form-sections">
+        <!-- Billing & Shipping Addresses -->
+        <div class="so-form-group">
+          <div class="so-field-head">
+            <h3 class="so-form-group__heading">
+              <ar-icon name="document" [size]="16" />
+              <span>Billing &amp; Delivery Addresses</span>
+            </h3>
+            @if (billingAddress().trim()) {
+              <button type="button" class="so-link-btn" (click)="copyBillingToShipping()">
+                <ar-icon name="copy" [size]="12" /> Copy billing to shipping
+              </button>
+            }
+          </div>
+
+          <!-- Saved Shipping Site Presets -->
+          @if (party().shipTo.length > 0) {
+            <div class="so-ship-presets">
+              <span class="so-ship-presets__label">Saved Site Addresses:</span>
+              <div class="so-ship-chips">
+                <button
+                  type="button"
+                  class="so-ship-chip"
+                  [class.so-ship-chip--active]="shipIndex() === -1"
+                  (click)="chooseShipTo(-1)"
+                >
+                  Custom / Manual
+                </button>
+                @for (s of party().shipTo; track $index; let idx = $index) {
+                  <button
+                    type="button"
+                    class="so-ship-chip"
+                    [class.so-ship-chip--active]="shipIndex() === idx"
+                    (click)="chooseShipTo(idx)"
+                  >
+                    {{ s.label || ('Site ' + (idx + 1)) }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="so-form-grid">
+            <!-- Billing Address -->
+            <label class="ar-field">
+              <span class="ar-field__label">Billing Address <span class="ar-field__opt">optional</span></span>
+              <textarea
+                class="ar-field__input"
+                rows="3"
+                placeholder="Company billing address for invoice generation..."
+                [value]="billingAddress()"
+                (input)="billingAddress.set($any($event.target).value)"
+              ></textarea>
+              <span class="ar-field__hint">Auto-populated from account profile where available</span>
+            </label>
+
+            <!-- Shipping Address -->
+            <label class="ar-field">
+              <span class="ar-field__label">Shipping / Site Address <span class="ar-field__opt">optional</span></span>
+              <textarea
+                class="ar-field__input"
+                rows="3"
+                placeholder="Plant, project or site address for physical goods dispatch..."
+                [value]="shippingAddress()"
+                (input)="shippingAddress.set($any($event.target).value)"
+              ></textarea>
+              <span class="ar-field__hint">Destination printed on delivery challan and e-Way bill</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Order Notes & Internal Remarks -->
+        <div class="so-form-group">
+          <h3 class="so-form-group__heading">
+            <ar-icon name="edit" [size]="16" />
+            <span>Order Notes &amp; Instructions</span>
+          </h3>
+
+          <div class="so-form-grid">
+            <!-- Notes on Order -->
+            <label class="ar-field">
+              <span class="ar-field__label">Notes printed on order <span class="ar-field__opt">optional</span></span>
+              <textarea
+                class="ar-field__input"
+                rows="2"
+                placeholder="Special commercial terms, inspection notes, warranty clauses..."
+                [value]="notes()"
+                (input)="notes.set($any($event.target).value)"
+              ></textarea>
+              <span class="ar-field__hint">Customer-visible note printed directly on the generated sales order</span>
+            </label>
+
+            <!-- Internal Notes -->
+            <label class="ar-field">
+              <span class="ar-field__label">Internal notes <span class="ar-field__opt">team only</span></span>
+              <textarea
+                class="ar-field__input"
+                rows="2"
+                placeholder="e.g. Approved 2% special discount; dispatch once 20% advance received..."
+                [value]="internalNotes()"
+                (input)="internalNotes.set($any($event.target).value)"
+              ></textarea>
+              <span class="ar-field__hint">Confidential notes visible only to your internal team</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </ar-card>
+
+    <!-- 3. Order Line Items Card -->
+    <ar-card heading="Order Line Items">
+      <div card-actions>
+        <button
+          ar-button
+          type="button"
+          size="sm"
+          variant="ghost"
+          icon="plus"
+          (click)="addLine()"
+        >
+          Add Line Item
+        </button>
+      </div>
+
+      <div class="so-items-wrapper">
+        <div class="so-items-meta">
+          <span class="so-items-count">
+            <strong class="so-items-count__num">{{ lines().length }}</strong>
+            <span>line item{{ lines().length === 1 ? '' : 's' }}</span>
+          </span>
+          <span class="so-items-hint">Search the master catalogue or enter items manually</span>
+        </div>
+
+        <div class="so-table-container">
+          <table class="so-items-table" aria-label="Order line items">
+            <thead>
+              <tr>
+                <th class="so-col--idx">#</th>
+                <th class="so-col--item">Item Name / Catalogue Product</th>
+                <th class="so-col--sku">Item No. / SKU</th>
+                <th class="so-col--desc">Description</th>
+                <th class="so-col--qty">Qty</th>
+                <th class="so-col--price">Unit Price (₹)</th>
+                <th class="so-col--total">Line Total (₹)</th>
+                <th class="so-col--act"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of lines(); track $index; let idx = $index) {
+                <tr class="so-item-row">
+                  <td class="so-col--idx">
+                    <span class="so-line-num">{{ idx + 1 }}</span>
+                  </td>
+                  <td class="so-col--item">
+                    <ar-catalogue-item
+                      [value]="l.itemName"
+                      (picked)="pickItem(idx, $event)"
+                      (typed)="patchLine(idx, { itemName: $event })"
+                    />
+                  </td>
+                  <td class="so-col--sku">
+                    <input
+                      class="ar-field__input"
+                      placeholder="Part / SKU"
+                      [value]="l.partNumber"
+                      (input)="patchLine(idx, { partNumber: $any($event.target).value })"
+                    />
+                  </td>
+                  <td class="so-col--desc">
+                    <input
+                      class="ar-field__input"
+                      placeholder="Item description"
+                      [value]="l.description"
+                      (input)="patchLine(idx, { description: $any($event.target).value })"
+                    />
+                  </td>
+                  <td class="so-col--qty">
+                    <input
+                      class="ar-field__input ar-num-input"
+                      type="number"
+                      min="1"
+                      [value]="l.quantity"
+                      (input)="patchLine(idx, { quantity: +$any($event.target).value || 0 })"
+                    />
+                  </td>
+                  <td class="so-col--price">
+                    <div class="so-price-wrap">
+                      <span class="so-currency-prefix">₹</span>
+                      <input
+                        class="ar-field__input ar-price-input"
+                        type="number"
+                        min="0"
+                        step="any"
+                        [value]="l.unitPrice"
+                        (input)="patchLine(idx, { unitPrice: +$any($event.target).value || 0 })"
+                      />
+                    </div>
+                  </td>
+                  <td class="so-col--total">
+                    <div class="so-line-total">{{ formatInr(lineTotal(l)) }}</div>
+                  </td>
+                  <td class="so-col--act">
+                    <button
+                      type="button"
+                      class="so-row-del-btn"
+                      [disabled]="lines().length <= 1"
+                      [attr.aria-label]="'Remove line ' + (idx + 1)"
+                      (click)="removeLine(idx)"
+                    >
+                      <ar-icon name="trash" [size]="14" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Order Summary Breakdown Card -->
+        <div class="so-summary-panel">
+          <div class="so-summary-card">
+            <h4 class="so-summary-card__title">Order Summary</h4>
+            <div class="so-summary-row">
+              <span class="so-summary-label">Items Count</span>
+              <span class="so-summary-val">{{ itemCount() }} items ({{ totalQuantity() }} units)</span>
+            </div>
+            <div class="so-summary-row">
+              <span class="so-summary-label">Subtotal</span>
+              <span class="so-summary-val">{{ formatInr(subtotal()) }}</span>
+            </div>
+            <div class="so-summary-row">
+              <span class="so-summary-label">Estimated GST (18%)</span>
+              <span class="so-summary-val">{{ formatInr(totalGst()) }}</span>
+            </div>
+            <div class="so-summary-row so-summary-row--grand">
+              <span class="so-summary-label">Grand Total</span>
+              <span class="so-summary-val">{{ formatInr(grandTotal()) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ar-card>
+
+    <!-- Bottom Form Actions (Reference: Account Form) -->
+    <div class="so-form-actions">
+      <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        icon="check"
+        [disabled]="creating()"
+        (click)="submit()"
+      >
+        {{ creating() ? 'Saving…' : editing() ? 'Save Changes' : 'Create Sales Order' }}
+      </button>
+    </div>
+  </div>
+</div>

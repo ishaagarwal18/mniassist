@@ -1,5 +1,36 @@
-// Shared by the three New sales record pages. Kept as a file (styleUrl), not one inline `styles` string reused by several
-// components: identical inline styles in one file make @angular/build 21.2.x leak esbuild contexts, and `ng build` never exits.
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+ar-new-sales-order {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+// Shared by the remaining New sales record pages (challan, invoice).
 .new-record {
-  padding: 1.25rem 1.5rem 2rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  background-color: var(--ar-bg-50, #f8fafc);
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+
+  // In inline dialog mode, ensure container expands to 100% full width
+  .dlg-page {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
 }

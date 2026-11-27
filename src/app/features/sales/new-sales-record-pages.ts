@@ -45,16 +45,11 @@ abstract class NewSalesRecordPage {
 
 @Component({
   selector: 'ar-new-sales-order-page',
-  imports: [ArTopbar, ArNewSalesOrder],
+  imports: [ArNewSalesOrder],
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar
-      help="Raise a sales order for an account and its contact person, with their PO, terms, site address and items."
-      title="New sales order" [subtitle]="customer?.label ?? ''" />
-    <div class="new-record ar-scroll">
-      <ar-new-sales-order [initialCustomer]="customer" (closed)="done($event)" />
-    </div>
+    <ar-new-sales-order [initialCustomer]="customer" (closed)="done($event)" />
   `,
   styleUrl: './new-sales-record-pages.scss',
 })
@@ -69,22 +64,17 @@ export class ArNewSalesOrderPage extends NewSalesRecordPage {
 /** /sales/orders/:id/edit — a draft order in the same form it was made in. */
 @Component({
   selector: 'ar-edit-sales-order-page',
-  imports: [ArTopbar, ArNewSalesOrder],
+  imports: [ArNewSalesOrder],
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar
-      help="Change a sales order's PO, terms, site address and items."
-      title="Edit sales order" [subtitle]="order()?.orderNumber ?? ''" />
-    <div class="new-record ar-scroll">
-      @if (problem(); as p) {
-        <p role="alert">{{ p }}</p>
-      } @else if (order(); as o) {
-        <ar-new-sales-order [editing]="o" (closed)="done($event)" />
-      } @else {
-        <p>Loading…</p>
-      }
-    </div>
+    @if (problem(); as p) {
+      <p role="alert" style="padding: 24px;">{{ p }}</p>
+    } @else if (order(); as o) {
+      <ar-new-sales-order [editing]="o" (closed)="done($event)" />
+    } @else {
+      <p style="padding: 24px;">Loading…</p>
+    }
   `,
   styleUrl: './new-sales-record-pages.scss',
 })

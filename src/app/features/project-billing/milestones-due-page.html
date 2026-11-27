@@ -1,0 +1,431 @@
+<ar-topbar
+  title="Milestones due"
+  subtitle="Billing milestones ready to invoice across all project sales orders"
+  help="Every billing milestone ready to invoice, across all project orders. Prepare draft invoices or inspect confirmed customer orders directly."
+>
+  <div actions class="md-header-actions">
+    <button
+      ar-button
+      type="button"
+      variant="ghost"
+      icon="refresh"
+      [disabled]="busy()"
+      title="Reload due milestones"
+      (click)="load()"
+    >
+      Refresh
+    </button>
+    <a
+      ar-button
+      variant="primary"
+      routerLink="/sales/orders"
+      icon="sales-orders"
+      class="btn-view-orders"
+    >
+      View sales orders
+    </a>
+  </div>
+</ar-topbar>
+
+<div class="md-shell">
+  <!-- Error Banner -->
+  @if (error(); as e) {
+    <div class="md-error-banner" role="alert">
+      <div class="md-error-banner__content">
+        <ar-icon name="alert" [size]="16" class="md-error-banner__icon" />
+        <span>{{ e }}</span>
+      </div>
+      <button ar-button variant="ghost" type="button" (click)="load()">Try again</button>
+    </div>
+  }
+
+  <!-- 1. Financial Overview KPI Cards (Compact, 100% full-width, 4 balanced columns) -->
+  <div class="md-kpi-grid" role="region" aria-label="Milestones Due KPI Overview">
+    <!-- Card 1: Ready to Bill -->
+    <div
+      class="md-kpi-card"
+      [class.md-kpi-card--active]="selectedStatusFilter() === 'ready'"
+      role="button"
+      tabindex="0"
+      (click)="setStatusFilter('ready')"
+      (keydown.enter)="setStatusFilter('ready')"
+      (keydown.space)="setStatusFilter('ready')"
+      title="Filter by milestones awaiting invoice preparation"
+    >
+      <div class="md-kpi-card__top">
+        <span class="md-kpi-card__label">Ready to Bill</span>
+        <div class="md-kpi-card__icon-wrap md-kpi-card__icon-wrap--ready">
+          <ar-icon name="sales-invoices" [size]="15" />
+        </div>
+      </div>
+      <div class="md-kpi-card__body">
+        <span class="md-kpi-card__value font-mono">{{ readyCount() }}</span>
+        <span class="md-kpi-card__sub">Pending invoice preparation</span>
+      </div>
+      <div class="md-kpi-card__indicator md-kpi-card__indicator--ready"></div>
+    </div>
+
+    <!-- Card 2: Total Billable Amount -->
+    <div
+      class="md-kpi-card"
+      [class.md-kpi-card--active]="selectedStatusFilter() === 'all'"
+      role="button"
+      tabindex="0"
+      (click)="setStatusFilter('all')"
+      (keydown.enter)="setStatusFilter('all')"
+      (keydown.space)="setStatusFilter('all')"
+      title="Show all billable milestones"
+    >
+      <div class="md-kpi-card__top">
+        <span class="md-kpi-card__label">Total Billable Amount</span>
+        <div class="md-kpi-card__icon-wrap md-kpi-card__icon-wrap--amount">
+          <ar-icon name="check" [size]="15" />
+        </div>
+      </div>
+      <div class="md-kpi-card__body">
+        <span class="md-kpi-card__value md-kpi-card__value--success font-mono">{{ rupees(total()) }}</span>
+        <span class="md-kpi-card__sub">{{ rows().length }} total billable milestones</span>
+      </div>
+      <div class="md-kpi-card__indicator md-kpi-card__indicator--amount"></div>
+    </div>
+
+    <!-- Card 3: Draft Invoices Created -->
+    <div
+      class="md-kpi-card"
+      [class.md-kpi-card--active]="selectedStatusFilter() === 'draft'"
+      role="button"
+      tabindex="0"
+      (click)="setStatusFilter('draft')"
+      (keydown.enter)="setStatusFilter('draft')"
+      (keydown.space)="setStatusFilter('draft')"
+      title="Filter by milestones with draft invoice ready"
+    >
+      <div class="md-kpi-card__top">
+        <span class="md-kpi-card__label">Draft Invoices</span>
+        <div class="md-kpi-card__icon-wrap md-kpi-card__icon-wrap--draft">
+          <ar-icon name="edit" [size]="15" />
+        </div>
+      </div>
+      <div class="md-kpi-card__body">
+        <span class="md-kpi-card__value md-kpi-card__value--amber font-mono">{{ draftCount() }}</span>
+        <span class="md-kpi-card__sub">Drafts created for review</span>
+      </div>
+      <div class="md-kpi-card__indicator md-kpi-card__indicator--draft"></div>
+    </div>
+
+    <!-- Card 4: Action Needed (≥ 2 Days) -->
+    <div
+      class="md-kpi-card"
+      [class.md-kpi-card--active]="selectedStatusFilter() === 'late'"
+      role="button"
+      tabindex="0"
+      (click)="setStatusFilter('late')"
+      (keydown.enter)="setStatusFilter('late')"
+      (keydown.space)="setStatusFilter('late')"
+      title="Filter by milestones ready for 2+ days"
+    >
+      <div class="md-kpi-card__top">
+        <span class="md-kpi-card__label">Aged (≥ 2 Days)</span>
+        <div class="md-kpi-card__icon-wrap md-kpi-card__icon-wrap--late">
+          <ar-icon name="alert" [size]="15" />
+        </div>
+      </div>
+      <div class="md-kpi-card__body">
+        <span
+          class="md-kpi-card__value font-mono"
+          [class.md-kpi-card__value--danger]="lateCount() > 0"
+        >
+          {{ lateCount() }}
+        </span>
+        <span class="md-kpi-card__sub">
+          @if (lateCount() > 0) {
+            <strong class="text-danger">Action required</strong> · unbilled for 2+ days
+          } @else {
+            All milestones billed promptly
+          }
+        </span>
+      </div>
+      <div class="md-kpi-card__indicator md-kpi-card__indicator--late"></div>
+    </div>
+  </div>
+
+  <!-- 2. Search & Filter Controls Toolbar Card -->
+  <div class="md-controls-card">
+    <div class="md-controls-card__top">
+      <!-- Search Input with clear button -->
+      <div class="md-search">
+        <ar-icon class="md-search__icon" name="search" [size]="16" />
+        <input
+          type="text"
+          class="md-search__input"
+          placeholder="Search by customer, order #, milestone or trigger..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="onSearchChange($event)"
+          aria-label="Search due milestones"
+        />
+        @if (searchQuery()) {
+          <button
+            type="button"
+            class="md-search__clear"
+            title="Clear search"
+            aria-label="Clear search"
+            (click)="clearSearch()"
+          >
+            <ar-icon name="close" [size]="13" />
+          </button>
+        }
+      </div>
+
+      <!-- Quick Filter Dropdowns -->
+      <div class="md-filter-dropdowns">
+        <!-- Customer filter -->
+        @if (customers().length > 1) {
+          <div class="md-select-wrap">
+            <select
+              class="md-select"
+              [ngModel]="selectedCustomer()"
+              (ngModelChange)="selectedCustomer.set($event)"
+              aria-label="Filter by customer"
+            >
+              <option [ngValue]="null">All Customers</option>
+              @for (c of customers(); track c) {
+                <option [ngValue]="c">{{ c }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <!-- Trigger filter -->
+        @if (availableTriggers().length > 1) {
+          <div class="md-select-wrap">
+            <select
+              class="md-select"
+              [ngModel]="selectedTrigger()"
+              (ngModelChange)="selectedTrigger.set($event)"
+              aria-label="Filter by billing trigger"
+            >
+              <option [ngValue]="null">All Triggers</option>
+              @for (t of availableTriggers(); track t) {
+                <option [ngValue]="t">{{ triggerText(t) }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        @if (isFiltered()) {
+          <button
+            type="button"
+            class="md-clear-btn"
+            title="Reset all filters"
+            (click)="clearFilters()"
+          >
+            Clear filters
+          </button>
+        }
+      </div>
+
+      <!-- Quick summary indicator -->
+      <div class="md-controls-card__meta">
+        <span class="md-meta-count">
+          Showing <strong>{{ filteredRows().length }}</strong> of <strong>{{ rows().length }}</strong> milestones
+        </span>
+      </div>
+    </div>
+
+    <!-- Status filter chips with live record counts -->
+    <div class="md-status-filters" role="tablist" aria-label="Milestone status filters">
+      <button
+        type="button"
+        class="md-filter-btn"
+        [class.md-filter-btn--active]="selectedStatusFilter() === 'all'"
+        (click)="setStatusFilter('all')"
+      >
+        <span>All</span>
+        <span class="md-filter-btn__badge">{{ rows().length }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="md-filter-btn"
+        [class.md-filter-btn--active]="selectedStatusFilter() === 'ready'"
+        (click)="setStatusFilter('ready')"
+      >
+        <span>Ready to Bill</span>
+        <span class="md-filter-btn__badge">{{ readyCount() }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="md-filter-btn"
+        [class.md-filter-btn--active]="selectedStatusFilter() === 'draft'"
+        (click)="setStatusFilter('draft')"
+      >
+        <span>Draft Created</span>
+        <span class="md-filter-btn__badge">{{ draftCount() }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="md-filter-btn"
+        [class.md-filter-btn--active]="selectedStatusFilter() === 'late'"
+        (click)="setStatusFilter('late')"
+      >
+        <span>Aged (≥ 2 Days)</span>
+        <span class="md-filter-btn__badge">{{ lateCount() }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. Milestones Table Card (100% full-width enterprise table) -->
+  <div class="md-table-card">
+    @if (loading()) {
+      <div class="md-loading-overlay">
+        <div class="md-spinner"></div>
+        <span>Loading due milestones…</span>
+      </div>
+    }
+
+    @if (filteredRows().length > 0) {
+      <div class="md-table-wrap">
+        <table class="md-table" aria-label="Milestones ready to bill">
+          <thead>
+            <tr>
+              <th scope="col" class="th-cust">CUSTOMER</th>
+              <th scope="col" class="th-order">ORDER #</th>
+              <th scope="col" class="th-milestone">MILESTONE</th>
+              <th scope="col" class="th-trigger">TRIGGER</th>
+              <th scope="col" class="th-amount">TO BILL</th>
+              <th scope="col" class="th-ready">READY SINCE</th>
+              <th scope="col" class="th-actions">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of filteredRows(); track d.milestoneId) {
+              <tr class="md-row" [class.md-row--late]="d.daysReady >= 2">
+                <!-- 1. Customer -->
+                <td class="td-cust">
+                  <div class="md-cust-cell">
+                    <span class="md-cust-name" [title]="d.customerName || 'Customer'" translate="no">
+                      {{ d.customerName || 'Customer' }}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- 2. Order # -->
+                <td class="td-order">
+                  <a
+                    class="md-order-link font-mono"
+                    [routerLink]="['/sales/orders', d.salesOrderId]"
+                    [title]="'View sales order ' + d.orderNumber"
+                  >
+                    {{ d.orderNumber }}
+                  </a>
+                </td>
+
+                <!-- 3. Milestone -->
+                <td class="td-milestone">
+                  <div class="md-milestone-cell">
+                    <span class="md-milestone-title font-semibold">{{ d.milestone }}</span>
+                  </div>
+                </td>
+
+                <!-- 4. Trigger -->
+                <td class="td-trigger">
+                  <ar-chip [tone]="triggerTone(d.trigger)">
+                    {{ triggerText(d.trigger) }}
+                  </ar-chip>
+                </td>
+
+                <!-- 5. To Bill (Amount) -->
+                <td class="td-amount">
+                  <span class="md-amount font-mono font-bold">
+                    {{ rupees(d.billableInPaise) }}
+                  </span>
+                </td>
+
+                <!-- 6. Ready Since -->
+                <td class="td-ready">
+                  <div class="md-ready-cell">
+                    <span class="md-ready-date">
+                      {{ d.readyAtUtc ? (d.readyAtUtc | date: 'dd MMM yyyy') : '—' }}
+                    </span>
+                    <span
+                      class="md-days-badge font-mono"
+                      [class.md-days-badge--late]="d.daysReady >= 2"
+                      [title]="d.daysReady >= 2 ? 'Ready for ' + d.daysReady + ' days without an invoice issued' : 'Ready for ' + d.daysReady + ' days'"
+                    >
+                      {{ d.daysReady }}d
+                    </span>
+                  </div>
+                </td>
+
+                <!-- 7. Actions -->
+                <td class="td-actions">
+                  <div class="md-row-actions">
+                    @if (d.draftInvoiceId) {
+                      <a
+                        class="md-action-btn md-action-btn--draft"
+                        [routerLink]="['/sales/invoices', d.draftInvoiceId]"
+                        title="Open and review existing draft invoice"
+                      >
+                        Open draft
+                      </a>
+                    } @else {
+                      <button
+                        type="button"
+                        class="md-action-btn md-action-btn--prepare"
+                        [disabled]="busy()"
+                        title="Prepare a new commercial invoice draft for this milestone"
+                        (click)="prepare(d)"
+                      >
+                        {{ busy() ? 'Preparing…' : 'Prepare invoice' }}
+                      </button>
+                    }
+                    <a
+                      class="md-action-btn md-action-btn--view"
+                      [routerLink]="['/sales/orders', d.salesOrderId]"
+                      title="View order details"
+                    >
+                      View order
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <!-- 4. Premium ERP Empty State -->
+      <div class="md-empty-state">
+        <div class="md-empty-state__icon-wrap">
+          <ar-icon name="sales-invoices" [size]="36" />
+        </div>
+        @if (rows().length === 0) {
+          <h3 class="md-empty-state__title">No milestones ready to bill</h3>
+          <p class="md-empty-state__desc">
+            When sales order milestones meet their statutory or commercial conditions (such as order confirmation, advance payment receipt, or goods dispatch), they will appear here ready to prepare tax invoices.
+          </p>
+          <div class="md-empty-state__actions">
+            <a ar-button variant="primary" routerLink="/sales/orders" icon="sales-orders">
+              View sales orders
+            </a>
+            <a ar-button variant="ghost" routerLink="/sales/invoices" icon="sales-invoices">
+              View sales invoices
+            </a>
+          </div>
+        } @else {
+          <h3 class="md-empty-state__title">No milestones match your criteria</h3>
+          <p class="md-empty-state__desc">
+            Try adjusting your search query, customer filter, or status pills to view matching milestones.
+          </p>
+          <div class="md-empty-state__actions">
+            <button ar-button variant="primary" type="button" (click)="clearFilters()">
+              Clear all filters
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
