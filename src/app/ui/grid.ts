@@ -1,12 +1,9 @@
 import {
-  AfterViewInit,
   Directive,
   DoCheck,
   ElementRef,
   inject,
   input,
-  NgZone,
-  OnDestroy,
   OnInit,
 } from '@angular/core';
 import { ClickEventArgs } from '@syncfusion/ej2-navigations';
@@ -82,7 +79,7 @@ let nextId = 0;
   ],
   host: { class: 'ar-grid' },
 })
-export class ArGrid implements OnInit, DoCheck, AfterViewInit, OnDestroy {
+export class ArGrid implements OnInit, DoCheck {
   /** Exported file name, without extension. */
   readonly arGrid = input('export');
   readonly arGridPageSize = input(20);
@@ -97,14 +94,6 @@ export class ArGrid implements OnInit, DoCheck, AfterViewInit, OnDestroy {
 
   private readonly grid = inject(GridComponent);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-  private readonly ngZone = inject(NgZone);
-
-  private scrollbarWrap?: HTMLElement;
-  private scrollbarTrack?: HTMLElement;
-  private resizeObserver?: ResizeObserver;
-  private isSyncingScroll = false;
-  private boundWrapScroll?: () => void;
-  private boundGridScroll?: () => void;
 
   constructor() {
     ensureSyncfusionTheme('grid');
@@ -126,13 +115,6 @@ export class ArGrid implements OnInit, DoCheck, AfterViewInit, OnDestroy {
     // replaced after each render: what the page is for and what to press, not "No records to display".
     grid.dataBound.subscribe(() => {
       this.fillEmptyRow();
-      this.syncScrollbarWidth();
-    });
-    grid.actionComplete.subscribe(() => {
-      this.syncScrollbarWidth();
-    });
-    grid.resizeStop.subscribe(() => {
-      this.syncScrollbarWidth();
     });
   }
 
@@ -153,90 +135,6 @@ export class ArGrid implements OnInit, DoCheck, AfterViewInit, OnDestroy {
         'ExcelExport',
         'CsvExport',
       ];
-    }
-  }
-
-  ngAfterViewInit(): void {
-    this.ngZone.runOutsideAngular(() => {
-      // Delay slightly to allow Syncfusion internal DOM elements to initialize
-      setTimeout(() => this.setupBottomScrollbar(), 50);
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.resizeObserver?.disconnect();
-    if (this.scrollbarWrap && this.boundWrapScroll) {
-      this.scrollbarWrap.removeEventListener('scroll', this.boundWrapScroll);
-    }
-    const contentEl = this.host.querySelector<HTMLElement>('.e-gridcontent .e-content');
-    if (contentEl && this.boundGridScroll) {
-      contentEl.removeEventListener('scroll', this.boundGridScroll);
-    }
-    this.scrollbarWrap?.remove();
-  }
-
-  private setupBottomScrollbar(): void {
-    const gridEl = this.host.querySelector<HTMLElement>('.e-grid') || this.host;
-    let wrap = gridEl.querySelector<HTMLElement>(':scope > .ar-bottom-scroller');
-    if (!wrap) {
-      wrap = document.createElement('div');
-      wrap.className = 'ar-bottom-scroller';
-      wrap.innerHTML = '<div class="ar-bottom-scroller__track"></div>';
-      gridEl.appendChild(wrap);
-    }
-    this.scrollbarWrap = wrap;
-    this.scrollbarTrack = wrap.firstElementChild as HTMLElement;
-
-    const contentEl = this.host.querySelector<HTMLElement>('.e-gridcontent .e-content');
-    if (!contentEl) return;
-
-    this.boundWrapScroll = () => {
-      if (this.isSyncingScroll) return;
-      this.isSyncingScroll = true;
-      contentEl.scrollLeft = wrap!.scrollLeft;
-      this.isSyncingScroll = false;
-    };
-
-    this.boundGridScroll = () => {
-      if (this.isSyncingScroll) return;
-      this.isSyncingScroll = true;
-      wrap!.scrollLeft = contentEl.scrollLeft;
-      this.isSyncingScroll = false;
-    };
-
-    wrap.addEventListener('scroll', this.boundWrapScroll, { passive: true });
-    contentEl.addEventListener('scroll', this.boundGridScroll, { passive: true });
-
-    if (typeof ResizeObserver !== 'undefined') {
-      this.resizeObserver = new ResizeObserver(() => {
-        this.syncScrollbarWidth();
-      });
-      this.resizeObserver.observe(contentEl);
-      const table = contentEl.querySelector('table');
-      if (table) this.resizeObserver.observe(table);
-    }
-
-    this.syncScrollbarWidth();
-  }
-
-  private syncScrollbarWidth(): void {
-    if (!this.scrollbarWrap || !this.scrollbarTrack) return;
-    const contentEl = this.host.querySelector<HTMLElement>('.e-gridcontent .e-content');
-    if (!contentEl) return;
-    const table = contentEl.querySelector<HTMLElement>('table.e-table');
-    if (!table) return;
-
-    const scrollWidth = table.offsetWidth || contentEl.scrollWidth;
-    const clientWidth = contentEl.clientWidth;
-
-    if (scrollWidth > clientWidth + 2) {
-      this.scrollbarWrap.style.display = 'block';
-      this.scrollbarTrack.style.width = `${scrollWidth}px`;
-      if (Math.abs(this.scrollbarWrap.scrollLeft - contentEl.scrollLeft) > 1) {
-        this.scrollbarWrap.scrollLeft = contentEl.scrollLeft;
-      }
-    } else {
-      this.scrollbarWrap.style.display = 'none';
     }
   }
 
