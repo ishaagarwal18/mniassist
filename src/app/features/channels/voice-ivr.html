@@ -460,7 +460,10 @@
                     {{ copied() === ch.ivrSetup!.connectUrl ? 'Copied' : 'Copy' }}
                   </button>
                   <span class="vi__applet-note"
-                    >Gather 3 goes straight here. Send its failure path to a Hangup applet.</span
+                    >Paste under “Configure parameters dynamically by providing a URL”, not under
+                    Dial Whom. Gather 3 goes straight here, and each Passthru’s other branch goes to
+                    a Connect with this URL. Send “After the call ends” and “If nobody answers” to a
+                    Hangup applet.</span
                   >
                 </li>
                 <li class="vi__applet">
@@ -474,7 +477,10 @@
                   >
                     {{ copied() === ch.ivrSetup!.statusCallbackUrl ? 'Copied' : 'Copy' }}
                   </button>
-                  <span class="vi__applet-note">The flow’s call-status callback.</span>
+                  <span class="vi__applet-note"
+                    >Nothing to paste. MNI Assist sends this with every call it places, so Exotel’s
+                    flow builder needs no callback. Do not use it as a Passthru URL.</span
+                  >
                 </li>
               </ol>
             </div>
@@ -530,7 +536,7 @@
                 <p class="vi__hint">
                   Lets an AI voice agent answer and place calls on this line. Exotel turns on its
                   Voicebot applet on request. Create a second flow with one Voicebot applet, then a
-                  Hangup, with the same status callback.
+                  Hangup.
                 </p>
                 <ol class="vi__applets">
                   <li class="vi__applet">
