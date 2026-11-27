@@ -1090,7 +1090,7 @@
         <!-- Total Accounts Card -->
         <div class="c360-kpi-card">
           <div class="c360-kpi-card__icon c360-kpi-card__icon--blue">
-            <ar-icon name="accounts" [size]="20" />
+            <ar-icon name="accounts" [size]="22" />
           </div>
           <div class="c360-kpi-card__content">
             <span class="c360-kpi-card__label">Total accounts</span>
@@ -1102,19 +1102,19 @@
         <!-- Total Contacts Card -->
         <div class="c360-kpi-card">
           <div class="c360-kpi-card__icon c360-kpi-card__icon--teal">
-            <ar-icon name="contacts" [size]="20" />
+            <ar-icon name="contacts" [size]="22" />
           </div>
           <div class="c360-kpi-card__content">
             <span class="c360-kpi-card__label">Total contacts</span>
             <span class="c360-kpi-card__value">{{ totalContactsCount() | number }}</span>
-            <span class="c360-kpi-card__desc">Registered people & buyers</span>
+            <span class="c360-kpi-card__desc">Registered people &amp; buyers</span>
           </div>
         </div>
 
         <!-- Cities Covered Card -->
         <div class="c360-kpi-card">
           <div class="c360-kpi-card__icon c360-kpi-card__icon--lavender">
-            <ar-icon name="globe" [size]="20" />
+            <ar-icon name="globe" [size]="22" />
           </div>
           <div class="c360-kpi-card__content">
             <span class="c360-kpi-card__label">Cities covered</span>
@@ -1261,25 +1261,30 @@
                   [attr.aria-label]="'Open Customer 360 for ' + a.name"
                 >
                   <div class="c360-account-card__avatar">
-                    <ar-icon name="accounts" [size]="18" />
+                    <ar-icon name="accounts" [size]="20" />
                   </div>
                   <div class="c360-account-card__main">
-                    <h3 class="c360-account-card__name">{{ a.name }}</h3>
+                    <div class="c360-account-card__header-row">
+                      <h3 class="c360-account-card__name">{{ a.name }}</h3>
+                      @if (a.gstin) {
+                        <span class="c360-account-card__gstin">GST: {{ a.gstin }}</span>
+                      }
+                    </div>
                     <div class="c360-account-card__chips">
                       @if (a.city) {
                         <span class="c360-account-chip">
-                          <ar-icon name="globe" [size]="12" />
+                          <ar-icon name="globe" [size]="13" />
                           <span>{{ a.city }}</span>
                         </span>
                       }
                       @if (a.industry) {
                         <span class="c360-account-chip">
-                          <ar-icon name="products" [size]="12" />
+                          <ar-icon name="products" [size]="13" />
                           <span>{{ a.industry }}</span>
                         </span>
                       }
                       <span class="c360-account-chip c360-account-chip--contacts">
-                        <ar-icon name="contacts" [size]="12" />
+                        <ar-icon name="contacts" [size]="13" />
                         <span>{{ a.contactCount ?? 0 }} {{ a.contactCount === 1 ? 'contact' : 'contacts' }}</span>
                       </span>
                     </div>
@@ -1321,19 +1326,19 @@
                   [attr.aria-label]="'Open Customer 360 for ' + (p.displayName || p.waId)"
                 >
                   <div class="c360-account-card__avatar c360-account-card__avatar--person">
-                    <ar-icon name="user" [size]="18" />
+                    <ar-icon name="user" [size]="20" />
                   </div>
                   <div class="c360-account-card__main">
                     <h3 class="c360-account-card__name">{{ p.displayName || p.waId }}</h3>
                     <div class="c360-account-card__chips">
                       @if (p.companyName) {
                         <span class="c360-account-chip">
-                          <ar-icon name="accounts" [size]="12" />
+                          <ar-icon name="accounts" [size]="13" />
                           <span>{{ p.companyName }}</span>
                         </span>
                       }
                       <span class="c360-account-chip">
-                        <ar-icon name="phone" [size]="12" />
+                        <ar-icon name="phone" [size]="13" />
                         <span>{{ p.waId }}</span>
                       </span>
                     </div>
