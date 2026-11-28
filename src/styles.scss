@@ -301,6 +301,59 @@ textarea.ar-field__input {
   }
 }
 
+/* Edit / New Contact Dialog Modal */
+.e-dialog.ar-contact-dialog-modal {
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 20px 48px -10px rgba(15, 23, 42, 0.22), 0 10px 24px -5px rgba(15, 23, 42, 0.12) !important;
+  max-height: min(90vh, 820px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+
+  .e-dlg-header-content {
+    padding: 16px 22px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    flex-shrink: 0;
+
+    .e-dlg-header {
+      font-size: 16.5px !important;
+      font-weight: 700 !important;
+      color: #0f172a !important;
+      letter-spacing: -0.01em;
+    }
+
+    .e-btn.e-dlg-closeicon-btn {
+      width: 32px !important;
+      height: 32px !important;
+      border-radius: 7px !important;
+      color: #64748b !important;
+      transition: all 0.15s ease !important;
+
+      &:hover {
+        background: #f1f5f9 !important;
+        color: #0f172a !important;
+      }
+    }
+  }
+
+  .e-dlg-content {
+    padding: 18px 22px !important;
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    background: #ffffff !important;
+  }
+
+  .e-footer-content {
+    padding: 12px 22px !important;
+    border-top: 1px solid #e2e8f0 !important;
+    background: #f8fafc !important;
+    border-radius: 0 0 12px 12px !important;
+    flex-shrink: 0;
+  }
+}
+
 /* Account Contacts Modal Dialog */
 .e-dialog.ar-accounts-people-dialog {
   .pp-toolbar {

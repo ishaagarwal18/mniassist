@@ -83,6 +83,7 @@ export class ArContactDialog {
   protected readonly reading = signal<'card' | 'vcard' | null>(null);
   protected readonly filledFrom = signal<string | null>(null);
   protected readonly otherPhones = signal<string[]>([]);
+  protected readonly isDragging = signal(false);
 
   /** Available accounts for the dropdown */
   protected readonly accountChoices = computed(() =>
@@ -162,12 +163,49 @@ export class ArContactDialog {
     this.form.update((f) => ({ ...f, role: Number(value) as DecisionRole }));
   }
 
+  protected onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.reading()) {
+      this.isDragging.set(true);
+    }
+  }
+
+  protected onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(false);
+  }
+
+  protected async onDropFile(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(false);
+    if (this.reading()) return;
+
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+
+    const name = file.name.toLowerCase();
+    if (file.type.startsWith('image/')) {
+      await this.processCardFile(file);
+    } else if (name.endsWith('.vcf') || name.endsWith('.vcard') || file.type.includes('vcard')) {
+      await this.processVcardFile(file);
+    } else {
+      this.toasts.warning('Drop a visiting card image (.jpg, .png) or a .vcf contact file.', 'Import Contact');
+    }
+  }
+
   /** A photo of a visiting card, read by the AI model into the form */
   protected async readCard(event: Event): Promise<void> {
     const inputEl = event.target as HTMLInputElement;
     const file = inputEl.files?.[0];
     inputEl.value = '';
     if (!file) return;
+    await this.processCardFile(file);
+  }
+
+  protected async processCardFile(file: File): Promise<void> {
     if (!file.type.startsWith('image/')) {
       this.toasts.warning('Choose a photo of the card (JPEG or PNG).', 'Visiting card');
       return;
@@ -205,28 +243,40 @@ export class ArContactDialog {
     const file = inputEl.files?.[0];
     inputEl.value = '';
     if (!file) return;
-    const cards = parseVCards(await file.text());
-    if (cards.length === 0) {
-      this.toasts.warning('No contact with a name or number was found in that file.', 'vCard');
-      return;
+    await this.processVcardFile(file);
+  }
+
+  protected async processVcardFile(file: File): Promise<void> {
+    this.reading.set('vcard');
+    try {
+      const text = await file.text();
+      const cards = parseVCards(text);
+      if (cards.length === 0) {
+        this.toasts.warning('No contact with a name or number was found in that file.', 'vCard');
+        return;
+      }
+      const c = cards[0];
+      this.fill(
+        {
+          waId: c.phone,
+          displayName: c.name,
+          designation: c.designation,
+          companyName: c.company,
+          email: c.email,
+          website: c.website,
+          city: c.city,
+          state: c.state,
+        },
+        cards.length > 1
+          ? `the first of ${cards.length} cards (use Import for all of them)`
+          : 'the vCard',
+        c.phones.slice(1),
+      );
+    } catch {
+      this.toasts.warning('Could not read the vCard file.', 'vCard');
+    } finally {
+      this.reading.set(null);
     }
-    const c = cards[0];
-    this.fill(
-      {
-        waId: c.phone,
-        displayName: c.name,
-        designation: c.designation,
-        companyName: c.company,
-        email: c.email,
-        website: c.website,
-        city: c.city,
-        state: c.state,
-      },
-      cards.length > 1
-        ? `the first of ${cards.length} cards (use Import for all of them)`
-        : 'the vCard',
-      c.phones.slice(1),
-    );
   }
 
   private fill(values: Partial<ContactFormData>, from: string, others: string[]): void {
