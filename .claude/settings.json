@@ -26,7 +26,11 @@
       "Bash(cd \"/d/Projects/Latest/Industrial Automation/autoreach-api/src\" && grep -n -iE \"catalog\" AutoReach.MetaApi/WhatsAppCloudApiClient.cs | head -5; grep -rn -iE \"catalog_management|instagram_content_publish|instagram_basic\\\\b|instagram_manage_messages\\\\b\" --include=*.cs --include=*.ts --include=*.json . ../../autoreach-web/src 2>/dev/null | grep -v node_modules | head)",
       "Bash(export MSYS_NO_PATHCONV=1)",
       "Bash(aws logs *)",
-      "Bash(aws elbv2 *)"
+      "Bash(aws elbv2 *)",
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "ClaudeInChromeDomain(my.exotel.com)",
+      "ClaudeInChromeDomain(example.com)",
+      "ClaudeInChromeDomain(claude.ai)"
     ],
     "additionalDirectories": [
       "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\src\\AutoReach.Domain\\Messaging",
