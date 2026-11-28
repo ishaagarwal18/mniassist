@@ -619,7 +619,7 @@
       <div class="drawer-rows">
         <div class="drawer-row">
           <span class="drawer-label">Phone</span>
-          <span class="drawer-val ar-mono">+{{ pc.phoneE164 }}</span>
+          <span class="drawer-val ar-mono">{{ pc.phoneE164 }}</span>
         </div>
         <div class="drawer-row">
           <span class="drawer-label">Email</span>
@@ -753,7 +753,7 @@
         </div>
         <div class="drawer-row">
           <span class="drawer-label">Channel</span>
-          <span class="drawer-val ar-mono">+{{ pc.phoneE164 }} (WhatsApp)</span>
+          <span class="drawer-val ar-mono">{{ pc.phoneE164 }} (WhatsApp)</span>
         </div>
       </div>
       @if (canView360()) {
