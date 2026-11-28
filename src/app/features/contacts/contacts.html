@@ -566,11 +566,13 @@
         {{ getInitials(pc.name) }}
       </div>
       <div class="drawer-profile-info">
-        <h2 class="drawer-name" translate="no">{{ pc.name }}</h2>
+        <div class="drawer-name-row">
+          <h2 class="drawer-name" translate="no">{{ pc.name }}</h2>
+          @if (pc.attributes.decisionRole) {
+          <span class="drawer-role-badge">{{ pc.attributes.decisionRole }}</span>
+          }
+        </div>
         <span class="drawer-company" translate="no">{{ pc.company || 'Independent Customer' }}</span>
-        @if (pc.attributes.decisionRole) {
-        <span class="drawer-role-badge">{{ pc.attributes.decisionRole }}</span>
-        }
       </div>
     </div>
     <button type="button" class="drawer-close-btn" (click)="closePreview()" aria-label="Close contact preview">
@@ -589,7 +591,7 @@
       <span>Message</span>
     </a>
     @if (canView360()) {
-    <a ar-button variant="primary" class="drawer-action-btn" [routerLink]="['/contacts', pc.id, '360']"
+    <a ar-button variant="primary" class="drawer-action-btn drawer-action-btn--primary" [routerLink]="['/contacts', pc.id, '360']"
       title="Open Customer 360 cockpit">
       <ar-icon name="contacts" [size]="14" />
       <span>Customer 360</span>
@@ -609,7 +611,9 @@
     <!-- Section 1: Contact Information -->
     <section class="drawer-card">
       <h3 class="drawer-card__title">
-        <ar-icon name="contacts" [size]="15" />
+        <span class="drawer-card__icon-badge drawer-card__icon-badge--blue">
+          <ar-icon name="contacts" [size]="14" />
+        </span>
         <span>Contact Information</span>
       </h3>
       <div class="drawer-rows">
@@ -643,7 +647,9 @@
     <!-- Section 2: Industrial & System Profile -->
     <section class="drawer-card">
       <h3 class="drawer-card__title">
-        <ar-icon name="workspaces" [size]="15" />
+        <span class="drawer-card__icon-badge drawer-card__icon-badge--purple">
+          <ar-icon name="workspaces" [size]="14" />
+        </span>
         <span>Company & Plant Details</span>
       </h3>
       <div class="drawer-rows">
@@ -667,7 +673,9 @@
     <!-- Section 3: Engagement Score -->
     <section class="drawer-card">
       <h3 class="drawer-card__title">
-        <ar-icon name="analytics-overview" [size]="15" />
+        <span class="drawer-card__icon-badge drawer-card__icon-badge--amber">
+          <ar-icon name="analytics-overview" [size]="14" />
+        </span>
         <span>Engagement Score</span>
       </h3>
       <div class="score-card-body">
@@ -689,7 +697,9 @@
     <!-- Section 4: Marketing Consent -->
     <section class="drawer-card">
       <h3 class="drawer-card__title">
-        <ar-icon name="shield" [size]="15" />
+        <span class="drawer-card__icon-badge drawer-card__icon-badge--teal">
+          <ar-icon name="shield" [size]="14" />
+        </span>
         <span>Marketing Consent</span>
       </h3>
       <div class="drawer-rows">
@@ -713,7 +723,9 @@
     <!-- Section 5: AMC Details -->
     <section class="drawer-card">
       <h3 class="drawer-card__title">
-        <ar-icon name="amc-contracts" [size]="15" />
+        <span class="drawer-card__icon-badge drawer-card__icon-badge--emerald">
+          <ar-icon name="amc-contracts" [size]="14" />
+        </span>
         <span>Maintenance & AMC</span>
       </h3>
       <div class="drawer-rows">
@@ -729,7 +741,9 @@
     <!-- Section 6: Activity & Communication -->
     <section class="drawer-card">
       <h3 class="drawer-card__title">
-        <ar-icon name="clock" [size]="15" />
+        <span class="drawer-card__icon-badge drawer-card__icon-badge--slate">
+          <ar-icon name="clock" [size]="14" />
+        </span>
         <span>Activity & Communication</span>
       </h3>
       <div class="drawer-rows">
