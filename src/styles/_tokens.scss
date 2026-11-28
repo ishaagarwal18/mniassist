@@ -21,9 +21,9 @@
   /* Muted text. #667085 from the brand sheet is 4.3:1 on --ar-blue-100, so
      this is one step darker: 5.4:1 on white, 4.8:1 on --ar-blue-100. */
   --ar-ink-400: #5f6b7c;
-  --ar-line-300: #d9e1ea; /* borders */
-  --ar-line-200: #eaecf0; /* hairlines, separators */
-  --ar-bg-100: #f5f7fa; /* page background */
+  --ar-line-300: #c9d2df; /* borders */
+  --ar-line-200: #d3dae5; /* card borders, separators */
+  --ar-bg-100: #eceff5; /* page background */
   --ar-bg-50: #f9fafb; /* raised-but-quiet surfaces */
   --ar-white: #ffffff; /* cards */
   --ar-surface-dark: #101828;
@@ -35,8 +35,8 @@
   --ar-blue-700: #0e47b8; /* text on blue tints, pressed */
   --ar-blue-600: #1258e0; /* links and blue text; primary hover */
   --ar-blue-500: #1769ff; /* primary fill, indicators, focus ring */
-  --ar-blue-200: #c7d9ff; /* selected borders */
-  --ar-blue-100: #ebf2ff; /* selected backgrounds */
+  --ar-blue-200: #a9c6ff; /* selected borders */
+  --ar-blue-100: #e2ecff; /* selected backgrounds */
 
   /* Fills that carry text. Separate from the text colours above because in the
      dark theme text turns light while these must stay strong behind white text. */
@@ -104,6 +104,52 @@
   --ar-amber-50: var(--ar-amber-100);
   --ar-warn-50: var(--ar-warn-100);
 
+  /* Names that screens reference but that were never defined. Before these existed, a rule such as
+     `border: 1px solid var(--ar-ink-100)` was dropped by the browser, so the card lost its edge (or
+     its tint) and only the text inside was visible. They now point at real tokens, so they follow
+     the light and dark themes. Prefer the real names in new code. */
+  --ar-border: var(--ar-line-200);
+  --ar-line: var(--ar-line-200);
+  --ar-line-strong: var(--ar-line-300);
+  --ar-line-weak: var(--ar-line-200);
+  --ar-ink-950: var(--ar-ink-900);
+  --ar-ink-100: var(--ar-line-200);
+  --ar-ink-50: var(--ar-bg-50);
+  --ar-ink-muted: var(--ar-ink-400);
+  --ar-ink-heavy: var(--ar-ink-900);
+  --ar-text-primary: var(--ar-ink-900);
+  --ar-text-secondary: var(--ar-ink-500);
+  --ar-text-muted: var(--ar-ink-400);
+  --ar-bg-subtle: var(--ar-bg-50);
+  --ar-surface-100: var(--ar-bg-100);
+  --ar-surface-subtle: var(--ar-bg-50);
+  --ar-surface-sunken: var(--ar-bg-100);
+  --ar-surface-alt: var(--ar-bg-50);
+  --ar-surface-hover: var(--ar-bg-100);
+  --ar-card-bg: var(--ar-white);
+  --ar-paper: var(--ar-white);
+  --ar-blue-50: var(--ar-blue-100);
+  --ar-blue-300: var(--ar-blue-200);
+  --ar-blue-400: var(--ar-blue-500);
+  --ar-blue-800: var(--ar-blue-700);
+  --ar-blue-900: var(--ar-blue-700);
+  --ar-primary-600: var(--ar-primary-hover);
+  --ar-primary-500: var(--ar-primary);
+  --ar-brand-600: var(--ar-primary);
+  --ar-brand-050: var(--ar-blue-100);
+  --ar-red-50: var(--ar-red-100);
+  --ar-red-700: var(--ar-red-600);
+  --ar-warn-700: var(--ar-warn-600);
+  --ar-warn-200: var(--ar-amber-200);
+  --ar-green-700: var(--ar-green-600);
+  --ar-danger: var(--ar-red-600);
+  --ar-danger-600: var(--ar-red-600);
+  --ar-bad: var(--ar-red-600);
+  --ar-good: var(--ar-green-600);
+  --ar-radius-xs: 4px;
+  --ar-radius-sm: var(--ar-radius-chip);
+  --ar-radius-md: var(--ar-radius-inset);
+
   /* Sidebar */
   --ar-nav: var(--ar-navy);
   --ar-nav-hi: #132c47; /* hover */
@@ -136,7 +182,7 @@
   --ar-pad-card: 18px;
 
   /* Elevation — barely there */
-  --ar-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --ar-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.08), 0 1px 3px rgba(16, 24, 40, 0.06);
   --ar-shadow-pop: 0 8px 24px rgba(16, 24, 40, 0.1);
   --ar-focus-ring: 0 0 0 3px rgba(23, 105, 255, 0.25);
   --ar-backdrop: rgba(11, 31, 51, 0.45); /* behind dialogs */

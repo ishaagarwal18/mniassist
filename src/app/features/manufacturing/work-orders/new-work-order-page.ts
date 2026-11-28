@@ -328,7 +328,7 @@ const plusDaysLocal = (days: number) =>
 
       .ar-field__input {
         padding: 0.55rem 0.85rem;
-        border: 1px solid #cbd5e1;
+        border: 1px solid var(--ar-line-300);
         border-radius: 6px;
         font-size: 0.9rem;
         background: #ffffff;

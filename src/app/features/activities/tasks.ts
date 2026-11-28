@@ -78,6 +78,36 @@ export class ArTasks {
   });
   protected readonly total = computed(() => this.tasks().length);
 
+  /** Side-panel figures, all taken from the server's own summary so they match the cards above. */
+  protected readonly workload = computed(() => {
+    const s = this.summary();
+    if (!s) return null;
+    const raw: { key: DueBucket; label: string; tone: string; count: number }[] = [
+      { key: 'overdue', label: 'Overdue', tone: 'bad', count: s.overdue ?? 0 },
+      { key: 'today', label: 'Due today', tone: 'amber', count: s.dueToday ?? 0 },
+      { key: 'week', label: 'This week', tone: 'blue', count: s.dueThisWeek ?? 0 },
+      { key: 'nodate', label: 'No due date', tone: 'slate', count: s.noDate ?? 0 },
+    ];
+    const max = Math.max(1, ...raw.map((r) => r.count));
+    const open = s.open ?? 0;
+    const done = s.doneLast7Days ?? 0;
+    const completionPct = open + done > 0 ? Math.round((done / (open + done)) * 100) : 0;
+    return {
+      rows: raw.map((r) => ({ ...r, pct: Math.round((r.count / max) * 100) })),
+      open,
+      done,
+      completionPct,
+    };
+  });
+
+  /** The next three open tasks that have a due date, soonest first. */
+  protected readonly nextUp = computed(() =>
+    this.tasks()
+      .filter((t) => t.status === CrmTaskStatus.Open && !!t.dueAtUtc)
+      .sort((a, b) => new Date(a.dueAtUtc!).getTime() - new Date(b.dueAtUtc!).getTime())
+      .slice(0, 3),
+  );
+
   protected readonly selectedBucketLabel = computed(() => {
     const sel = this.selectedBucket();
     return sel === 'all' ? '' : BUCKET_LABEL[sel] ?? sel;

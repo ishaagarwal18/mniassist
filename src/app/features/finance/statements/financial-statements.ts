@@ -453,7 +453,7 @@ const EMPTY_BALANCE_SHEET: BalanceSheetResultDto = {
         }
 
         .section-heading-row td {
-          background: #f8fafc;
+          background: var(--ar-bg-50);
           font-weight: 700;
           color: #0f172a;
           padding-top: 1rem;
@@ -461,7 +461,7 @@ const EMPTY_BALANCE_SHEET: BalanceSheetResultDto = {
         }
 
         .subtotal-row td {
-          border-top: 1px solid #cbd5e1;
+          border-top: 1px solid var(--ar-line-300);
           background: #fdfdfd;
           font-weight: 600;
         }
@@ -483,8 +483,8 @@ const EMPTY_BALANCE_SHEET: BalanceSheetResultDto = {
         }
 
         .statement-total-row td {
-          background: #f8fafc;
-          border-top: 2px solid #cbd5e1;
+          background: var(--ar-bg-50);
+          border-top: 2px solid var(--ar-line-300);
           font-size: 0.95rem;
         }
       }
@@ -492,7 +492,7 @@ const EMPTY_BALANCE_SHEET: BalanceSheetResultDto = {
       .code-pill {
         font-family: monospace;
         font-weight: 600;
-        background: #f1f5f9;
+        background: var(--ar-bg-100);
         padding: 1px 5px;
         border-radius: 3px;
       }
@@ -525,7 +525,7 @@ const EMPTY_BALANCE_SHEET: BalanceSheetResultDto = {
           font-size: 1.1rem;
           color: #0f172a;
           padding-bottom: 0.75rem;
-          border-bottom: 2px solid #e2e8f0;
+          border-bottom: 2px solid var(--ar-line-200);
         }
       }
 
@@ -533,8 +533,8 @@ const EMPTY_BALANCE_SHEET: BalanceSheetResultDto = {
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
+        background: var(--ar-bg-50);
+        border: 1px solid var(--ar-line-200);
         border-radius: 6px;
         padding: 1rem;
 
@@ -552,7 +552,7 @@ const EMPTY_BALANCE_SHEET: BalanceSheetResultDto = {
           font-size: 0.82rem;
           color: #475569;
           padding: 0.2rem 0;
-          border-bottom: 1px dashed #e2e8f0;
+          border-bottom: 1px dashed var(--ar-line-200);
         }
 
         .bs-sec-total {
@@ -568,7 +568,7 @@ const EMPTY_BALANCE_SHEET: BalanceSheetResultDto = {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: #f1f5f9;
+        background: var(--ar-bg-100);
         padding: 1rem;
         border-radius: 6px;
         font-size: 1.05rem;
@@ -785,7 +785,7 @@ export class FinancialStatementsComponent {
       const rows = tb.items
         .map(
           (item) => `
-        <tr style="border-bottom:1px solid #e2e8f0;">
+        <tr style="border-bottom:1px solid var(--ar-line-200);">
           <td style="padding:7px 8px; font-weight:600; font-family:monospace;">${item.accountCode}</td>
           <td style="padding:7px 8px;">${item.accountName}</td>
           <td style="padding:7px 8px; text-align:right; font-family:monospace;">₹${(item.openingBalanceInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
@@ -801,7 +801,7 @@ export class FinancialStatementsComponent {
       bodyHtml = `
         <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:16px;">
           <thead>
-            <tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
+            <tr style="background:var(--ar-bg-100); border-bottom:2px solid var(--ar-line-300);">
               <th style="padding:8px; text-align:left;">Code</th>
               <th style="padding:8px; text-align:left;">Account Name</th>
               <th style="padding:8px; text-align:right;">Opening</th>
@@ -813,7 +813,7 @@ export class FinancialStatementsComponent {
           </thead>
           <tbody>
             ${rows}
-            <tr style="background:#f8fafc; font-weight:bold; border-top:2px solid #0f172a; font-family:monospace;">
+            <tr style="background:var(--ar-bg-50); font-weight:bold; border-top:2px solid #0f172a; font-family:monospace;">
               <td colspan="2" style="padding:9px 8px; font-family:sans-serif;">TOTAL</td>
               <td style="padding:9px 8px; text-align:right;">₹${(tb.totalOpeningDebitInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
               <td style="padding:9px 8px; text-align:right;">₹${(tb.totalPeriodDebitInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
@@ -832,14 +832,14 @@ export class FinancialStatementsComponent {
           const isSubtotal = r.type === 'subtotal';
           const isHighlight = r.type === 'highlight' || r.type === 'net-profit';
           const bg = isHeader
-            ? 'background:#e2e8f0; font-weight:bold;'
+            ? 'background:var(--ar-line-200); font-weight:bold;'
             : isHighlight
               ? 'background:#f0fdf4; font-weight:bold; color:#15803d;'
               : isSubtotal
-                ? 'background:#f8fafc; font-weight:bold;'
+                ? 'background:var(--ar-bg-50); font-weight:bold;'
                 : '';
           return `
-          <tr style="${bg} border-bottom:1px solid #e2e8f0;">
+          <tr style="${bg} border-bottom:1px solid var(--ar-line-200);">
             <td style="padding:8px 10px; ${isHeader ? 'font-size:13px; text-transform:uppercase;' : ''}">${r.schedule}</td>
             <td style="padding:8px 10px; text-align:right; font-family:monospace; font-weight:600;">
               ${r.amount !== null ? '₹' + r.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
@@ -852,7 +852,7 @@ export class FinancialStatementsComponent {
       bodyHtml = `
         <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:16px;">
           <thead>
-            <tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
+            <tr style="background:var(--ar-bg-100); border-bottom:2px solid var(--ar-line-300);">
               <th style="padding:8px 10px; text-align:left;">Schedule / Particulars</th>
               <th style="padding:8px 10px; text-align:right;">Amount (INR)</th>
             </tr>
@@ -869,35 +869,35 @@ export class FinancialStatementsComponent {
 
       sectionsHtml += `<tr style="background:#0284c7; color:#fff; font-weight:bold;"><td colspan="2" style="padding:8px 10px; text-transform:uppercase;">ASSETS</td></tr>`;
       for (const sec of bs.assets) {
-        sectionsHtml += `<tr style="background:#f8fafc; font-weight:600;"><td colspan="2" style="padding:7px 10px; color:#334155;">${sec.title}</td></tr>`;
+        sectionsHtml += `<tr style="background:var(--ar-bg-50); font-weight:600;"><td colspan="2" style="padding:7px 10px; color:#334155;">${sec.title}</td></tr>`;
         for (const item of sec.items) {
-          sectionsHtml += `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:6px 20px;">${item.accountCode} - ${item.accountName}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(item.amountInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+          sectionsHtml += `<tr style="border-bottom:1px solid var(--ar-line-200);"><td style="padding:6px 20px;">${item.accountCode} - ${item.accountName}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(item.amountInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
         }
-        sectionsHtml += `<tr style="border-top:1px dashed #cbd5e1; font-weight:bold; background:#fafafa;"><td style="padding:6px 20px;">Subtotal: ${sec.title}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(sec.totalInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+        sectionsHtml += `<tr style="border-top:1px dashed var(--ar-line-300); font-weight:bold; background:#fafafa;"><td style="padding:6px 20px;">Subtotal: ${sec.title}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(sec.totalInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
       }
       sectionsHtml += `<tr style="background:#0369a1; color:#fff; font-weight:bold;"><td style="padding:8px 10px;">TOTAL ASSETS</td><td style="padding:8px 10px; text-align:right; font-family:monospace;">₹${(bs.totalAssetsInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
 
       sectionsHtml += `<tr style="background:#d97706; color:#fff; font-weight:bold;"><td colspan="2" style="padding:8px 10px; margin-top:15px; text-transform:uppercase;">LIABILITIES & EQUITY</td></tr>`;
       for (const sec of bs.liabilities) {
-        sectionsHtml += `<tr style="background:#f8fafc; font-weight:600;"><td colspan="2" style="padding:7px 10px; color:#334155;">${sec.title}</td></tr>`;
+        sectionsHtml += `<tr style="background:var(--ar-bg-50); font-weight:600;"><td colspan="2" style="padding:7px 10px; color:#334155;">${sec.title}</td></tr>`;
         for (const item of sec.items) {
-          sectionsHtml += `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:6px 20px;">${item.accountCode} - ${item.accountName}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(item.amountInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+          sectionsHtml += `<tr style="border-bottom:1px solid var(--ar-line-200);"><td style="padding:6px 20px;">${item.accountCode} - ${item.accountName}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(item.amountInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
         }
-        sectionsHtml += `<tr style="border-top:1px dashed #cbd5e1; font-weight:bold; background:#fafafa;"><td style="padding:6px 20px;">Subtotal: ${sec.title}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(sec.totalInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+        sectionsHtml += `<tr style="border-top:1px dashed var(--ar-line-300); font-weight:bold; background:#fafafa;"><td style="padding:6px 20px;">Subtotal: ${sec.title}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(sec.totalInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
       }
       for (const sec of bs.equity) {
-        sectionsHtml += `<tr style="background:#f8fafc; font-weight:600;"><td colspan="2" style="padding:7px 10px; color:#334155;">${sec.title}</td></tr>`;
+        sectionsHtml += `<tr style="background:var(--ar-bg-50); font-weight:600;"><td colspan="2" style="padding:7px 10px; color:#334155;">${sec.title}</td></tr>`;
         for (const item of sec.items) {
-          sectionsHtml += `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:6px 20px;">${item.accountCode} - ${item.accountName}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(item.amountInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+          sectionsHtml += `<tr style="border-bottom:1px solid var(--ar-line-200);"><td style="padding:6px 20px;">${item.accountCode} - ${item.accountName}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(item.amountInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
         }
-        sectionsHtml += `<tr style="border-top:1px dashed #cbd5e1; font-weight:bold; background:#fafafa;"><td style="padding:6px 20px;">Subtotal: ${sec.title}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(sec.totalInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+        sectionsHtml += `<tr style="border-top:1px dashed var(--ar-line-300); font-weight:bold; background:#fafafa;"><td style="padding:6px 20px;">Subtotal: ${sec.title}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(sec.totalInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
       }
       sectionsHtml += `<tr style="background:#15803d; color:#fff; font-weight:bold;"><td style="padding:8px 10px;">TOTAL LIABILITIES & EQUITY</td><td style="padding:8px 10px; text-align:right; font-family:monospace;">₹${(bs.totalLiabilitiesAndEquityInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
 
       bodyHtml = `
         <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:16px;">
           <thead>
-            <tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
+            <tr style="background:var(--ar-bg-100); border-bottom:2px solid var(--ar-line-300);">
               <th style="padding:8px 10px; text-align:left;">Category / Line Item</th>
               <th style="padding:8px 10px; text-align:right;">Amount (INR)</th>
             </tr>

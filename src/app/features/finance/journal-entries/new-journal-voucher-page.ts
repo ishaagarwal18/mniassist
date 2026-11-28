@@ -314,7 +314,7 @@ const BLANK_LINE: VoucherLineVM = {
     }
     .ar-field__input {
       padding: 0.5rem 0.75rem;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--ar-line-300);
       border-radius: 6px;
       font-size: 0.875rem;
       background: #ffffff;
@@ -342,18 +342,18 @@ const BLANK_LINE: VoucherLineVM = {
       font-size: 0.85rem;
 
       th {
-        background: #f8fafc;
+        background: var(--ar-bg-50);
         padding: 0.6rem 0.75rem;
         text-align: left;
         color: #475569;
         font-weight: 600;
-        border-bottom: 2px solid #e2e8f0;
+        border-bottom: 2px solid var(--ar-line-200);
         white-space: nowrap;
       }
 
       td {
         padding: 0.5rem 0.5rem;
-        border-bottom: 1px solid #f1f5f9;
+        border-bottom: 1px solid var(--ar-line-200);
         vertical-align: middle;
       }
 
@@ -379,8 +379,8 @@ const BLANK_LINE: VoucherLineVM = {
       }
 
       .totals-row td {
-        background: #f8fafc;
-        border-top: 2px solid #cbd5e1;
+        background: var(--ar-bg-50);
+        border-top: 2px solid var(--ar-line-300);
         padding: 0.75rem 0.5rem;
       }
     }

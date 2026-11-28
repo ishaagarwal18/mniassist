@@ -153,10 +153,10 @@ interface AccountOption {
     .sc__seg {
       display: inline-flex;
       align-self: flex-start;
-      background: #f1f5f9;
+      background: var(--ar-bg-100);
       padding: 3px;
       border-radius: 8px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--ar-line-200);
       gap: 2px;
     }
     .sc__seg-btn {

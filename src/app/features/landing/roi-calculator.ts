@@ -301,7 +301,7 @@ const VOICE_PLANS = LANDING_PLANS.filter((p) => p.name === 'Pro' || p.name === '
       gap: 7px;
       padding: 5px 12px;
       border-radius: 9999px;
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       border: 1px solid rgba(37, 99, 235, 0.25);
       color: #2563EB;
       font-size: 11px;
@@ -358,7 +358,7 @@ const VOICE_PLANS = LANDING_PLANS.filter((p) => p.name === 'Pro' || p.name === '
     /* Cards */
     .roi-card {
       background: #FFFFFF;
-      border: 1px solid #E2E8F0;
+      border: 1px solid var(--ar-line-200);
       border-radius: 16px;
       padding: 30px 28px;
       box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04);
@@ -420,8 +420,8 @@ const VOICE_PLANS = LANDING_PLANS.filter((p) => p.name === 'Pro' || p.name === '
       width: 100%;
       height: 42px;
       padding: 0 14px;
-      background: #F8FAFC;
-      border: 1px solid #CBD5E1;
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-300);
       border-radius: 8px;
       font-size: 14px;
       font-family: inherit;
@@ -449,13 +449,13 @@ const VOICE_PLANS = LANDING_PLANS.filter((p) => p.name === 'Pro' || p.name === '
     /* Results Card */
     .roi-card--result {
       background: #FFFFFF;
-      border: 1px solid #E2E8F0;
+      border: 1px solid var(--ar-line-200);
       position: sticky;
       top: 24px;
     }
 
     .roi-card--has-estimate {
-      border-color: #93C5FD;
+      border-color: var(--ar-blue-200);
       box-shadow: 0 12px 32px -8px rgba(37, 99, 235, 0.1);
     }
 
@@ -545,7 +545,7 @@ const VOICE_PLANS = LANDING_PLANS.filter((p) => p.name === 'Pro' || p.name === '
 
     /* Breakdown Table */
     .roi-table-wrapper {
-      border: 1px solid #E2E8F0;
+      border: 1px solid var(--ar-line-200);
       border-radius: 10px;
       overflow: hidden;
     }
@@ -559,7 +559,7 @@ const VOICE_PLANS = LANDING_PLANS.filter((p) => p.name === 'Pro' || p.name === '
     .roi-table th,
     .roi-table td {
       padding: 10px 14px;
-      border-bottom: 1px solid #F1F5F9;
+      border-bottom: 1px solid var(--ar-line-200);
     }
 
     .roi-table tr:last-child th,
@@ -571,7 +571,7 @@ const VOICE_PLANS = LANDING_PLANS.filter((p) => p.name === 'Pro' || p.name === '
       text-align: left;
       font-weight: 500;
       color: #475569;
-      background: #F8FAFC;
+      background: var(--ar-bg-50);
     }
 
     .roi-table td {
@@ -584,7 +584,7 @@ const VOICE_PLANS = LANDING_PLANS.filter((p) => p.name === 'Pro' || p.name === '
 
     /* Note Box */
     .roi-note-box {
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       border: 1px solid rgba(37, 99, 235, 0.18);
       border-radius: 10px;
       padding: 12px 14px;
@@ -605,8 +605,8 @@ const VOICE_PLANS = LANDING_PLANS.filter((p) => p.name === 'Pro' || p.name === '
       flex-direction: column;
       align-items: center;
       gap: 12px;
-      background: #F8FAFC;
-      border: 1px dashed #CBD5E1;
+      background: var(--ar-bg-50);
+      border: 1px dashed var(--ar-line-300);
       border-radius: 12px;
     }
 
@@ -614,7 +614,7 @@ const VOICE_PLANS = LANDING_PLANS.filter((p) => p.name === 'Pro' || p.name === '
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       color: #2563EB;
       display: flex;
       align-items: center;
@@ -689,11 +689,11 @@ const VOICE_PLANS = LANDING_PLANS.filter((p) => p.name === 'Pro' || p.name === '
     .roi-btn--secondary {
       background: #FFFFFF;
       color: #0F172A;
-      border: 1px solid #CBD5E1;
+      border: 1px solid var(--ar-line-300);
     }
 
     .roi-btn--secondary:hover {
-      background: #F8FAFC;
+      background: var(--ar-bg-50);
       border-color: #94A3B8;
       transform: translateY(-2px);
     }

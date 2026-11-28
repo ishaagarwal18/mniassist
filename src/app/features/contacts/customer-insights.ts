@@ -74,7 +74,7 @@ export function timelineKindLabel(k: ContactTimelineKind | undefined): string {
     .pe-card,
     .fh-card {
       background: #ffffff;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--ar-line-200);
       border-radius: 14px;
       padding: 1.25rem 1.5rem;
       box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
@@ -205,7 +205,7 @@ export function timelineKindLabel(k: ContactTimelineKind | undefined): string {
       font-size: 0.75rem;
       color: #64748b;
       padding-top: 0.5rem;
-      border-top: 1px solid #f1f5f9;
+      border-top: 1px solid var(--ar-line-200);
     }
     .ah-empty-state {
       padding: 1.5rem 0;
@@ -250,7 +250,7 @@ export function timelineKindLabel(k: ContactTimelineKind | undefined): string {
       font-size: 0.7rem;
       font-weight: 500;
       color: #475569;
-      background: #f1f5f9;
+      background: var(--ar-bg-100);
       padding: 1px 6px;
       border-radius: 4px;
     }
@@ -263,7 +263,7 @@ export function timelineKindLabel(k: ContactTimelineKind | undefined): string {
       align-items: center;
       gap: 1rem;
       padding-top: 0.75rem;
-      border-top: 1px solid #f1f5f9;
+      border-top: 1px solid var(--ar-line-200);
     }
     .pe-score-meta {
       display: flex;
@@ -314,13 +314,13 @@ export function timelineKindLabel(k: ContactTimelineKind | undefined): string {
       gap: 0.75rem;
       padding: 0.6rem 0.75rem;
       border-radius: 8px;
-      background: #f8fafc;
-      border: 1px solid #f1f5f9;
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-200);
       font-size: 0.82rem;
       transition: background 0.15s ease;
     }
     .fh-item:hover {
-      background: #f1f5f9;
+      background: var(--ar-bg-100);
     }
     .fh-chip {
       flex-shrink: 0;

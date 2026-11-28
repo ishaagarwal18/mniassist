@@ -986,7 +986,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       height: 100%;
       width: min(820px, 92vw);
       max-width: 100vw;
-      background: #F8FAFC;
+      background: var(--ar-bg-50);
       border-left: 1px solid var(--border);
       display: flex;
       flex-direction: column;
@@ -1032,7 +1032,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       font-weight: 700;
       color: var(--primary);
       background: var(--soft-blue);
-      border: 1px solid #BFDBFE;
+      border: 1px solid var(--ar-blue-200);
       padding: 2.5px 8px;
       border-radius: 6px;
       letter-spacing: 0.02em;
@@ -1042,8 +1042,8 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       font-size: 11.5px;
       font-weight: 600;
       color: #334155;
-      background: #F1F5F9;
-      border: 1px solid #E2E8F0;
+      background: var(--ar-bg-100);
+      border: 1px solid var(--ar-line-200);
       padding: 2.5px 8.5px;
       border-radius: 6px;
     }
@@ -1056,8 +1056,8 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       font-weight: 600;
       padding: 2.5px 8.5px;
       border-radius: 6px;
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-200);
       color: #475569;
     }
 
@@ -1081,8 +1081,8 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
     }
 
     .temp-pill--cold {
-      background: #EFF6FF;
-      border-color: #BFDBFE;
+      background: var(--ar-blue-100);
+      border-color: var(--ar-blue-200);
       color: #1E40AF;
     }
 
@@ -1106,8 +1106,8 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       transition: all 0.15s ease;
 
       &:hover {
-        background: #F1F5F9;
-        border-color: #E2E8F0;
+        background: var(--ar-bg-100);
+        border-color: var(--ar-line-200);
         color: var(--navy);
       }
     }
@@ -1217,8 +1217,8 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       transition: all 0.15s ease;
 
       &:hover {
-        background: #F8FAFC;
-        border-color: #CBD5E1;
+        background: var(--ar-bg-50);
+        border-color: var(--ar-line-300);
         color: var(--navy);
       }
     }
@@ -1251,7 +1251,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
     }
 
     .summary-card {
-      background: #F8FAFC;
+      background: var(--ar-bg-50);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 10px 12px;
@@ -1321,7 +1321,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       display: flex;
       align-items: center;
       gap: 3px;
-      background: #F1F5F9;
+      background: var(--ar-bg-100);
       padding: 4px;
       border-radius: 9px;
       margin-bottom: 12px;
@@ -1361,7 +1361,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       font-weight: 700;
       padding: 1px 6px;
       border-radius: 999px;
-      background: #E2E8F0;
+      background: var(--ar-line-200);
       color: #475569;
     }
 
@@ -1383,8 +1383,8 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
 
     /* Next Action Recommendation Card */
     .next-action-card {
-      background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
-      border: 1px solid #DBEAFE;
+      background: linear-gradient(180deg, #FFFFFF 0%, var(--ar-bg-50) 100%);
+      border: 1px solid var(--ar-blue-200);
       border-left: 4px solid var(--primary);
       border-radius: 12px;
       padding: 16px 18px;
@@ -1428,8 +1428,8 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       font-size: 11.5px;
       font-weight: 600;
       color: #475569;
-      background: #EFF6FF;
-      border: 1px solid #BFDBFE;
+      background: var(--ar-blue-100);
+      border: 1px solid var(--ar-blue-200);
       padding: 2px 7px;
       border-radius: 5px;
     }
@@ -1474,7 +1474,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
     .lostbox {
       margin-top: 14px;
       padding: 14px;
-      border: 1px solid #E2E8F0;
+      border: 1px solid var(--ar-line-200);
       border-radius: 10px;
       background: #FFFFFF;
       display: flex;
@@ -1548,7 +1548,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       width: 26px;
       height: 26px;
       border-radius: 6px;
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       color: var(--primary);
       display: flex;
       align-items: center;
@@ -1585,14 +1585,14 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       transition: all 0.12s ease;
 
       &:hover {
-        background: #EFF6FF;
+        background: var(--ar-blue-100);
       }
     }
 
     /* Requirements Quote Body */
     .req-quote {
       border-left: 3px solid var(--primary);
-      background: #F8FAFC;
+      background: var(--ar-bg-50);
       border-radius: 0 8px 8px 0;
       padding: 12px 16px;
     }
@@ -1609,9 +1609,9 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
     .empty-state {
       text-align: center;
       padding: 24px 16px;
-      background: #F8FAFC;
+      background: var(--ar-bg-50);
       border-radius: 9px;
-      border: 1px dashed #CBD5E1;
+      border: 1px dashed var(--ar-line-300);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1660,9 +1660,9 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
     }
 
     .score-status-badge--cold {
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       color: #1E40AF;
-      border: 1px solid #BFDBFE;
+      border: 1px solid var(--ar-blue-200);
     }
 
     .score-hero {
@@ -1671,7 +1671,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       gap: 20px;
       padding: 14px 16px;
       background: #FFFFFF;
-      border: 1px solid #E2E8F0;
+      border: 1px solid var(--ar-line-200);
       border-radius: 10px;
       margin-bottom: 16px;
     }
@@ -1763,7 +1763,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       gap: 12px;
       padding: 8px 12px;
       background: #FFFFFF;
-      border: 1px solid #F1F5F9;
+      border: 1px solid var(--ar-line-200);
       border-radius: 8px;
       font-size: 12.5px;
     }
@@ -1791,7 +1791,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
 
     .score-factor-row__bar {
       height: 5px;
-      background: #E2E8F0;
+      background: var(--ar-line-200);
       border-radius: 999px;
       overflow: hidden;
 
@@ -1832,7 +1832,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
 
     .rfq-progress-bar {
       height: 6px;
-      background: #E2E8F0;
+      background: var(--ar-line-200);
       border-radius: 999px;
       overflow: hidden;
       margin-bottom: 16px;
@@ -1854,7 +1854,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
     }
 
     .rfq-grid__item {
-      background: #F8FAFC;
+      background: var(--ar-bg-50);
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 10px 12px;
@@ -1895,7 +1895,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       font-weight: 700;
       padding: 1px 6px;
       border-radius: 999px;
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       color: var(--primary);
     }
 
@@ -1911,7 +1911,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       justify-content: space-between;
       gap: 12px;
       padding: 12px 14px;
-      background: #F8FAFC;
+      background: var(--ar-bg-50);
       border: 1px solid var(--border);
       border-radius: 9px;
       transition: all 0.15s ease;
@@ -1932,7 +1932,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       width: 28px;
       height: 28px;
       border-radius: 6px;
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       color: var(--primary);
       display: flex;
       align-items: center;
@@ -1956,7 +1956,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
     .rev-pill {
       font-size: 11px;
       font-weight: 600;
-      background: #E2E8F0;
+      background: var(--ar-line-200);
       color: #475569;
       padding: 1px 6px;
       border-radius: 4px;
@@ -1995,7 +1995,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
       font-size: 13px;
       line-height: 1.5;
       color: var(--navy);
-      background: #F8FAFC;
+      background: var(--ar-bg-50);
       resize: vertical;
       box-sizing: border-box;
       outline: none;
@@ -2037,7 +2037,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
         bottom: 10px;
         left: 6px;
         width: 2px;
-        background: #E2E8F0;
+        background: var(--ar-line-200);
       }
     }
 
@@ -2060,7 +2060,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
 
     .timeline__card {
       flex: 1;
-      background: #F8FAFC;
+      background: var(--ar-bg-50);
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 8px 12px;
@@ -2123,7 +2123,7 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
     .loading-spinner {
       width: 32px;
       height: 32px;
-      border: 3px solid #E2E8F0;
+      border: 3px solid var(--ar-line-200);
       border-top-color: var(--primary);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;

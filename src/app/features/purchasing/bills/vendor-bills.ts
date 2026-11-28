@@ -427,8 +427,8 @@ import { ArGrid } from '../../../ui/grid';
 
         th {
           padding: 0.75rem 1rem;
-          background: #f8fafc;
-          border-bottom: 1px solid #e2e8f0;
+          background: var(--ar-bg-50);
+          border-bottom: 1px solid var(--ar-line-200);
           font-weight: 600;
           color: #475569;
           text-transform: uppercase;
@@ -438,16 +438,16 @@ import { ArGrid } from '../../../ui/grid';
 
         td {
           padding: 0.75rem 1rem;
-          border-bottom: 1px solid #f1f5f9;
+          border-bottom: 1px solid var(--ar-line-200);
           vertical-align: middle;
         }
 
         tbody tr:hover {
-          background: #f8fafc;
+          background: var(--ar-bg-50);
         }
 
         tbody tr.selected {
-          background: #f1f5f9;
+          background: var(--ar-bg-100);
         }
       }
 
@@ -473,7 +473,7 @@ import { ArGrid } from '../../../ui/grid';
       .gstin-badge {
         font-size: 0.75rem;
         color: #475569;
-        background: #f1f5f9;
+        background: var(--ar-bg-100);
         padding: 0.1rem 0.35rem;
         border-radius: 4px;
         width: fit-content;
@@ -505,7 +505,7 @@ import { ArGrid } from '../../../ui/grid';
         justify-content: space-between;
         align-items: flex-start;
         padding-bottom: 0.75rem;
-        border-bottom: 1px solid #e2e8f0;
+        border-bottom: 1px solid var(--ar-line-200);
       }
 
       .meta-status {
@@ -520,10 +520,10 @@ import { ArGrid } from '../../../ui/grid';
       }
 
       .info-card {
-        background: #f8fafc;
+        background: var(--ar-bg-50);
         padding: 0.75rem 1rem;
         border-radius: 6px;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--ar-line-200);
 
         h5 {
           margin-top: 0;
@@ -540,7 +540,7 @@ import { ArGrid } from '../../../ui/grid';
       }
 
       .lines-table-wrapper {
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--ar-line-200);
         border-radius: 6px;
         overflow-x: auto;
       }
@@ -551,15 +551,15 @@ import { ArGrid } from '../../../ui/grid';
         font-size: 0.8rem;
 
         th {
-          background: #f8fafc;
+          background: var(--ar-bg-50);
           padding: 0.5rem 0.75rem;
-          border-bottom: 1px solid #e2e8f0;
+          border-bottom: 1px solid var(--ar-line-200);
           text-align: left;
         }
 
         td {
           padding: 0.5rem 0.75rem;
-          border-bottom: 1px solid #f1f5f9;
+          border-bottom: 1px solid var(--ar-line-200);
         }
       }
 
@@ -616,7 +616,7 @@ import { ArGrid } from '../../../ui/grid';
 
         .form-control {
           padding: 0.45rem 0.65rem;
-          border: 1px solid #cbd5e1;
+          border: 1px solid var(--ar-line-300);
           border-radius: 6px;
           font-size: 0.82rem;
         }

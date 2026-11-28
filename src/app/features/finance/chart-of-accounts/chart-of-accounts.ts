@@ -471,7 +471,7 @@ import { ArGrid } from '../../../ui/grid';
       .code-badge {
         font-family: monospace;
         font-weight: 700;
-        background: #f1f5f9;
+        background: var(--ar-bg-100);
         color: #0f172a;
         padding: 2px 6px;
         border-radius: 4px;
@@ -496,8 +496,8 @@ import { ArGrid } from '../../../ui/grid';
       .subcat-tag {
         font-size: 0.75rem;
         color: #475569;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
+        background: var(--ar-bg-50);
+        border: 1px solid var(--ar-line-200);
         padding: 2px 6px;
         border-radius: 3px;
       }
@@ -565,7 +565,7 @@ import { ArGrid } from '../../../ui/grid';
 
         .form-control {
           padding: 0.45rem 0.75rem;
-          border: 1px solid #cbd5e1;
+          border: 1px solid var(--ar-line-300);
           border-radius: 5px;
           font-size: 0.875rem;
 

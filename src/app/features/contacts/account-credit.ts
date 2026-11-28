@@ -27,7 +27,7 @@ import { ArReorderBuyers } from '../reorder/reorder-buyers';
   styles: `
     .credit-page {
       padding: 1.5rem 1.75rem 3rem;
-      background: #f1f5f9;
+      background: var(--ar-bg-100);
       min-height: calc(100vh - 64px);
     }
   `,

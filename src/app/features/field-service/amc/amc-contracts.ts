@@ -441,7 +441,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
 
       .kpi-card {
         background: #fff;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--ar-line-200);
         border-radius: 8px;
         padding: 1rem 1.25rem;
         display: flex;
@@ -502,7 +502,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
           width: 100%;
           box-sizing: border-box;
           padding: 0.45rem 0.85rem;
-          border: 1px solid #cbd5e1;
+          border: 1px solid var(--ar-line-300);
           border-radius: 6px;
           font-size: 0.875rem;
           background: #fff;
@@ -526,7 +526,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
           padding: 0.32rem 0.85rem;
           font-size: 0.78rem;
           border-radius: 20px;
-          border: 1px solid #cbd5e1;
+          border: 1px solid var(--ar-line-300);
           background: #fff;
           color: #475569;
           cursor: pointer;
@@ -536,7 +536,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
 
           &:hover {
             border-color: #94a3b8;
-            background: #f8fafc;
+            background: var(--ar-bg-50);
           }
 
           &.active {
@@ -567,7 +567,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
       /* ── Table Card ── */
       .table-card {
         background: #fff;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--ar-line-200);
         border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -629,7 +629,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
 
       .type-pill {
         font-size: 0.72rem;
-        background: #f1f5f9;
+        background: var(--ar-bg-100);
         color: #334155;
         padding: 2px 7px;
         border-radius: 4px;
@@ -652,7 +652,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
       /* ── Cockpit Detail Column ── */
       .detail-cockpit {
         background: #fff;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--ar-line-200);
         border-radius: 8px;
         padding: 1.25rem;
         display: flex;
@@ -672,7 +672,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
         align-items: flex-start;
         gap: 0.75rem;
         flex-wrap: wrap;
-        border-bottom: 1px solid #f1f5f9;
+        border-bottom: 1px solid var(--ar-line-200);
         padding-bottom: 1rem;
         min-width: 0;
 
@@ -733,10 +733,10 @@ import { initialSearch } from '../../../core/util/customer-scope';
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.75rem;
-        background: #f8fafc;
+        background: var(--ar-bg-50);
         padding: 0.85rem;
         border-radius: 6px;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--ar-line-200);
         min-width: 0;
 
         @media (max-width: 640px) {
@@ -846,7 +846,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
 
             .badge-count {
               font-size: 0.72rem;
-              background: #e2e8f0;
+              background: var(--ar-line-200);
               padding: 2px 8px;
               border-radius: 10px;
               color: #475569;
@@ -859,7 +859,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
       .schedules-table-container {
         width: 100%;
         overflow-x: auto;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--ar-line-200);
         border-radius: 6px;
         background: #fff;
         box-sizing: border-box;
@@ -873,8 +873,8 @@ import { initialSearch } from '../../../core/util/customer-scope';
         min-width: 520px;
 
         thead {
-          background: #f8fafc;
-          border-bottom: 1px solid #e2e8f0;
+          background: var(--ar-bg-50);
+          border-bottom: 1px solid var(--ar-line-200);
 
           th {
             padding: 0.55rem 0.75rem;
@@ -893,7 +893,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
 
         tbody {
           tr {
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid var(--ar-line-200);
             transition: background 0.12s;
 
             &:last-child {
@@ -901,7 +901,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
             }
 
             &:hover {
-              background: #f8fafc;
+              background: var(--ar-bg-50);
             }
 
             &.row-completed {
@@ -949,7 +949,7 @@ import { initialSearch } from '../../../core/util/customer-scope';
         }
 
         .eng-badge {
-          background: #f1f5f9;
+          background: var(--ar-bg-100);
           color: #334155;
           padding: 2px 6px;
           border-radius: 4px;

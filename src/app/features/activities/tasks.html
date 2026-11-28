@@ -40,12 +40,6 @@
       </p>
     </div>
 
-    @if (directory.canCreate) {
-    <button ar-button type="button" variant="primary" icon="plus" class="btn-header-new-task"
-      (click)="creating.set(true)">
-      New task
-    </button>
-    }
   </header>
 
   <!-- 2. Interactive Task Overview Cards (Clickable to Filter) -->
@@ -194,6 +188,8 @@
   </div>
   }
 
+  <div class="tk-body">
+  <div class="tk-main">
   <!-- Error Alert -->
   @if (error(); as msg) {
   <div class="tasks-error-banner" role="alert">
@@ -367,4 +363,58 @@
     </ul>
   </details>
   }
+  </div>
+
+  <!-- 7. Side panel: workload at a glance + what is due next -->
+  <aside class="tk-aside" aria-label="Task insights">
+    @if (workload(); as w) {
+    <section class="tk-panel">
+      <h2 class="tk-panel__title">Workload</h2>
+      <ul class="tk-bars" role="list">
+        @for (r of w.rows; track r.key) {
+        <li class="tk-bars__row">
+          <button type="button" class="tk-bars__btn" (click)="toggleBucketFilter(r.key)"
+            [class.tk-bars__btn--active]="selectedBucket() === r.key" [attr.title]="'Filter by ' + r.label.toLowerCase()">
+            <span class="tk-bars__lbl">{{ r.label }}</span>
+            <span class="tk-bars__num">{{ r.count }}</span>
+            <span class="tk-bars__track" aria-hidden="true">
+              <span class="tk-bars__fill tk-bars__fill--{{ r.tone }}" [style.width.%]="r.pct"></span>
+            </span>
+          </button>
+        </li>
+        }
+      </ul>
+      <div class="tk-rate">
+        <div class="tk-rate__head">
+          <span>7-day completion</span>
+          <strong>{{ w.completionPct }}%</strong>
+        </div>
+        <div class="tk-rate__track" role="progressbar" aria-label="Tasks completed in the last 7 days against tasks still open"
+          [attr.aria-valuenow]="w.completionPct" aria-valuemin="0" aria-valuemax="100">
+          <span class="tk-rate__fill" [style.width.%]="w.completionPct"></span>
+        </div>
+        <p class="tk-rate__hint">{{ w.done }} finished · {{ w.open }} still open</p>
+      </div>
+    </section>
+    }
+
+    <section class="tk-panel">
+      <h2 class="tk-panel__title">Up next</h2>
+      @if (nextUp().length) {
+      <ul class="tk-next" role="list">
+        @for (t of nextUp(); track t.id) {
+        <li>
+          <button type="button" class="tk-next__item" (click)="editing.set(t)">
+            <span class="tk-next__title">{{ t.title }}</span>
+            <span class="tk-next__due" [class.tk-next__due--overdue]="isOverdue(t)">{{ dueText(t) }}</span>
+          </button>
+        </li>
+        }
+      </ul>
+      } @else {
+      <p class="tk-panel__empty">Nothing scheduled. Give a task a due date and it will show up here.</p>
+      }
+    </section>
+  </aside>
+  </div>
 </div>

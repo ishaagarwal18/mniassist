@@ -72,7 +72,7 @@ interface Industry {
     }
     .card:hover .card__icon {
       transform: translateY(-3px) scale(1.1);
-      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      background: linear-gradient(135deg, var(--ar-blue-100) 0%, #bfdbfe 100%);
       border-color: #3b82f6;
       box-shadow: 0 4px 14px -2px rgba(37, 99, 235, 0.35);
     }

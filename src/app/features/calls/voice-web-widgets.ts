@@ -604,7 +604,7 @@ interface WidgetForm extends Omit<VoiceWebWidgetInput, 'allowedOrigins'> {
       height: 160px;
       position: relative;
       padding: 16px;
-      background: #fafbfc;
+      background: var(--ar-bg-50);
     }
 
     .mock-content-lines {

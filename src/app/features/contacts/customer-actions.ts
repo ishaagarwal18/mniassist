@@ -63,7 +63,7 @@ import { ArIcon } from '../../ui/icon';
     }
     .ca-btn--ghost {
       background: #ffffff !important;
-      border: 1px solid #e2e8f0 !important;
+      border: 1px solid var(--ar-line-200) !important;
       color: #334155 !important;
       box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
 
@@ -73,8 +73,8 @@ import { ArIcon } from '../../ui/icon';
       }
 
       &:hover {
-        background: #f8fafc !important;
-        border-color: #cbd5e1 !important;
+        background: var(--ar-bg-50) !important;
+        border-color: var(--ar-line-300) !important;
         color: #0f172a !important;
         transform: translateY(-1px);
 

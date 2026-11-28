@@ -162,8 +162,8 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
       justify-content: space-between;
       gap: 12px;
       padding: 10px 14px;
-      border: 1px solid #BFDBFE;
-      background: #F0F7FF;
+      border: 1px solid var(--ar-blue-200);
+      background: var(--ar-blue-100);
       border-radius: 9px;
       transition: all 0.15s ease;
     }
@@ -221,7 +221,7 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
       align-items: center;
       gap: 4px;
       background: #FFFFFF;
-      border: 1px solid #CBD5E1;
+      border: 1px solid var(--ar-line-300);
       padding: 5px 10px;
       border-radius: 6px;
       cursor: pointer;
@@ -231,8 +231,8 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
       transition: all 0.12s ease;
 
       &:hover {
-        background: #EFF6FF;
-        border-color: #93C5FD;
+        background: var(--ar-blue-100);
+        border-color: var(--ar-blue-200);
       }
     }
 
@@ -260,7 +260,7 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
       right: 12px;
       width: 14px;
       height: 14px;
-      border: 2px solid #E2E8F0;
+      border: 2px solid var(--ar-line-200);
       border-top-color: #2563EB;
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
@@ -275,7 +275,7 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
       list-style: none;
       margin: 6px 0 0;
       padding: 6px;
-      border: 1px solid #E2E8F0;
+      border: 1px solid var(--ar-line-200);
       border-radius: 10px;
       max-height: 220px;
       overflow-y: auto;
@@ -305,7 +305,7 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
       transition: background 0.12s ease;
 
       &:hover {
-        background: #F1F5F9;
+        background: var(--ar-bg-100);
       }
     }
 
@@ -313,7 +313,7 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
       width: 28px;
       height: 28px;
       border-radius: 6px;
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       color: #2563EB;
       font-size: 11px;
       font-weight: 700;
@@ -352,7 +352,7 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
       font-size: 11px;
       font-weight: 600;
       color: #2563EB;
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       padding: 2px 8px;
       border-radius: 5px;
       opacity: 0;
@@ -366,8 +366,8 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
     /* Empty and Add States */
     .cp__empty {
       padding: 10px 12px;
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-200);
       border-radius: 8px;
       margin-top: 6px;
     }
@@ -384,9 +384,9 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
       gap: 6px;
       margin-top: 8px;
       padding: 6px 10px;
-      border: 1px dashed #BFDBFE;
+      border: 1px dashed var(--ar-blue-200);
       border-radius: 7px;
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       cursor: pointer;
       font-size: 12.5px;
       font-weight: 600;
@@ -394,8 +394,8 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
       transition: all 0.15s ease;
 
       &:hover {
-        background: #DBEAFE;
-        border-color: #93C5FD;
+        background: var(--ar-blue-100);
+        border-color: var(--ar-blue-200);
       }
     }
 
@@ -406,9 +406,9 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
       gap: 8px;
       margin-top: 10px;
       padding: 14px;
-      border: 1px solid #BFDBFE;
+      border: 1px solid var(--ar-blue-200);
       border-radius: 10px;
-      background: #F8FAFC;
+      background: var(--ar-bg-50);
     }
 
     .cp__new-head {

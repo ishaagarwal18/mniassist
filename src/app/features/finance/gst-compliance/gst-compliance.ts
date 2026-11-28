@@ -724,7 +724,7 @@ export function recentReturnPeriods(
 
       .section-tag {
         font-size: 0.75rem;
-        background: #f1f5f9;
+        background: var(--ar-bg-100);
         color: #334155;
         padding: 2px 6px;
         border-radius: 4px;
@@ -829,7 +829,7 @@ export function recentReturnPeriods(
             justify-content: space-between;
             font-size: 0.95rem;
             padding-top: 0.5rem;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid var(--ar-line-200);
             font-weight: 700;
           }
         }
@@ -858,7 +858,7 @@ export function recentReturnPeriods(
 
         .form-control {
           padding: 0.45rem 0.75rem;
-          border: 1px solid #cbd5e1;
+          border: 1px solid var(--ar-line-300);
           border-radius: 5px;
           font-size: 0.875rem;
 

@@ -64,7 +64,7 @@ interface CreditForm {
     /* Enterprise Cards */
     .bc-card {
       background: #ffffff;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--ar-line-200);
       border-radius: 14px;
       box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
       padding: 1.5rem;
@@ -92,7 +92,7 @@ interface CreditForm {
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      background: #eff6ff;
+      background: var(--ar-blue-100);
       color: #2563eb;
     }
 
@@ -151,7 +151,7 @@ interface CreditForm {
       height: 40px;
       padding: 0 0.85rem;
       border-radius: 8px;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--ar-line-300);
       background: #ffffff;
       color: #0f172a;
       font-size: 0.875rem;
@@ -178,8 +178,8 @@ interface CreditForm {
       align-items: center;
       gap: 0.75rem;
       padding: 0.75rem 1rem;
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
+      background: var(--ar-blue-100);
+      border: 1px solid var(--ar-blue-200);
       border-radius: 10px;
       font-size: 0.82rem;
       color: #1e40af;
@@ -194,7 +194,7 @@ interface CreditForm {
       margin-left: auto;
       font-size: 0.75rem;
       font-weight: 600;
-      background: #dbeafe;
+      background: var(--ar-blue-100);
       color: #1d4ed8;
       padding: 2px 8px;
       border-radius: 12px;
@@ -213,15 +213,15 @@ interface CreditForm {
       gap: 1rem;
       align-items: center;
       padding: 1rem 1.25rem;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-200);
       border-radius: 10px;
       transition: all 0.15s ease;
     }
 
     .bc-buyer-card:hover {
-      background: #f1f5f9;
-      border-color: #cbd5e1;
+      background: var(--ar-bg-100);
+      border-color: var(--ar-line-300);
     }
 
     .bc-buyer-who {
@@ -310,8 +310,8 @@ interface CreditForm {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 0.75rem;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-200);
       border-radius: 10px;
       padding: 0.85rem 1rem;
     }
@@ -364,8 +364,8 @@ interface CreditForm {
 
     /* Modern Toggle Control */
     .bc-toggle-box {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-200);
       border-radius: 10px;
       padding: 1.15rem 1.25rem;
       display: flex;
@@ -460,8 +460,8 @@ interface CreditForm {
       gap: 0.85rem;
       align-items: flex-start;
       padding: 1rem 1.25rem;
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
+      background: var(--ar-blue-100);
+      border: 1px solid var(--ar-blue-200);
       border-radius: 10px;
       font-size: 0.82rem;
       color: #1e40af;
@@ -506,7 +506,7 @@ interface CreditForm {
       align-items: center;
       padding: 1.25rem 1.5rem;
       background: #ffffff;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--ar-line-200);
       border-radius: 14px;
       box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
       gap: 1rem;

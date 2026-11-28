@@ -292,7 +292,7 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
       gap: 7px;
       padding: 5px 12px;
       border-radius: 9999px;
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       border: 1px solid rgba(37, 99, 235, 0.25);
       color: #2563EB;
       font-size: 11px;
@@ -411,11 +411,11 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
     }
 
     .ip-problem-card--2 {
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       border-color: rgba(37, 99, 235, 0.2);
     }
     .ip-problem-card--2 .ip-problem-card__icon-box {
-      background: #DBEAFE;
+      background: var(--ar-blue-100);
       color: #2563EB;
     }
 
@@ -451,7 +451,7 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
 
     .ip-use-card {
       background: #FFFFFF;
-      border: 1px solid #E2E8F0;
+      border: 1px solid var(--ar-line-200);
       border-radius: 14px;
       padding: 24px 22px;
       display: flex;
@@ -463,7 +463,7 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
 
     .ip-use-card:hover {
       transform: translateY(-4px);
-      border-color: #93C5FD;
+      border-color: var(--ar-blue-200);
       box-shadow: 0 16px 32px -8px rgba(37, 99, 235, 0.12);
     }
 
@@ -471,7 +471,7 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
       width: 42px;
       height: 42px;
       border-radius: 10px;
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       color: #2563EB;
       display: flex;
       align-items: center;
@@ -481,7 +481,7 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
     }
 
     .ip-use-card:hover .ip-use-card__icon-box {
-      background: #DBEAFE;
+      background: var(--ar-blue-100);
     }
 
     .ip-use-card__icon {
@@ -506,8 +506,8 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
     /* AI Card */
     .ip-ai-card {
       position: relative;
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-200);
       border-radius: 16px;
       padding: 28px 24px;
       overflow: hidden;
@@ -550,7 +550,7 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
       padding: 6px 14px;
       border-radius: 9999px;
       background: #FFFFFF;
-      border: 1px solid #CBD5E1;
+      border: 1px solid var(--ar-line-300);
       font-size: 13px;
       font-weight: 600;
       color: #1E293B;
@@ -567,7 +567,7 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
       display: flex;
       align-items: center;
       gap: 12px;
-      background: #EFF6FF;
+      background: var(--ar-blue-100);
       border: 1px solid rgba(37, 99, 235, 0.2);
       border-radius: 10px;
       padding: 14px 16px;
@@ -685,11 +685,11 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
     .ip-btn--secondary {
       background: #FFFFFF;
       color: #0F172A;
-      border: 1px solid #CBD5E1;
+      border: 1px solid var(--ar-line-300);
     }
 
     .ip-btn--secondary:hover {
-      background: #F8FAFC;
+      background: var(--ar-bg-50);
       border-color: #94A3B8;
       transform: translateY(-2px);
     }

@@ -60,9 +60,9 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 16px;
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--ar-blue-200);
   border-radius: 10px;
-  background: #eff6ff;
+  background: var(--ar-blue-100);
   color: #1e40af;
   font-size: 13px;
 
@@ -141,7 +141,7 @@
   transition: all 0.15s ease;
 
   &:hover {
-    border-color: #cbd5e1;
+    border-color: var(--ar-line-300);
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
     transform: translateY(-2px);
   }
@@ -183,17 +183,17 @@
     flex-shrink: 0;
 
     &--all {
-      background: #eff6ff;
+      background: var(--ar-blue-100);
       color: #2563eb;
     }
 
     &--draft {
-      background: #f1f5f9;
+      background: var(--ar-bg-100);
       color: #64748b;
     }
 
     &--confirmed {
-      background: #eff6ff;
+      background: var(--ar-blue-100);
       color: #0284c7;
     }
 
@@ -340,13 +340,13 @@
     height: 22px;
     border: none;
     border-radius: 50%;
-    background: #f1f5f9;
+    background: var(--ar-bg-100);
     color: #64748b;
     cursor: pointer;
     transition: all 0.15s ease;
 
     &:hover {
-      background: #e2e8f0;
+      background: var(--ar-line-200);
       color: #0f172a;
     }
   }
@@ -392,7 +392,7 @@
   }
 
   &:hover {
-    background: #e2e8f0;
+    background: var(--ar-line-200);
     color: #0f172a;
   }
 
@@ -505,8 +505,8 @@
     display: inline-block;
     align-self: flex-start;
     padding: 2px 7px;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
+    background: var(--ar-bg-100);
+    border: 1px solid var(--ar-line-200);
     border-radius: 5px;
     font-size: 11.5px;
     font-weight: 600;
@@ -568,8 +568,8 @@
 
   // Draft (Neutral Grey)
   &--draft {
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
+    background: var(--ar-bg-100);
+    border: 1px solid var(--ar-line-200);
     color: #475569;
 
     .so-status-badge__dot {
@@ -579,8 +579,8 @@
 
   // Confirmed (Blue)
   &--confirmed {
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
+    background: var(--ar-blue-100);
+    border: 1px solid var(--ar-blue-200);
     color: #1d4ed8;
 
     .so-status-badge__dot {
@@ -686,8 +686,8 @@
   }
 
   &--active {
-    background: #eff6ff !important;
-    border-color: #93c5fd !important;
+    background: var(--ar-blue-100) !important;
+    border-color: var(--ar-blue-200) !important;
     color: #2563eb !important;
   }
 }
@@ -745,7 +745,7 @@
     font-weight: 600;
 
     &:hover {
-      background: #eff6ff;
+      background: var(--ar-blue-100);
       color: #1d4ed8;
     }
   }
@@ -779,17 +779,17 @@
   .e-dialog.e-cc-dialog {
     border-radius: 12px !important;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
-    border: 1px solid #e2e8f0 !important;
+    border: 1px solid var(--ar-line-200) !important;
 
     .e-dlg-header-content {
-      border-bottom: 1px solid #e2e8f0 !important;
-      background: #f8fafc !important;
+      border-bottom: 1px solid var(--ar-line-200) !important;
+      background: var(--ar-bg-50) !important;
       border-radius: 12px 12px 0 0 !important;
     }
 
     .e-footer-content {
-      border-top: 1px solid #e2e8f0 !important;
-      background: #f8fafc !important;
+      border-top: 1px solid var(--ar-line-200) !important;
+      background: var(--ar-bg-50) !important;
       border-radius: 0 0 12px 12px !important;
     }
   }

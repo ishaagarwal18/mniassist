@@ -69,7 +69,7 @@ import { customerLinkGroups } from './customer-360-links.logic';
   styles: `
     .cl {
       background: #ffffff;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--ar-line-200);
       border-radius: 16px;
       box-shadow:
         0 1px 3px rgba(15, 23, 42, 0.04),
@@ -86,7 +86,7 @@ import { customerLinkGroups } from './customer-360-links.logic';
       gap: 1rem;
       flex-wrap: wrap;
       padding-bottom: 0.75rem;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--ar-line-200);
     }
     .cl__head-info {
       display: flex;
@@ -110,7 +110,7 @@ import { customerLinkGroups } from './customer-360-links.logic';
       gap: 6px;
       background: #ffffff;
       cursor: pointer;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--ar-line-200);
       border-radius: 8px;
       padding: 6px 12px;
       font: 500 0.8125rem var(--ar-font-sans);
@@ -124,8 +124,8 @@ import { customerLinkGroups } from './customer-360-links.logic';
       }
 
       &:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
+        background: var(--ar-bg-50);
+        border-color: var(--ar-line-300);
         color: #0f172a;
         transform: translateY(-1px);
       }
@@ -136,8 +136,8 @@ import { customerLinkGroups } from './customer-360-links.logic';
       gap: 1rem;
     }
     .cl__group {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-200);
       border-radius: 12px;
       padding: 1rem;
       display: flex;
@@ -147,7 +147,7 @@ import { customerLinkGroups } from './customer-360-links.logic';
 
       &:hover {
         background: #ffffff;
-        border-color: #cbd5e1;
+        border-color: var(--ar-line-300);
         box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.05);
       }
     }
@@ -156,14 +156,14 @@ import { customerLinkGroups } from './customer-360-links.logic';
       align-items: center;
       gap: 8px;
       padding-bottom: 0.5rem;
-      border-bottom: 1px solid #e2e8f0;
+      border-bottom: 1px solid var(--ar-line-200);
     }
     .cl__group-icon {
       width: 28px;
       height: 28px;
       border-radius: 7px;
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
+      background: var(--ar-blue-100);
+      border: 1px solid var(--ar-blue-200);
       color: #2563eb;
       display: flex;
       align-items: center;
@@ -200,7 +200,7 @@ import { customerLinkGroups } from './customer-360-links.logic';
       transition: all 0.14s ease;
 
       &:hover {
-        background: #eff6ff;
+        background: var(--ar-blue-100);
         color: #1d4ed8;
 
         .cl__go {
@@ -241,7 +241,7 @@ import { customerLinkGroups } from './customer-360-links.logic';
       padding: 0 6px;
       border-radius: 999px;
       background: #ffffff;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--ar-line-300);
       font: 600 0.6875rem/18px var(--ar-font-sans);
       color: #0f172a;
       text-align: center;
