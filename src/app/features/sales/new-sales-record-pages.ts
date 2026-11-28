@@ -173,16 +173,11 @@ export class ArEditDeliveryChallanPage extends NewSalesRecordPage {
 
 @Component({
   selector: 'ar-new-sales-invoice-page',
-  imports: [ArTopbar, ArNewSalesInvoice],
+  imports: [ArNewSalesInvoice],
   providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar
-      help="Raise a GST tax invoice with the customer's GSTIN, terms and items."
-      title="New invoice" [subtitle]="customer?.label ?? ''" />
-    <div class="new-record ar-scroll">
-      <ar-new-sales-invoice [initialCustomer]="customer" (closed)="done($event)" />
-    </div>
+    <ar-new-sales-invoice [initialCustomer]="customer" (closed)="done($event)" />
   `,
   styleUrl: './new-sales-record-pages.scss',
 })

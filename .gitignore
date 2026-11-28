@@ -9,3 +9,5 @@ a11y-audit/
 docs/
 .vscode
 tools/
+*.zip
+delivery-challan-redesign/

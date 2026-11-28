@@ -1,0 +1,768 @@
+<ar-topbar
+  title="New sales invoice"
+  subtitle="Create a GST-compliant invoice for your customer."
+  help="Issue statutory GST sales invoices, bills of supply, credit notes, or debit notes with automatic tax calculations, payment terms, and e-invoice details."
+>
+  <button ar-button type="button" variant="ghost" class="nsi-topbar-btn" (click)="cancel()">Cancel</button>
+  <button
+    ar-button
+    type="button"
+    variant="primary"
+    icon="check"
+    class="nsi-topbar-btn"
+    [disabled]="busy()"
+    (click)="save()"
+  >
+    {{ busy() ? 'Saving…' : 'Save as draft' }}
+  </button>
+</ar-topbar>
+
+<div class="nsi-page ar-scroll">
+  <div class="nsi-container">
+    @if (error(); as e) {
+      <div class="nsi-banner-error" role="alert">
+        <ar-icon name="alert" [size]="18" />
+        <span class="nsi-banner-error__text">{{ e }}</span>
+      </div>
+    }
+
+    <!-- Visual Placement Banner Card -->
+    <div class="nsi-banner-card">
+      <div class="nsi-banner-card__icon">
+        <ar-icon name="sales-invoices" [size]="22" />
+      </div>
+      <div class="nsi-banner-card__content">
+        <strong class="nsi-banner-card__title">GST Sales Invoice Workspace</strong>
+        <p class="nsi-banner-card__desc">
+          Select customer account and contact person, configure terms and place of supply, and specify invoice items. CGST, SGST, or IGST are automatically calculated based on GSTIN and location.
+        </p>
+      </div>
+    </div>
+
+    <!-- Mobile-only collapsible summary bar (visible below 1200px) -->
+    <div class="nsi-summary-mobile-bar" (click)="toggleMobileSummary()">
+      <div class="nsi-summary-mobile-bar__left">
+        <ar-icon name="analytics-overview" [size]="16" />
+        <span class="nsi-summary-mobile-bar__label">Grand Total:</span>
+        <strong class="nsi-summary-mobile-bar__amount">₹ {{ money(totals().taxable + totals().tax) }}</strong>
+        <span class="nsi-summary-mobile-bar__count">({{ startedCount() }} items)</span>
+      </div>
+      <div class="nsi-summary-mobile-bar__right">
+        <span>{{ mobileSummaryOpen() ? 'Hide breakdown' : 'View breakdown' }}</span>
+        <ar-icon name="chevron" [size]="14" class="nsi-mobile-chevron" [class.nsi-mobile-chevron--open]="mobileSummaryOpen()" />
+      </div>
+    </div>
+
+    @if (mobileSummaryOpen()) {
+      <div class="nsi-summary-mobile-drawer">
+        <ng-container *ngTemplateOutlet="summaryCardTpl" />
+      </div>
+    }
+
+    <!-- 2-Column Responsive Workspace -->
+    <div class="nsi-workspace">
+      <!-- LEFT COLUMN: Form Sections -->
+      <div class="nsi-form-col">
+        <!-- Section 1: Bill To (Customer & Document) -->
+        <section class="nsi-card" aria-labelledby="sec-billto">
+          <header class="nsi-card__header">
+            <div class="nsi-card__icon-badge nsi-card__icon-badge--blue">
+              <ar-icon name="contacts" [size]="16" />
+            </div>
+            <div class="nsi-card__header-text">
+              <h3 id="sec-billto" class="nsi-card__title">Bill to</h3>
+              <p class="nsi-card__subtitle">Customer account and contact person, or an independent buyer.</p>
+            </div>
+          </header>
+
+          <div class="nsi-card__body">
+            <ar-sales-customer [initialCustomer]="initialCustomer()" (changed)="onCustomer($event)" />
+
+            @if (choice()?.mode === 'contact' && choice()?.customer && !party().accountId) {
+              <div class="nsi-note-box">
+                <ar-icon name="alert" [size]="16" />
+                <span>This contact has no corporate account linked: enter their GSTIN and addresses below.</span>
+              </div>
+            }
+
+            <div class="nsi-form-grid nsi-form-grid--3col">
+              <!-- Document Type -->
+              <label class="ar-field">
+                <span class="ar-field__label">Document Type <span class="ar-field__req">*</span></span>
+                <select class="ar-field__input ar-field__select" (change)="kind.set(+$any($event.target).value)">
+                  <option [value]="Kind.TaxInvoice" [selected]="kind() === Kind.TaxInvoice">
+                    Tax invoice
+                  </option>
+                  <option [value]="Kind.BillOfSupply" [selected]="kind() === Kind.BillOfSupply">
+                    Bill of supply (no GST)
+                  </option>
+                  <option [value]="Kind.CreditNote" [selected]="kind() === Kind.CreditNote">
+                    Credit note
+                  </option>
+                  <option [value]="Kind.DebitNote" [selected]="kind() === Kind.DebitNote">
+                    Debit note
+                  </option>
+                </select>
+              </label>
+
+              <!-- Against Invoice (if Credit/Debit note) or Against Challan -->
+              @if (isNote()) {
+                <label class="ar-field nsi-col-span-2" for="ni-original">
+                  <span class="ar-field__label">Against Invoice <span class="ar-field__req">*</span></span>
+                  <select
+                    id="ni-original"
+                    class="ar-field__input ar-field__select"
+                    (change)="originalInvoiceId.set($any($event.target).value)"
+                  >
+                    <option value="" [selected]="!originalInvoiceId()">
+                      {{
+                        priorInvoices().length
+                          ? 'Choose the invoice it adjusts…'
+                          : 'No issued invoices found for this customer'
+                      }}
+                    </option>
+                    @for (i of priorInvoices(); track i.id) {
+                      <option [value]="i.id" [selected]="i.id === originalInvoiceId()" translate="no">
+                        {{ i.invoiceNumber }} · {{ i.issueDateUtc.slice(0, 10) }}
+                      </option>
+                    }
+                  </select>
+                </label>
+              } @else if (challans().length) {
+                <label class="ar-field nsi-col-span-2" for="ni-challan">
+                  <div class="ar-field__label-row">
+                    <span class="ar-field__label">Against Delivery Challan</span>
+                    <span class="ar-field__opt">optional</span>
+                  </div>
+                  <select
+                    id="ni-challan"
+                    class="ar-field__input ar-field__select"
+                    (change)="challanId.set($any($event.target).value)"
+                  >
+                    <option value="" [selected]="!challanId()">Not against a challan</option>
+                    @for (c of challans(); track c.id) {
+                      <option [value]="c.id" [selected]="c.id === challanId()" translate="no">
+                        {{ c.challanNumber }} · {{ c.challanDateUtc.slice(0, 10) }}
+                      </option>
+                    }
+                  </select>
+                </label>
+              }
+
+              <!-- Customer GSTIN -->
+              <label class="ar-field" [class.nsi-col-span-2]="!isNote() && !challans().length">
+                <div class="ar-field__label-row">
+                  <span class="ar-field__label">Customer GSTIN</span>
+                  <span class="ar-field__opt">optional</span>
+                </div>
+                <input
+                  class="ar-field__input ar-mono"
+                  maxlength="15"
+                  placeholder="e.g. 27ABCDE1234F1Z5"
+                  [class.nsi-input-invalid]="gstinInvalid()"
+                  [value]="gstin()"
+                  (input)="setGstin($any($event.target).value)"
+                />
+                @if (gstinInvalid()) {
+                  <span class="ar-field__hint nsi-text-bad">
+                    A GSTIN must have 15 characters, like 27ABCDE1234F1Z5.
+                  </span>
+                }
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 2: Invoice Details -->
+        <section class="nsi-card" aria-labelledby="sec-details">
+          <header class="nsi-card__header">
+            <div class="nsi-card__icon-badge nsi-card__icon-badge--purple">
+              <ar-icon name="sales-orders" [size]="16" />
+            </div>
+            <div class="nsi-card__header-text">
+              <h3 id="sec-details" class="nsi-card__title">Invoice details</h3>
+              <p class="nsi-card__subtitle">Dates, commercial credit terms, and GST jurisdiction.</p>
+            </div>
+          </header>
+
+          <div class="nsi-card__body">
+            <div class="nsi-form-grid nsi-form-grid--4col">
+              <label class="ar-field">
+                <span class="ar-field__label">Invoice Date <span class="ar-field__req">*</span></span>
+                <input
+                  type="date"
+                  class="ar-field__input"
+                  [value]="issueDate()"
+                  (input)="setIssueDate($any($event.target).value)"
+                />
+              </label>
+
+              <label class="ar-field">
+                <span class="ar-field__label">Payment Terms</span>
+                <select class="ar-field__input ar-field__select" (change)="setTerms($any($event.target).value)">
+                  @for (d of paymentTerms(); track d.value) {
+                    <option [value]="d.value" [selected]="terms() === d.value">
+                      {{ d.label }}
+                    </option>
+                  }
+                  <option value="custom" [selected]="terms() === null">Custom date</option>
+                </select>
+              </label>
+
+              <label class="ar-field">
+                <span class="ar-field__label">Due Date <span class="ar-field__req">*</span></span>
+                <input
+                  type="date"
+                  class="ar-field__input"
+                  [min]="issueDate()"
+                  [value]="dueDate()"
+                  (input)="setDueDate($any($event.target).value)"
+                />
+              </label>
+
+              <label class="ar-field">
+                <span class="ar-field__label">Place of Supply <span class="ar-field__req">*</span></span>
+                <select
+                  class="ar-field__input ar-field__select"
+                  (change)="setPlaceOfSupply($any($event.target).value)"
+                >
+                  <option value="" [selected]="!placeCode()">Choose state…</option>
+                  @for (s of states(); track s.name) {
+                    <option [value]="s.code" [selected]="s.code === placeCode()">
+                      {{ s.code }} · {{ s.name }}
+                    </option>
+                  }
+                </select>
+              </label>
+            </div>
+
+            <!-- Inter-State Supply Switch -->
+            <div class="nsi-switch-card">
+              <label class="nsi-switch-label">
+                <input
+                  type="checkbox"
+                  class="nsi-switch-checkbox"
+                  [checked]="interState()"
+                  (change)="interState.set($any($event.target).checked)"
+                />
+                <div class="nsi-switch-text">
+                  <div class="nsi-switch-title-row">
+                    <strong>Inter-state supply (IGST)</strong>
+                    <span class="nsi-tax-pill" [class.nsi-tax-pill--igst]="interState()">
+                      {{ interState() ? 'IGST Applicable' : 'CGST + SGST Applicable' }}
+                    </span>
+                  </div>
+                  <small class="nsi-switch-hint">
+                    {{
+                      interState()
+                        ? 'Integrated GST (IGST) is charged because the place of supply is outside your state.'
+                        : 'Central & State GST (CGST + SGST) are charged equally for intra-state supply. Check this if supply is interstate.'
+                    }}
+                  </small>
+                </div>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 3: Addresses -->
+        <section class="nsi-card" aria-labelledby="sec-addr">
+          <header class="nsi-card__header">
+            <div class="nsi-card__icon-badge nsi-card__icon-badge--teal">
+              <ar-icon name="delivery-challans" [size]="16" />
+            </div>
+            <div class="nsi-card__header-text">
+              <h3 id="sec-addr" class="nsi-card__title">Addresses</h3>
+              <p class="nsi-card__subtitle">Official billing address and dispatch/destination site address.</p>
+            </div>
+          </header>
+
+          <div class="nsi-card__body">
+            <div class="nsi-form-grid nsi-form-grid--2col">
+              <!-- Billing Address Card -->
+              <div class="nsi-address-box">
+                <div class="nsi-address-box__head">
+                  <span class="nsi-address-box__label">Billing Address</span>
+                </div>
+                <textarea
+                  class="ar-field__input nsi-textarea"
+                  rows="3"
+                  placeholder="Company billing address..."
+                  [value]="billingAddress()"
+                  (input)="billingAddress.set($any($event.target).value)"
+                ></textarea>
+              </div>
+
+              <!-- Shipping / Site Address Card -->
+              <div class="nsi-address-box">
+                <div class="nsi-address-box__head">
+                  <span class="nsi-address-box__label">Shipping / Site Address</span>
+                  @if (party().shipTo.length) {
+                    <span class="nsi-address-box__badge">{{ party().shipTo.length }} site(s)</span>
+                  }
+                </div>
+                @if (party().shipTo.length) {
+                  <select
+                    class="ar-field__input ar-field__select nsi-mb-2"
+                    aria-label="Ship to site"
+                    (change)="chooseShipTo(+$any($event.target).value)"
+                  >
+                    @for (s of party().shipTo; track $index; let i = $index) {
+                      <option [value]="i" [selected]="i === shipIndex()">
+                        {{ s.label }}{{ s.isDefault ? ' (default)' : '' }}
+                      </option>
+                    }
+                    <option [value]="-1" [selected]="shipIndex() === -1">
+                      Same as billing / other…
+                    </option>
+                  </select>
+                }
+                <textarea
+                  class="ar-field__input nsi-textarea"
+                  rows="3"
+                  placeholder="Delivery destination address..."
+                  aria-label="Shipping address"
+                  [value]="shippingAddress()"
+                  (input)="shippingAddress.set($any($event.target).value); shipIndex.set(-1)"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 4: Invoice Items -->
+        <section class="nsi-card" aria-labelledby="sec-items">
+          <header class="nsi-card__header nsi-card__header--split">
+            <div class="nsi-card__header-main">
+              <div class="nsi-card__icon-badge nsi-card__icon-badge--amber">
+                <ar-icon name="products" [size]="16" />
+              </div>
+              <div class="nsi-card__header-text">
+                <h3 id="sec-items" class="nsi-card__title">Invoice Items</h3>
+                <p class="nsi-card__subtitle">
+                  {{
+                    catalogue.blocked()
+                      ? "Product catalogue is not available to your role: enter item numbers and descriptions manually."
+                      : 'Search items by name to auto-fill item number, HSN code, unit price, and statutory GST.'
+                  }}
+                </p>
+              </div>
+            </div>
+            <button type="button" class="nsi-btn-add-item" (click)="addLine()">
+              <ar-icon name="plus" [size]="14" />
+              <span>Add Item</span>
+            </button>
+          </header>
+
+          <div class="nsi-card__body">
+            <div class="nsi-items-list">
+              @for (l of lines(); track $index; let i = $index) {
+                <div class="nsi-item-card" [class.nsi-item-card--started]="l.itemName || l.partNumber">
+                  <!-- Item Card Header Bar -->
+                  <div class="nsi-item-card__head">
+                    <div class="nsi-item-card__head-left">
+                      <span class="nsi-item-badge">#{{ i + 1 }}</span>
+                      <span class="nsi-item-card__title">{{ l.itemName || 'New Line Item' }}</span>
+                    </div>
+                    <div class="nsi-item-card__head-right">
+                      <div class="nsi-item-amount-wrap">
+                        <span class="nsi-item-amount-label">Taxable:</span>
+                        <strong class="nsi-item-amount-val ar-mono">₹ {{ money(taxable(l)) }}</strong>
+                      </div>
+                      <button
+                        type="button"
+                        class="nsi-item-remove-btn"
+                        [attr.aria-label]="'Remove item ' + (i + 1)"
+                        [title]="lines().length === 1 ? 'An invoice requires at least one item' : 'Remove item'"
+                        [disabled]="lines().length === 1"
+                        (click)="removeLine(i)"
+                      >
+                        <ar-icon name="plus" [size]="14" class="nsi-rotate-45" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Row 1: Item Search, Item No, Qty, Rate -->
+                  <div class="nsi-item-grid nsi-item-grid--top">
+                    <div class="ar-field nsi-field-grow">
+                      <span class="ar-field__label">Item Name / Catalogue Search <span class="ar-field__req">*</span></span>
+                      <ar-catalogue-item
+                        [value]="l.itemName"
+                        (typed)="patchLine(i, { itemName: $event })"
+                        (picked)="pickItem(i, $event)"
+                      />
+                    </div>
+
+                    <label class="ar-field nsi-field-part">
+                      <div class="ar-field__label-row">
+                        <span class="ar-field__label">Item No.</span>
+                        <span class="ar-field__opt">opt</span>
+                      </div>
+                      <input
+                        class="ar-field__input ar-mono"
+                        placeholder="Part #"
+                        [value]="l.partNumber"
+                        (input)="patchLine(i, { partNumber: $any($event.target).value })"
+                      />
+                    </label>
+
+                    <label class="ar-field nsi-field-qty">
+                      <span class="ar-field__label">Qty <span class="ar-field__req">*</span></span>
+                      <input
+                        class="ar-field__input ar-mono nsi-text-right"
+                        type="number"
+                        min="0"
+                        step="any"
+                        [value]="l.quantity"
+                        (input)="patchLine(i, { quantity: +$any($event.target).value })"
+                      />
+                    </label>
+
+                    <label class="ar-field nsi-field-rate">
+                      <span class="ar-field__label">Rate (₹) <span class="ar-field__req">*</span></span>
+                      <input
+                        class="ar-field__input ar-mono nsi-text-right"
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="0.00"
+                        [value]="l.unitPrice"
+                        (input)="patchLine(i, { unitPrice: +$any($event.target).value })"
+                      />
+                    </label>
+                  </div>
+
+                  <!-- Row 2: Description, HSN/SAC, Disc %, GST % -->
+                  <div class="nsi-item-grid nsi-item-grid--bottom">
+                    <label class="ar-field nsi-field-desc">
+                      <div class="ar-field__label-row">
+                        <span class="ar-field__label">Description</span>
+                        <span class="ar-field__opt">optional</span>
+                      </div>
+                      <input
+                        class="ar-field__input"
+                        placeholder="Item specification or notes..."
+                        [value]="l.description"
+                        (input)="patchLine(i, { description: $any($event.target).value })"
+                      />
+                    </label>
+
+                    <label class="ar-field nsi-field-hsn">
+                      <div class="ar-field__label-row">
+                        <span class="ar-field__label">HSN / SAC</span>
+                        <span class="ar-field__opt">opt</span>
+                      </div>
+                      <input
+                        class="ar-field__input ar-mono"
+                        maxlength="8"
+                        placeholder="HSN"
+                        [value]="l.hsnCode"
+                        (input)="patchLine(i, { hsnCode: $any($event.target).value })"
+                      />
+                    </label>
+
+                    <label class="ar-field nsi-field-disc">
+                      <span class="ar-field__label">Disc %</span>
+                      <input
+                        class="ar-field__input ar-mono nsi-text-right"
+                        type="number"
+                        min="0"
+                        max="100"
+                        placeholder="0"
+                        [value]="l.discountPercent"
+                        (input)="patchLine(i, { discountPercent: +$any($event.target).value })"
+                      />
+                    </label>
+
+                    <label class="ar-field nsi-field-gst">
+                      <span class="ar-field__label">GST %</span>
+                      <select
+                        class="ar-field__input ar-field__select"
+                        [disabled]="kind() === Kind.BillOfSupply"
+                        (change)="patchLine(i, { gstPercent: +$any($event.target).value })"
+                      >
+                        @for (r of gstRates(); track r.value) {
+                          <option [value]="r.value" [selected]="r.value === l.gstPercent">
+                            {{ r.label }}
+                          </option>
+                        }
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="nsi-add-item-wrap">
+              <button type="button" class="nsi-btn-add-item-dashed" (click)="addLine()">
+                <ar-icon name="plus" [size]="15" />
+                <span>Add Another Line Item</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 5: E-Invoice Details Accordion -->
+        <section class="nsi-card nsi-card--accordion">
+          <details class="nsi-accordion">
+            <summary class="nsi-accordion__summary">
+              <div class="nsi-accordion__summary-left">
+                <div class="nsi-card__icon-badge nsi-card__icon-badge--slate">
+                  <ar-icon name="gst-compliance" [size]="16" />
+                </div>
+                <div class="nsi-accordion__title-group">
+                  <strong class="nsi-accordion__title">E-invoice already generated outside the app</strong>
+                  <span class="nsi-accordion__hint">Optional: Only for invoices pre-registered on NIC / GST portal</span>
+                </div>
+              </div>
+              <ar-icon name="chevron" [size]="16" class="nsi-accordion__chevron" />
+            </summary>
+
+            <div class="nsi-accordion__content">
+              <p class="nsi-accordion__desc">
+                Provide these details if this invoice was registered on the official GST portal or via another ERP. Invoices generated inside MNI Assist obtain their statutory IRN directly via the connected GST gateway.
+              </p>
+
+              <div class="nsi-form-grid nsi-form-grid--2col">
+                <label class="ar-field" for="ni-irn">
+                  <span class="ar-field__label">Invoice Reference Number (IRN)</span>
+                  <input
+                    id="ni-irn"
+                    class="ar-field__input ar-mono"
+                    translate="no"
+                    maxlength="64"
+                    placeholder="64-character hash"
+                    [value]="irn()"
+                    (input)="irn.set($any($event.target).value)"
+                  />
+                </label>
+
+                <label class="ar-field" for="ni-eway">
+                  <span class="ar-field__label">E-way Bill Number</span>
+                  <input
+                    id="ni-eway"
+                    class="ar-field__input ar-mono"
+                    inputmode="numeric"
+                    maxlength="14"
+                    placeholder="12-digit number"
+                    [value]="ewayBill()"
+                    (input)="ewayBill.set($any($event.target).value)"
+                  />
+                </label>
+
+                <label class="ar-field nsi-col-span-2" for="ni-qr">
+                  <span class="ar-field__label">Signed QR Code Text</span>
+                  <textarea
+                    id="ni-qr"
+                    class="ar-field__input ar-mono nsi-textarea"
+                    translate="no"
+                    rows="3"
+                    maxlength="2048"
+                    placeholder="Paste signed JWT/payload from GST portal..."
+                    [value]="qrCode()"
+                    (input)="qrCode.set($any($event.target).value)"
+                  ></textarea>
+                </label>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <!-- Section 6: Notes & Terms -->
+        <section class="nsi-card" aria-labelledby="sec-notes">
+          <header class="nsi-card__header">
+            <div class="nsi-card__icon-badge nsi-card__icon-badge--blue">
+              <ar-icon name="documents" [size]="16" />
+            </div>
+            <div class="nsi-card__header-text">
+              <h3 id="sec-notes" class="nsi-card__title">Notes &amp; Commercial Terms</h3>
+              <p class="nsi-card__subtitle">Printed on the final PDF and customer invoice documentation.</p>
+            </div>
+          </header>
+
+          <div class="nsi-card__body">
+            <div class="nsi-form-grid nsi-form-grid--2col">
+              <label class="ar-field">
+                <div class="ar-field__label-row">
+                  <span class="ar-field__label">Customer Notes</span>
+                  <span class="ar-field__opt">printed on invoice</span>
+                </div>
+                <textarea
+                  class="ar-field__input nsi-textarea"
+                  rows="4"
+                  placeholder="Bank details, delivery terms, thank-you note…"
+                  [value]="notes()"
+                  (input)="notes.set($any($event.target).value)"
+                ></textarea>
+              </label>
+
+              <label class="ar-field" for="ni-conditions">
+                <div class="ar-field__label-row">
+                  <span class="ar-field__label">Terms &amp; Conditions</span>
+                  <span class="ar-field__opt">printed on invoice</span>
+                </div>
+                <textarea
+                  id="ni-conditions"
+                  class="ar-field__input nsi-textarea"
+                  rows="4"
+                  maxlength="4000"
+                  placeholder="Payment, warranty, return and dispute terms…"
+                  [value]="conditions()"
+                  (input)="conditions.set($any($event.target).value)"
+                ></textarea>
+              </label>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- RIGHT COLUMN: Sticky Invoice Summary Card -->
+      <aside class="nsi-summary-col">
+        <ng-container *ngTemplateOutlet="summaryCardTpl" />
+      </aside>
+    </div>
+
+    <!-- Page Footer Actions (Desktop & Tablet) -->
+    <footer class="nsi-footer-bar">
+      <div class="nsi-footer-bar__left">
+        <span class="nsi-footer-status">
+          Draft will be created · Can be revised before final issuance
+        </span>
+      </div>
+      <div class="nsi-footer-bar__actions">
+        <button ar-button type="button" variant="ghost" class="nsi-btn-cancel" (click)="cancel()">
+          Cancel
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          icon="check"
+          class="nsi-btn-submit"
+          [disabled]="busy()"
+          (click)="save()"
+        >
+          {{ busy() ? 'Saving Invoice…' : 'Save as Draft' }}
+        </button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- Mobile Fixed Bottom Action Bar -->
+<div class="nsi-mobile-action-bar">
+  <div class="nsi-mobile-action-bar__info">
+    <span class="nsi-mobile-action-bar__label">Total:</span>
+    <strong class="nsi-mobile-action-bar__total ar-mono">₹ {{ money(totals().taxable + totals().tax) }}</strong>
+  </div>
+  <div class="nsi-mobile-action-bar__buttons">
+    <button ar-button type="button" variant="ghost" class="nsi-mobile-btn-cancel" (click)="cancel()">
+      Cancel
+    </button>
+    <button
+      ar-button
+      type="button"
+      variant="primary"
+      class="nsi-mobile-btn-save"
+      [disabled]="busy()"
+      (click)="save()"
+    >
+      {{ busy() ? 'Saving…' : 'Save Draft' }}
+    </button>
+  </div>
+</div>
+
+<!-- Summary Card Template -->
+<ng-template #summaryCardTpl>
+  <div class="nsi-summary-card">
+    <header class="nsi-summary-card__head">
+      <div class="nsi-summary-card__icon-badge">
+        <ar-icon name="chart-of-accounts" [size]="16" />
+      </div>
+      <div>
+        <h4 class="nsi-summary-card__title">Invoice Summary</h4>
+        <span class="nsi-summary-card__subtitle">Calculated tax breakdown</span>
+      </div>
+    </header>
+
+    <div class="nsi-summary-card__body">
+      <!-- Breakdown Rows -->
+      <dl class="nsi-summary-list">
+        <div class="nsi-summary-row">
+          <dt class="nsi-summary-label">Items Count</dt>
+          <dd class="nsi-summary-val">{{ startedCount() }} started / {{ lines().length }} total</dd>
+        </div>
+
+        <div class="nsi-summary-row">
+          <dt class="nsi-summary-label">Taxable Value</dt>
+          <dd class="nsi-summary-val ar-mono">₹ {{ money(totals().taxable) }}</dd>
+        </div>
+
+        @if (kind() === Kind.BillOfSupply) {
+          <div class="nsi-summary-row">
+            <dt class="nsi-summary-label">Statutory GST</dt>
+            <dd class="nsi-summary-val nsi-text-muted">Not charged (Bill of Supply)</dd>
+          </div>
+        } @else if (interState()) {
+          <div class="nsi-summary-row nsi-summary-row--tax">
+            <dt class="nsi-summary-label">
+              <span>Integrated GST (IGST)</span>
+              <span class="nsi-badge-igst">Inter-state</span>
+            </dt>
+            <dd class="nsi-summary-val ar-mono">₹ {{ money(totals().tax) }}</dd>
+          </div>
+        } @else {
+          <div class="nsi-summary-row nsi-summary-row--tax">
+            <dt class="nsi-summary-label">Central GST (CGST)</dt>
+            <dd class="nsi-summary-val ar-mono">₹ {{ money(totals().tax / 2) }}</dd>
+          </div>
+          <div class="nsi-summary-row nsi-summary-row--tax">
+            <dt class="nsi-summary-label">State GST (SGST)</dt>
+            <dd class="nsi-summary-val ar-mono">₹ {{ money(totals().tax / 2) }}</dd>
+          </div>
+        }
+
+        <!-- Total Tax Row -->
+        @if (kind() !== Kind.BillOfSupply) {
+          <div class="nsi-summary-row nsi-summary-row--subtotal">
+            <dt class="nsi-summary-label">Total Tax Amount</dt>
+            <dd class="nsi-summary-val ar-mono">₹ {{ money(totals().tax) }}</dd>
+          </div>
+        }
+
+        <!-- Grand Total Row -->
+        <div class="nsi-summary-row nsi-summary-row--grand">
+          <dt class="nsi-summary-label">Grand Total</dt>
+          <dd class="nsi-summary-val ar-mono">₹ {{ money(totals().taxable + totals().tax) }}</dd>
+        </div>
+      </dl>
+
+      <!-- Context Badges -->
+      <div class="nsi-summary-pills">
+        <div class="nsi-summary-pill">
+          <span class="nsi-summary-pill__dot"></span>
+          <span>Place: {{ placeCode() || 'Not selected' }}</span>
+        </div>
+        <div class="nsi-summary-pill">
+          <span class="nsi-summary-pill__dot" [class.nsi-summary-pill__dot--green]="gstin() && !gstinInvalid()"></span>
+          <span>GSTIN: {{ gstin() ? (gstinInvalid() ? 'Invalid' : 'Configured') : 'None' }}</span>
+        </div>
+      </div>
+
+      <!-- Quick Action Inside Summary (Desktop) -->
+      <div class="nsi-summary-action">
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          icon="check"
+          class="nsi-btn-block"
+          [disabled]="busy()"
+          (click)="save()"
+        >
+          {{ busy() ? 'Saving…' : 'Save as Draft' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-template>

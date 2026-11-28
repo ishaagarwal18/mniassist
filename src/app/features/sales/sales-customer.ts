@@ -156,7 +156,7 @@ interface AccountOption {
       background: var(--ar-bg-100);
       padding: 3px;
       border-radius: 8px;
-      border: 1px solid var(--ar-line-200);
+      border: 1px solid var(--ar-line-300);
       gap: 2px;
     }
     .sc__seg-btn {
@@ -165,17 +165,17 @@ interface AccountOption {
       border: 0;
       cursor: pointer;
       font: 500 12.5px var(--ar-font-sans, system-ui, sans-serif);
-      color: #64748b;
+      color: var(--ar-ink-500);
       border-radius: 6px;
       transition: all 0.15s ease;
     }
     .sc__seg-btn:hover:not(.sc__seg-btn--on) {
-      color: #1e293b;
-      background: rgba(255, 255, 255, 0.5);
+      color: var(--ar-ink-900);
+      background: var(--ar-white);
     }
     .sc__seg-btn--on {
-      background: #ffffff;
-      color: #2563eb;
+      background: var(--ar-white);
+      color: var(--ar-primary);
       font-weight: 600;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
@@ -189,7 +189,7 @@ interface AccountOption {
       grid-column: 1 / -1;
     }
     .sc__req {
-      color: var(--ar-bad-600);
+      color: var(--ar-red-600);
     }
     .sc__chosen {
       display: flex;
@@ -225,7 +225,7 @@ interface AccountOption {
       max-height: 280px;
       overflow-y: auto;
       background: var(--ar-white);
-      border: 1px solid var(--ar-line-200);
+      border: 1px solid var(--ar-line-300);
       border-radius: var(--ar-radius-control);
       box-shadow: var(--ar-shadow-pop);
     }

@@ -1,0 +1,1159 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.nsi-topbar-btn {
+  height: 36px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.nsi-page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background-color: var(--ar-bg-50, #f8fafc);
+  padding: 24px 32px 80px;
+
+  @media (max-width: 1024px) {
+    padding: 20px 20px 80px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px 12px 96px;
+  }
+}
+
+.nsi-container {
+  width: 100%;
+  max-width: 1540px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ========================================================================= */
+/* Banners & Header Cards                                                    */
+/* ========================================================================= */
+.nsi-banner-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #b91c1c;
+  font: 500 13px var(--ar-font-sans);
+
+  &__text {
+    flex: 1;
+  }
+}
+
+.nsi-banner-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+
+  &__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  &__title {
+    font: 700 15px var(--ar-font-sans);
+    color: #0f172a;
+    letter-spacing: -0.01em;
+  }
+
+  &__desc {
+    margin: 0;
+    font: 400 12.5px/1.5 var(--ar-font-sans);
+    color: #64748b;
+  }
+
+  @media (max-width: 640px) {
+    display: none;
+  }
+}
+
+/* ========================================================================= */
+/* Mobile Sticky Summary Bar (< 1200px)                                      */
+/* ========================================================================= */
+.nsi-summary-mobile-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+  cursor: pointer;
+  user-select: none;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: 500 13px var(--ar-font-sans);
+    color: #334155;
+  }
+
+  &__amount {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  &__count {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font: 500 12px var(--ar-font-sans);
+    color: #2563eb;
+  }
+
+  @media (max-width: 1199px) {
+    display: flex;
+  }
+}
+
+.nsi-mobile-chevron {
+  transition: transform 0.2s ease;
+
+  &--open {
+    transform: rotate(180deg);
+  }
+}
+
+.nsi-summary-mobile-drawer {
+  display: none;
+  animation: fadeIn 0.2s ease;
+
+  @media (max-width: 1199px) {
+    display: block;
+  }
+}
+
+/* ========================================================================= */
+/* 2-Column Responsive Workspace Grid                                        */
+/* ========================================================================= */
+.nsi-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+  align-items: start;
+
+  @media (min-width: 1440px) {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 28px;
+  }
+
+  @media (max-width: 1199px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+.nsi-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.nsi-summary-col {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  @media (max-width: 1199px) {
+    display: none;
+  }
+}
+
+/* ========================================================================= */
+/* Cards & Sections                                                          */
+/* ========================================================================= */
+.nsi-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #ffffff;
+
+    &--split {
+      justify-content: space-between;
+    }
+  }
+
+  &__header-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__icon-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    &--blue {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    &--purple {
+      background: #f5f3ff;
+      color: #7c3aed;
+    }
+
+    &--teal {
+      background: #f0fdfa;
+      color: #0d9488;
+    }
+
+    &--amber {
+      background: #fffbeb;
+      color: #d97706;
+    }
+
+    &--slate {
+      background: #f1f5f9;
+      color: #475569;
+    }
+  }
+
+  &__header-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__title {
+    margin: 0;
+    font: 700 14.5px var(--ar-font-sans);
+    color: #0f172a;
+    letter-spacing: -0.01em;
+  }
+
+  &__subtitle {
+    margin: 2px 0 0;
+    font: 400 12px var(--ar-font-sans);
+    color: #64748b;
+  }
+
+  &__body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    @media (max-width: 640px) {
+      padding: 16px 14px;
+    }
+  }
+
+  &--accordion {
+    padding: 0;
+  }
+}
+
+.nsi-note-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-radius: 8px;
+  font: 400 12.5px var(--ar-font-sans);
+  color: #92400e;
+}
+
+/* ========================================================================= */
+/* Responsive Form Grids                                                     */
+/* ========================================================================= */
+.nsi-form-grid {
+  display: grid;
+  gap: 14px;
+  align-items: start;
+
+  &--4col {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    @media (max-width: 1024px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &--3col {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &--2col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+.nsi-col-span-2 {
+  grid-column: span 2;
+
+  @media (max-width: 900px) {
+    grid-column: auto;
+  }
+}
+
+.ar-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+
+  &__label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  &__label {
+    font: 500 12.5px var(--ar-font-sans);
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  &__req {
+    color: #dc2626;
+    font-weight: 700;
+  }
+
+  &__opt {
+    font: 400 11.5px var(--ar-font-sans);
+    color: #94a3b8;
+  }
+
+  &__hint {
+    font: 400 11.5px var(--ar-font-sans);
+    color: #64748b;
+  }
+
+  &__input {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    font: 400 13.5px var(--ar-font-sans);
+    color: #0f172a;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+
+    &::placeholder {
+      color: #94a3b8;
+    }
+
+    &:hover:not(:disabled):not([readonly]) {
+      border-color: #94a3b8;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+  }
+
+  &__select {
+    appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+  }
+}
+
+.nsi-textarea {
+  height: auto !important;
+  min-height: 80px;
+  padding: 10px 12px !important;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.nsi-input-invalid {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 1px #dc2626 !important;
+}
+
+.nsi-text-bad {
+  color: #dc2626 !important;
+}
+
+.nsi-text-right {
+  text-align: right;
+}
+
+.nsi-mb-2 {
+  margin-bottom: 8px;
+}
+
+/* ========================================================================= */
+/* Inter-State Switch Card                                                   */
+/* ========================================================================= */
+.nsi-switch-card {
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+}
+
+.nsi-switch-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.nsi-switch-checkbox {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.nsi-switch-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.nsi-switch-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  strong {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+}
+
+.nsi-tax-pill {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+
+  &--igst {
+    background: #f0fdf4;
+    color: #16a34a;
+    border-color: #bbf7d0;
+  }
+}
+
+.nsi-switch-hint {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* ========================================================================= */
+/* Address Boxes                                                             */
+/* ========================================================================= */
+.nsi-address-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  &__label {
+    font: 600 12.5px var(--ar-font-sans);
+    color: #334155;
+  }
+
+  &__badge {
+    font: 500 11px var(--ar-font-sans);
+    color: #0284c7;
+    background: #e0f2fe;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+}
+
+/* ========================================================================= */
+/* Invoice Items List & Cards                                                */
+/* ========================================================================= */
+.nsi-btn-add-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 7px;
+  font: 600 12.5px var(--ar-font-sans);
+  color: #2563eb;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+  }
+}
+
+.nsi-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nsi-item-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+
+  &:hover,
+  &--started,
+  &:focus-within {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  &__head-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  &__title {
+    font: 600 13px var(--ar-font-sans);
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__head-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+.nsi-item-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #2563eb;
+  font: 700 11px var(--ar-font-sans);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nsi-item-amount-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.nsi-item-amount-label {
+  font: 500 11.5px var(--ar-font-sans);
+  color: #64748b;
+}
+
+.nsi-item-amount-val {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.nsi-item-remove-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  &:disabled {
+    opacity: 0.25;
+    cursor: default;
+  }
+}
+
+.nsi-rotate-45 {
+  transform: rotate(45deg);
+}
+
+.nsi-item-grid {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+
+  &--top {
+    @media (max-width: 768px) {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  &--bottom {
+    @media (max-width: 768px) {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+}
+
+.nsi-field-grow {
+  flex: 1 1 auto;
+  min-width: 180px;
+
+  @media (max-width: 768px) {
+    grid-column: span 2;
+  }
+}
+
+.nsi-field-part {
+  flex: 0 0 130px;
+
+  @media (max-width: 768px) {
+    flex: auto;
+  }
+}
+
+.nsi-field-qty {
+  flex: 0 0 85px;
+
+  @media (max-width: 768px) {
+    flex: auto;
+  }
+}
+
+.nsi-field-rate {
+  flex: 0 0 120px;
+
+  @media (max-width: 768px) {
+    flex: auto;
+  }
+}
+
+.nsi-field-desc {
+  flex: 1 1 auto;
+  min-width: 180px;
+
+  @media (max-width: 768px) {
+    grid-column: span 2;
+  }
+}
+
+.nsi-field-hsn {
+  flex: 0 0 110px;
+
+  @media (max-width: 768px) {
+    flex: auto;
+  }
+}
+
+.nsi-field-disc {
+  flex: 0 0 85px;
+
+  @media (max-width: 768px) {
+    flex: auto;
+  }
+}
+
+.nsi-field-gst {
+  flex: 0 0 120px;
+
+  @media (max-width: 768px) {
+    flex: auto;
+  }
+}
+
+.nsi-add-item-wrap {
+  display: flex;
+  margin-top: 4px;
+}
+
+.nsi-btn-add-item-dashed {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: transparent;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 8px;
+  font: 600 13px var(--ar-font-sans);
+  color: #2563eb;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+  }
+}
+
+/* ========================================================================= */
+/* E-Invoice Accordion                                                       */
+/* ========================================================================= */
+.nsi-accordion {
+  width: 100%;
+
+  &__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+
+  &__summary-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__title-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__title {
+    font: 600 13.5px var(--ar-font-sans);
+    color: #1e293b;
+  }
+
+  &__hint {
+    font: 400 11.5px var(--ar-font-sans);
+    color: #64748b;
+  }
+
+  &__chevron {
+    color: #64748b;
+    transition: transform 0.2s ease;
+  }
+
+  &[open] .nsi-accordion__chevron {
+    transform: rotate(180deg);
+  }
+
+  &__content {
+    padding: 0 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 16px;
+  }
+
+  &__desc {
+    margin: 0;
+    font: 400 12.5px/1.5 var(--ar-font-sans);
+    color: #64748b;
+  }
+}
+
+/* ========================================================================= */
+/* Invoice Summary Card (Desktop & Drawer)                                   */
+/* ========================================================================= */
+.nsi-summary-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  &__icon-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    margin: 0;
+    font: 700 14px var(--ar-font-sans);
+    color: #0f172a;
+  }
+
+  &__subtitle {
+    font: 400 11.5px var(--ar-font-sans);
+    color: #64748b;
+  }
+
+  &__body {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+.nsi-summary-list {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nsi-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font: 400 13px var(--ar-font-sans);
+  color: #334155;
+
+  &--tax {
+    color: #475569;
+    font-size: 12.5px;
+  }
+
+  &--subtotal {
+    padding-top: 8px;
+    border-top: 1px dashed #e2e8f0;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  &--grand {
+    margin-top: 4px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+
+    .nsi-summary-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .nsi-summary-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #2563eb;
+    }
+  }
+}
+
+.nsi-summary-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+}
+
+.nsi-summary-val {
+  margin: 0;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: right;
+}
+
+.nsi-badge-igst {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.nsi-summary-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nsi-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font: 500 11.5px var(--ar-font-sans);
+  color: #475569;
+
+  &__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #94a3b8;
+
+    &--green {
+      background: #16a34a;
+    }
+  }
+}
+
+.nsi-summary-action {
+  margin-top: 4px;
+
+  .nsi-btn-block {
+    width: 100%;
+    height: 38px;
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+}
+
+/* ========================================================================= */
+/* Desktop Footer Bar                                                        */
+/* ========================================================================= */
+.nsi-footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 0 0;
+  border-top: 1px solid #e2e8f0;
+
+  &__left {
+    display: flex;
+    align-items: center;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nsi-footer-status {
+    font: 400 12.5px var(--ar-font-sans);
+    color: #64748b;
+  }
+
+  .nsi-btn-cancel {
+    height: 38px;
+    padding: 0 18px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .nsi-btn-submit {
+    height: 38px;
+    padding: 0 20px;
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+/* ========================================================================= */
+/* Mobile Fixed Bottom Action Bar (< 768px)                                  */
+/* ========================================================================= */
+.nsi-mobile-action-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.08);
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__label {
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  &__total {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  &__buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nsi-mobile-btn-cancel {
+    height: 38px;
+    padding: 0 14px;
+    font-size: 12.5px;
+  }
+
+  .nsi-mobile-btn-save {
+    height: 38px;
+    padding: 0 18px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

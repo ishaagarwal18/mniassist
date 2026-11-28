@@ -7,7 +7,9 @@
   max-width: 100%;
 }
 
-ar-new-sales-order {
+ar-new-sales-order,
+ar-new-sales-invoice,
+ar-new-delivery-challan {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -22,7 +24,7 @@ ar-new-sales-order {
   max-width: 100%;
   box-sizing: border-box;
   padding: 0;
-  background-color: var(--ar-bg-50, #f8fafc);
+  background-color: var(--ar-bg-100);
   overflow-x: hidden;
   flex: 1;
   min-height: 0;
